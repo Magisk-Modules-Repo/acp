@@ -220,13 +220,13 @@ aud_mod_lib() {
 
   mkdir -p $AUDMODLIBPATH
 
-  cp -af $INSTALLER/common/audmodlibsystem.prop $AUDMODLIBPATH/system.prop
-  cp -af $INSTALLER/common/audmodlib.prop $AUDMODLIBPATH/module.prop
-  cp -af $INSTALLER/common/audmodlibservice.sh $AUDMODLIBPATH/service.sh
-  
   for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
     mkdir -p $AUDMODLIBPATH${CFG%/*}
   done
+  
+  cp -af $INSTALLER/common/audmodlibsystem.prop $AUDMODLIBPATH/system.prop
+  cp -af $INSTALLER/common/audmodlib.prop $AUDMODLIBPATH/module.prop
+  cp -af $INSTALLER/common/audmodlibservice.sh $AUDMODLIBPATH/service.sh
 
   #### PATCHING FILES ####
   ui_print " "
