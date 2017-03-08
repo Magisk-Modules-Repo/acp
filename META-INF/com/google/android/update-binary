@@ -195,20 +195,16 @@ aud_mod_lib() {
     TMPAUDMODLIBDIR=/magisk/audmodlib
   fi
 
-  if [ ! -f $AUDMODLIBPATH$AUD_POL.bak ] || [ ! -f /magisk/audmodlib$AUD_POL.bak ]; then
-    AUDPOLPATH=""
-    AUDPOLEXT=""
-  else
-    AUDPOLPATH=$AUDMODLIBPATH
-    AUDPOLEXT=.bak
-  fi
-
   for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
     mkdir -p /cache/magisk/audmodlib${CFG%/*}
   done
 
   for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
-    cp -af $AUDPOLPATH$CFG$AUDPOLEXT /cache/magisk/audmodlib$CFG.bak
+    if [ ! -f $CFG.bak ]; then
+      cp -af $CFG /cache/magisk/audmodlib$CFG.bak
+    else
+      cp -af $CFG.bak /cache/magisk/audmodlib$CFG.bak
+    fi
   done
 
   for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
@@ -516,9 +512,6 @@ if (! is_mounted $MOUNTPATH); then
   ui_print "   ! $IMG mount failed... abort"
   exit 1
 fi
-
-# Wipe files
-universal_mod_wipe
 
 # Create mod paths
 magisk_mod_directory
