@@ -197,8 +197,10 @@ aud_mod_lib() {
 
   if [ ! -f $AUDMODLIBPATH$AUD_POL.bak ] || [ ! -f /magisk/audmodlib$AUD_POL.bak ]; then
     AUDPOLPATH=""
+    AUDPOLEXT=""
   else
     AUDPOLPATH=$AUDMODLIBPATH
+    AUDPOLEXT=.bak
   fi
 
   for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
@@ -206,7 +208,7 @@ aud_mod_lib() {
   done
 
   for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
-    cp -af $AUDPOLPATH$CFG /cache/magisk/audmodlib$CFG.bak
+    cp -af $AUDPOLPATH$CFG$AUDPOLEXT /cache/magisk/audmodlib$CFG.bak
   done
 
   for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
