@@ -50,6 +50,7 @@ uninstall() {
 if [ ! -d /magisk/$MODID ]; then
   uninstall
   rm -f /magisk/.core/post-fs-data.d/$MODID.sh
+  reboot
 fi
 
 rm -rf /cache/magisk/audmodlib
