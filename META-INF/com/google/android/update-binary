@@ -168,6 +168,15 @@ target_size_check() {
 # Flashable update-binary preparation
 ##########################################################################################
 
+universal_mod_wipe() {
+}
+
+magisk_mod_directory() {
+}
+
+magisk_mod_copy() {
+}
+
 aud_mod_lib() {
   ### CREATE AUDIO MODIFICATION LIBRARY ###
 
@@ -423,12 +432,11 @@ ABILONG=$(grep_prop ro.product.cpu.abi)
 MIUIVER=$(grep_prop ro.miui.ui.version.name)
 
 ARCH=arm
-DRVARCH=NEON
 IS64BIT=false
-if [ "$ABI" = "x86" ]; then ARCH=x86; DRVARCH=X86; fi;
-if [ "$ABI2" = "x86" ]; then ARCH=x86; DRVARCH=X86; fi;
+if [ "$ABI" = "x86" ]; then ARCH=x86; fi;
+if [ "$ABI2" = "x86" ]; then ARCH=x86; fi;
 if [ "$ABILONG" = "arm64-v8a" ]; then ARCH=arm64; IS64BIT=true; fi;
-if [ "$ABILONG" = "x86_64" ]; then ARCH=x64; IS64BIT=true; DRVARCH=X86; fi;
+if [ "$ABILONG" = "x86_64" ]; then ARCH=x64; IS64BIT=true; fi;
 
 # You can get the Android API version from $API, the CPU architecture from $ARCH
 # Useful if you are creating Android version / platform dependent mods
