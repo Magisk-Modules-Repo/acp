@@ -27,7 +27,7 @@
 
 # This will be the folder name under /magisk
 # This should also be the same as the id in your module.prop to prevent confusion
-MODID=dbr
+MODID=udbr
 AUDMODLIBID=audmodlib
 
 # Set to true if you need to enable Magic Mount
@@ -52,9 +52,9 @@ LATESTARTSERVICE=false
 print_modname() {
   ui_print " "
   ui_print "      ****************************************"
-  ui_print "      *           ViPER4Android FX           *"
+  ui_print "      *    Universal deep_buffer Remover     *"
   ui_print "      ****************************************"
-  ui_print "      *           Universal - Mod            *"
+  ui_print "      *         Universal - Patcher          *"
   ui_print "      *             Version <version>              *"
   ui_print "      *              by ahrion               *"
   ui_print "      ****************************************"

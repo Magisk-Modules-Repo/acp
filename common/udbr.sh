@@ -3,7 +3,7 @@
 # More info in the main Magisk thread
 
 #### v THIS SHOULD MATCH YOUR CONFIG.SH MODID v #####
-MODID=dbr
+MODID=udbr
 #### ^ THIS SHOULD MATCH YOUR CONFIG.SH MODID ^ #####
 
 ################ v DO NOT REMOVE v ################
