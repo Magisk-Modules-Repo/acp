@@ -1,0 +1,19 @@
+# This file will be read by resetprop
+# Example: Change dpi
+# ro.sf.lcd_density=320
+
+# LOW POWER AUDIO TWEAKS
+lpa.decode=false
+lpa.releaselock=false
+lpa.use-stagefright=false
+tunnel.decode=false
+
+# OTHER AUDIO TWEAKS
+audio.deep_buffer.media=false
+tunnel.audiovideo.decode=false
+persist.sys.media.use-awesome=1
+ro.audio.samplerate=48000
+ro.audio.pcm.samplerate=48000
+
+# SCRIPT BY ahrion@XDA
+# DO NOT STEAL
