@@ -261,6 +261,14 @@ sys_mod_wipe() {
       fi
     done
   fi
+  
+  # BACKUP CONFIGS
+  ui_print "   Backing up existing audio_policy cfg files..."
+  for BACKUP in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
+    if [ -f $BACKUP ]; then
+      cp -f $BACKUP $BACKUP.bak
+    fi
+  done
 }
 
 sys_mod_directory() {
@@ -277,14 +285,14 @@ sys_mod_copy() {
   #### PREPARE INSTALL ####
   ui_print " "
   ui_print "- Preparing installation -"
+  
+  # EXTRACT FILES
+  ui_print "   Extracting installation files..."
 
-  # BACKUP CONFIGS
-  ui_print "   Backing up existing audio_policy cfg files..."
-  for BACKUP in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
-    if [ -f $BACKUP ]; then
-      cp -f $BACKUP $BACKUP.bak
-    fi
-  done
+  cd /tmp
+  mkdir $MODID
+  cd $MODID
+  unzip -o "$ZIP"
 
   # INSTALL ROM BACKUP SCRIPT
   if [ -d $SYSTEM/addon.d ]; then
