@@ -168,15 +168,6 @@ target_size_check() {
 # Flashable update-binary preparation
 ##########################################################################################
 
-universal_mod_wipe() {
-}
-
-magisk_mod_directory() {
-}
-
-magisk_mod_copy() {
-}
-
 aud_mod_lib() {
   ### CREATE AUDIO MODIFICATION LIBRARY ###
 
@@ -455,7 +446,6 @@ if (is_mounted /data); then
     ui_print "   ! Magisk is not installed!"
     ui_print "     ! Installing on system!"
     # Wipe files
-    universal_mod_wipe
     sys_mod_wipe
     # Create mod paths
     sys_mod_directory
@@ -512,12 +502,6 @@ if (! is_mounted $MOUNTPATH); then
   ui_print "   ! $IMG mount failed... abort"
   exit 1
 fi
-
-# Create mod paths
-magisk_mod_directory
-
-# Copy files
-magisk_mod_copy
 
 # Patch files
 aud_mod_lib
