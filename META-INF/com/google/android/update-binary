@@ -101,7 +101,7 @@ mount_image() {
           fi
         fi
         if (is_mounted $2); then
-          ui_print "     Mounting $1 to $2"
+          ui_print "    Mounting $1 to $2..."
           break;
         fi
       fi
@@ -168,8 +168,22 @@ target_size_check() {
 # Flashable update-binary preparation
 ##########################################################################################
 
+magisk_mod_directory() {
+  #### PREPARE INSTALL ####
+  ui_print " "
+  ui_print "- Preparing installation -"
+
+  # CREATING DIRECTORIES
+  ui_print "   Creating directories..."
+
+  rm -rf $MODPATH 2>/dev/null
+  mkdir -p $MODPATH
+}
+
 aud_mod_lib() {
   ### CREATE AUDIO MODIFICATION LIBRARY ###
+  ui_print " "
+  ui_print "- Installing Audio Modification Library -"
 
   mkdir -p $MOUNTPATH/.core/post-fs-data.d
   cp -af $INSTALLER/common/$MODID.sh $MOUNTPATH/.core/post-fs-data.d/$MODID.sh
@@ -218,11 +232,10 @@ aud_mod_lib() {
   cp -af $INSTALLER/common/audmodlibservice.sh $AUDMODLIBPATH/service.sh
 
   #### PATCHING FILES ####
-  ui_print " "
-  ui_print "- Patching necessary cfg files -"
+  ui_print "   Patching necessary cfg files"
 
   # REMOVE DEEP_BUFFER LINES
-  ui_print "   Patching existing audio_policy files..."
+  ui_print "    Patching existing audio_policy files..."
   if [ -f $AUD_OUT_POL ] && [ -f $AUD_POL_CONF ]; then
     # REMOVE DEEP_BUFFER
     sed -i '/Speaker/{n;s/deep_buffer,//;}' /cache/magisk/audmodlib$AUD_POL_CONF
@@ -247,9 +260,9 @@ aud_mod_lib() {
 }
 
 sys_mod_wipe() {
-  #### PREPARE INSTALL ####
+  #### CLEANING UP ####
   ui_print " "
-  ui_print "- Preparing remover -"
+  ui_print "- Cleaning up previous installations -"
 
   # RESTORE CONFIGS
   if [ -f $AUD_POL.bak ] || [ -f $AUD_POL_CONF.bak ] || [ -f $AUD_OUT_POL.bak ] || [ -f $V_AUD_POL.bak ]; then
@@ -272,6 +285,21 @@ sys_mod_wipe() {
 }
 
 sys_mod_directory() {
+  #### PREPARE INSTALL ####
+  ui_print " "
+  ui_print "- Preparing installation -"
+
+  # EXTRACT FILES
+  ui_print "   Extracting installation files..."
+
+  cd /tmp
+  mkdir $MODID
+  cd $MODID
+  unzip -o "$ZIP"
+
+  # CREATING DIRECTORIES
+  ui_print "   Creating directories..."
+
   if [ -d $SYSTEM/addon.d ]; then
     sys_mk_ch $SYSTEM/addon.d 0755
   fi
@@ -282,17 +310,9 @@ sys_mod_directory() {
 }
 
 sys_mod_copy() {
-  #### PREPARE INSTALL ####
+  #### INSTALL FILES ####
   ui_print " "
-  ui_print "- Preparing installation -"
-  
-  # EXTRACT FILES
-  ui_print "   Extracting installation files..."
-
-  cd /tmp
-  mkdir $MODID
-  cd $MODID
-  unzip -o "$ZIP"
+  ui_print "- Installing scripts -"
 
   # INSTALL ROM BACKUP SCRIPT
   if [ -d $SYSTEM/addon.d ]; then
@@ -452,7 +472,7 @@ if (is_mounted /data); then
   if [ ! -f "/data/magisk.img" ]; then
     ui_print " "
     ui_print "   ! Magisk is not installed!"
-    ui_print "     ! Installing on system!"
+    ui_print "    ! Installing on system!"
     # Wipe files
     sys_mod_wipe
     # Create mod paths
@@ -494,7 +514,7 @@ if [ -f "$IMG" ]; then
   target_size_check $IMG
   if [ "$reqSizeM" -gt "$curFreeM" ]; then
     SIZE=$((((reqSizeM + curUsedM) / 32 + 2) * 32))
-    ui_print "     Resizing $IMG to ${SIZE}M..."
+    ui_print "    Resizing $IMG to ${SIZE}M..."
     resize2fs $IMG ${SIZE}M
   fi
 else
@@ -510,6 +530,9 @@ if (! is_mounted $MOUNTPATH); then
   ui_print "   ! $IMG mount failed... abort"
   exit 1
 fi
+
+# Create mod paths
+magisk_mod_directory
 
 # Patch files
 aud_mod_lib
