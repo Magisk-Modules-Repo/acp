@@ -22,15 +22,15 @@ fi
 ### FILE LOCATIONS ###
 # AUDIO EFFECTS
 CONFIG_FILE=$SYSTEM/etc/audio_effects.conf
-VENDOR_CONFIG=$VENDOR/etc/audio_effects.conf
+VENDOR_CONFIG=$SYSTEM$VENDOR/etc/audio_effects.conf
 HTC_CONFIG_FILE=$SYSTEM/etc/htc_audio_effects.conf
 OTHER_VENDOR_FILE=$SYSTEM/etc/audio_effects_vendor.conf
 OFFLOAD_CONFIG=$SYSTEM/etc/audio_effects_offload.conf
 # AUDIO POLICY
 AUD_POL=$SYSTEM/etc/audio_policy.conf
 AUD_POL_CONF=$SYSTEM/etc/audio_policy_configuration.xml
-AUD_OUT_POL=$VENDOR/etc/audio_output_policy.conf
-V_AUD_POL=$VENDOR/etc/audio_policy.conf
+AUD_OUT_POL=$SYSTEM$VENDOR/etc/audio_output_policy.conf
+V_AUD_POL=$SYSTEM$VENDOR/etc/audio_policy.conf
 
 if [ -d $SYSTEM/priv-app ]; then
   APPDIR=priv-app
@@ -202,27 +202,27 @@ audmodlib() {
 
   for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
     if [ -f $CFG ]; then
-      sys_mk_ch -p /cache/magisk/audmodlib${CFG%/*} 0755
+      mkdir -p /cache/magisk/audmodlib${CFG%/*}
 	fi
   done
 
   for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
     if [ ! -f $CFG.bak ]; then
-      sys_cp_ch -af $CFG /cache/magisk/audmodlib$CFG.bak 0644
+      cp -af $CFG /cache/magisk/audmodlib$CFG.bak
     elif [ -f $CFG.bak ]; then
-      sys_cp_ch -af $CFG.bak /cache/magisk/audmodlib$CFG.bak 0644
+      cp -af $CFG.bak /cache/magisk/audmodlib$CFG.bak
     fi
   done
 
   for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
     if [ -f $CFG ]; then
-      sys_cp_ch -af $TMPAUDMODLIBDIR$CFG /cache/magisk/audmodlib$CFG 0644
+      cp -af $TMPAUDMODLIBDIR$CFG /cache/magisk/audmodlib$CFG
 	fi
   done
 
   # COPY OVER MAIN AUDIO_EFFECTS CFG FILE TO VENDOR FILE
   if [ -f $VENDOR_CONFIG ]; then
-    sys_cp_ch -af /cache/magisk/audmodlib$CONFIG_FILE /cache/magisk/audmodlib$VENDOR_CONFIG 0644
+    cp -af /cache/magisk/audmodlib$CONFIG_FILE /cache/magisk/audmodlib$VENDOR_CONFIG
   fi
   
   set_perm_recursive  /cache/magisk/audmodlib  0  0  0755  0644
