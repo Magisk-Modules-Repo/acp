@@ -4,6 +4,17 @@
 # Functions
 ##########################################################################################
 
+safe_mount() {
+  IS_MOUNTED=$(cat /proc/mounts | grep "$1")
+  if [ "$IS_MOUNTED" ]; then
+    mount -o rw,remount $1
+  else
+    mount $1
+  fi
+}
+
+safe_mount /system
+
 suimg=$(ls /cache/su.img /data/su.img 2>/dev/null);
 
 SLOT=$(getprop ro.boot.slot_suffix 2>/tmp/null)
@@ -14,6 +25,7 @@ else
 fi
 
 if [ ! -d "$SYSTEM/vendor" ] || [ -L "$SYSTEM/vendor" ]; then
+  safe_mount /vendor
   VENDOR=/vendor
 elif [ -d "$SYSTEM/vendor" ] || [ -L "/vendor" ]; then
   VENDOR=$SYSTEM/vendor
@@ -22,15 +34,15 @@ fi
 ### FILE LOCATIONS ###
 # AUDIO EFFECTS
 CONFIG_FILE=$SYSTEM/etc/audio_effects.conf
-VENDOR_CONFIG=$SYSTEM$VENDOR/etc/audio_effects.conf
+VENDOR_CONFIG=$VENDOR/etc/audio_effects.conf
 HTC_CONFIG_FILE=$SYSTEM/etc/htc_audio_effects.conf
 OTHER_VENDOR_FILE=$SYSTEM/etc/audio_effects_vendor.conf
 OFFLOAD_CONFIG=$SYSTEM/etc/audio_effects_offload.conf
 # AUDIO POLICY
 AUD_POL=$SYSTEM/etc/audio_policy.conf
 AUD_POL_CONF=$SYSTEM/etc/audio_policy_configuration.xml
-AUD_OUT_POL=$SYSTEM$VENDOR/etc/audio_output_policy.conf
-V_AUD_POL=$SYSTEM$VENDOR/etc/audio_policy.conf
+AUD_OUT_POL=$VENDOR/etc/audio_output_policy.conf
+V_AUD_POL=$VENDOR/etc/audio_policy.conf
 
 if [ -d $SYSTEM/priv-app ]; then
   APPDIR=priv-app
