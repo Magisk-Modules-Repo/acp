@@ -431,12 +431,8 @@ ui_print "- Mounting filesystems -"
 
 ui_print "   Mounting /cache..."
 mount /cache 2>/dev/null
-mount -o rw,remount /cache 2>/dev/null
-mount -o rw,remount /cache /cache 2>/dev/null
 ui_print "   Mounting /data..."
 mount /data 2>/dev/null
-mount -o rw,remount /data 2>/dev/null
-mount -o rw,remount /data /data 2>/dev/null
 
 if [ "$suimg" ]; then
   if [ "$(sys_is_mounted /su)" == 0 ]; then
@@ -461,12 +457,8 @@ fi
 
 ui_print "   Mounting $SYSTEM($WRITE)..."
 mount -o $WRITE $SYSTEM 2>/dev/null
-mount -o $WRITE,remount $SYSTEM 2>/dev/null
-mount -o $WRITE,remount $SYSTEM $SYSTEM 2>/dev/null
 ui_print "   Mounting $VENDOR($WRITE)..."
 mount -o $WRITE $VENDOR 2>/dev/null
-mount -o $WRITE,remount $VENDOR 2>/dev/null
-mount -o $WRITE,remount $VENDOR $VENDOR 2>/dev/null
 
 API=$(grep_prop ro.build.version.sdk)
 ABI=$(grep_prop ro.product.cpu.abi | cut -c-3)
