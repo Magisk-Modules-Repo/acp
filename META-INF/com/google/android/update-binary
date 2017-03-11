@@ -268,9 +268,9 @@ audmodlib_patch() {
   else
     for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
       if [ -f $CFG ]; then
-      # REMOVE DEEP_BUFFER
-      sed -i '/deep_buffer {/,/}/d' /cache/magisk/audmodlib$CFG
-    fi
+        # REMOVE DEEP_BUFFER
+        sed -i '/deep_buffer {/,/}/d' /cache/magisk/audmodlib$CFG
+      fi
     done
   fi
 }
@@ -457,14 +457,14 @@ else
   WRITE=rw
 fi
 
-ui_print "   Mounting /system($WRITE)..."
-mount -o $WRITE /system 2>/dev/null
-mount -o $WRITE,remount /system 2>/dev/null
-mount -o $WRITE,remount /system /system 2>/dev/null
-ui_print "   Mounting /vendor($WRITE)..."
-mount -o $WRITE /vendor 2>/dev/null
-mount -o $WRITE,remount /vendor 2>/dev/null
-mount -o $WRITE,remount /vendor /vendor 2>/dev/null
+ui_print "   Mounting $SYSTEM($WRITE)..."
+mount -o $WRITE $SYSTEM 2>/dev/null
+mount -o $WRITE,remount $SYSTEM 2>/dev/null
+mount -o $WRITE,remount $SYSTEM $SYSTEM 2>/dev/null
+ui_print "   Mounting $VENDOR($WRITE)..."
+mount -o $WRITE $VENDOR 2>/dev/null
+mount -o $WRITE,remount $VENDOR 2>/dev/null
+mount -o $WRITE,remount $VENDOR $VENDOR 2>/dev/null
 
 API=$(grep_prop ro.build.version.sdk)
 ABI=$(grep_prop ro.product.cpu.abi | cut -c-3)
@@ -501,8 +501,8 @@ if (is_mounted /data); then
     rm -rf /tmp/$MODID
     umount /data
     umount /su
-    umount /system
-    umount /vendor
+    umount $SYSTEM
+    umount $VENDOR
     ui_print " "
     ui_print "    --------- INSTALLATION SUCCESSFUL ---------"
     ui_print " "
@@ -613,8 +613,8 @@ if [ "$curSizeM" -gt "$NEWDATASIZE" ]; then
 fi
 
 if (! $BOOTMODE); then
-  umount /system
-  umount /vendor 2>/dev/null
+  umount $SYSTEM
+  umount $VENDOR 2>/dev/null
 fi
 
 ui_print " "
