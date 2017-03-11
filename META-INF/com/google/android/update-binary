@@ -180,7 +180,7 @@ magisk_mod_directory() {
   mkdir -p $MODPATH
 }
 
-aud_mod_lib() {
+audmodlib() {
   ### CREATE AUDIO MODIFICATION LIBRARY ###
   ui_print " "
   ui_print "- Installing Audio Modification Library -"
@@ -201,7 +201,9 @@ aud_mod_lib() {
   fi
 
   for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
-    mkdir -p /cache/magisk/audmodlib${CFG%/*}
+    if [ -f $CFG ]; then
+      mkdir -p /cache/magisk/audmodlib${CFG%/*}
+	fi
   done
 
   for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
@@ -213,24 +215,48 @@ aud_mod_lib() {
   done
 
   for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
-    cp -af $TMPAUDMODLIBDIR$CFG /cache/magisk/audmodlib$CFG
+    if [ -f $CFG ]; then
+      cp -af $TMPAUDMODLIBDIR$CFG /cache/magisk/audmodlib$CFG
+	fi
   done
 
   # COPY OVER MAIN AUDIO_EFFECTS CFG FILE TO VENDOR FILE
   if [ -f $VENDOR_CONFIG ]; then
     cp -af /cache/magisk/audmodlib$CONFIG_FILE /cache/magisk/audmodlib$VENDOR_CONFIG
   fi
+  
+  set_perm_recursive  /cache/magisk/audmodlib  0  0  0755  0644
 
   mkdir -p $AUDMODLIBPATH
 
   for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
-    mkdir -p $AUDMODLIBPATH${CFG%/*}
+    if [ -f $CFG ]; then
+      mkdir -p $AUDMODLIBPATH${CFG%/*}
+	fi
   done
   
   cp -af $INSTALLER/common/audmodlibsystem.prop $AUDMODLIBPATH/system.prop
   cp -af $INSTALLER/common/audmodlib.prop $AUDMODLIBPATH/module.prop
   cp -af $INSTALLER/common/audmodlibservice.sh $AUDMODLIBPATH/service.sh
 
+  audmodlib_patch
+
+  for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
+    if [ -f $CFG ]; then
+      cp -af /cache/magisk/audmodlib$CFG.bak $AUDMODLIBPATH$CFG.bak
+	fi
+  done
+  
+  for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
+    if [ -f $CFG ]; then
+      cp -af /cache/magisk/audmodlib$CFG $AUDMODLIBPATH$CFG
+	fi
+  done
+  
+  set_perm_recursive  $AUDMODLIBPATH  0  0  0755  0644
+}
+
+audmodlib_patch() {
   #### PATCHING FILES ####
   ui_print "   Patching necessary cfg files"
 
@@ -247,16 +273,6 @@ aud_mod_lib() {
     fi
     done
   fi
-
-  for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
-    cp -af /cache/magisk/audmodlib$CFG.bak $AUDMODLIBPATH$CFG.bak
-  done
-  
-  for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
-    cp -af /cache/magisk/audmodlib$CFG $AUDMODLIBPATH$CFG
-  done
-  
-  set_perm_recursive  $AUDMODLIBPATH  0  0  0755  0644
 }
 
 sys_mod_wipe() {
@@ -535,7 +551,7 @@ fi
 magisk_mod_directory
 
 # Patch files
-aud_mod_lib
+audmodlib
 
 # Handle replace folders
 for TARGET in $REPLACE; do
