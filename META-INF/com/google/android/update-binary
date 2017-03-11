@@ -50,9 +50,6 @@ else
   APPDIR=app
 fi
 
-OUTFD=$2
-ZIP=$3
-
 ui_print() {
   if ($BOOTMODE); then
     echo "$1"
@@ -179,6 +176,9 @@ target_size_check() {
 ##########################################################################################
 # Flashable update-binary preparation
 ##########################################################################################
+
+OUTFD=$2
+ZIP=$3
 
 magisk_mod_directory() {
   #### PREPARE INSTALL ####
