@@ -200,23 +200,35 @@ audmodlib() {
     TMPAUDMODLIBDIR=/magisk/audmodlib
   fi
 
-  for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
+  for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG; do
     if [ -f $CFG ]; then
       mkdir -p /cache/magisk/audmodlib${CFG%/*}
 	fi
   done
 
   for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
+    if [ -f $CFG ]; then
+      mkdir -p /cache/magisk/audmodlib${CFG%/*}
+	fi
+  done
+  
+  for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
     if [ ! -f $CFG.bak ]; then
-      cp -f $CFG /cache/magisk/audmodlib$CFG.bak
+      cp -af $CFG /cache/magisk/audmodlib$CFG.bak
     elif [ -f $CFG.bak ]; then
-      cp -f $CFG.bak /cache/magisk/audmodlib$CFG.bak
+      cp -af $CFG.bak /cache/magisk/audmodlib$CFG.bak
     fi
   done
 
-  for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
+  for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG; do
     if [ -f $CFG ]; then
-      cp -f $TMPAUDMODLIBDIR$CFG /cache/magisk/audmodlib$CFG
+      cp -af $TMPAUDMODLIBDIR$CFG /cache/magisk/audmodlib$CFG
+	fi
+  done
+  
+  for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
+    if [ -f $CFG ]; then
+      cp -af $TMPAUDMODLIBDIR$CFG /cache/magisk/audmodlib$CFG
 	fi
   done
 
@@ -229,7 +241,13 @@ audmodlib() {
 
   mkdir -p $AUDMODLIBPATH
 
-  for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
+  for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG; do
+    if [ -f $CFG ]; then
+      mkdir -p $AUDMODLIBPATH${CFG%/*}
+	fi
+  done
+  
+  for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
     if [ -f $CFG ]; then
       mkdir -p $AUDMODLIBPATH${CFG%/*}
 	fi
@@ -247,7 +265,13 @@ audmodlib() {
 	fi
   done
   
-  for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
+  for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG; do
+    if [ -f $CFG ]; then
+      cp -af /cache/magisk/audmodlib$CFG $AUDMODLIBPATH$CFG
+	fi
+  done
+  
+  for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
     if [ -f $CFG ]; then
       cp -af /cache/magisk/audmodlib$CFG $AUDMODLIBPATH$CFG
 	fi
