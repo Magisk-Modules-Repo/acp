@@ -451,7 +451,7 @@ if [ "$suimg" ]; then
   fi;
 fi;
 
-if [[ -f /data/magisk.img || -d /magisk ]]; then
+if [ -f /data/magisk.img ] || [ -d /magisk ]; then
   WRITE=ro
 else
   WRITE=rw
