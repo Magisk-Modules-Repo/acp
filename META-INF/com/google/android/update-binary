@@ -221,8 +221,8 @@ audmodlib() {
   for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
     if [ ! -f $CFG.bak ]; then
       cp -af $CFG /cache/magisk/audmodlib$CFG.bak
-    elif [ -f $CFG.bak ]; then
-      cp -af $CFG.bak /cache/magisk/audmodlib$CFG.bak
+    else
+	  cp -af $CFG.bak /cache/magisk/audmodlib$CFG.bak
     fi
   done
 
