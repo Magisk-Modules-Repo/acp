@@ -2,15 +2,26 @@
 # This script will be executed in post-fs-data mode
 # More info in the main Magisk thread
 
-## v THIS MATCHES YOUR CONFIG.SH MODID v ##
+#### v INSERT YOUR CONFIG.SH MODID v ####
 MODID=udbr
-## ^ THIS MATCHES YOUR CONFIG.SH MODID ^ ##
+#### ^ INSERT YOUR CONFIG.SH MODID ^ ####
 
 rm -rf /cache/magisk/audmodlib
 
 if [ ! -d /magisk/$MODID ]; then
   ########## v DO NOT REMOVE v ##########
   AUDMODLIBPATH=/magisk/audmodlib
+
+  safe_mount() {
+    IS_MOUNTED=$(cat /proc/mounts | grep "$1")
+    if [ "$IS_MOUNTED" ]; then
+      mount -o rw,remount $1
+    else
+      mount $1
+    fi
+  }
+
+  safe_mount /system
 
   SLOT=$(getprop ro.boot.slot_suffix 2>/tmp/null)
   if [ "$SLOT" ]; then
@@ -20,6 +31,7 @@ if [ ! -d /magisk/$MODID ]; then
   fi
 
   if [ ! -d "$SYSTEM/vendor" ] || [ -L "$SYSTEM/vendor" ]; then
+    safe_mount /vendor
     VENDOR=/vendor
   elif [ -d "$SYSTEM/vendor" ] || [ -L "/vendor" ]; then
     VENDOR=$SYSTEM/vendor
@@ -39,14 +51,16 @@ if [ ! -d /magisk/$MODID ]; then
   V_AUD_POL=$VENDOR/etc/audio_policy.conf
   ########## v DO NOT REMOVE v ##########
 
+  #### v INSERT YOUR FILE PATCHES v ####
+  # RESTORE BACKED UP CONFIGS
   if [ -f $AUD_POL.bak ] || [ -f $AUD_POL_CONF.bak ] || [ -f $AUD_OUT_POL.bak ] || [ -f $V_AUD_POL.bak ]; then
-    # RESTORE BACKED UP CONFIGS
     for RESTORE in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
       if [ -f $RESTORE.bak ]; then
         cp -f $AUDMODLIBPATH$RESTORE.bak $AUDMODLIBPATH$RESTORE
       fi
     done
   fi
+  #### ^ INSERT YOUR FILE PATCHES ^ ####
 
   rm -f /magisk/.core/post-fs-data.d/$MODID.sh
   reboot

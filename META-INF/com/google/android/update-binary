@@ -15,8 +15,6 @@ safe_mount() {
 
 safe_mount /system
 
-suimg=$(ls /cache/su.img /data/su.img 2>/dev/null);
-
 SLOT=$(getprop ro.boot.slot_suffix 2>/tmp/null)
 if [ "$SLOT" ]; then
   SYSTEM=/system/system
@@ -43,6 +41,8 @@ AUD_POL=$SYSTEM/etc/audio_policy.conf
 AUD_POL_CONF=$SYSTEM/etc/audio_policy_configuration.xml
 AUD_OUT_POL=$VENDOR/etc/audio_output_policy.conf
 V_AUD_POL=$VENDOR/etc/audio_policy.conf
+
+suimg=$(ls /cache/su.img /data/su.img 2>/dev/null);
 
 if [ -d $SYSTEM/priv-app ]; then
   APPDIR=priv-app
@@ -272,6 +272,7 @@ audmodlib_patch() {
   #### PATCHING FILES ####
   ui_print "   Patching necessary cfg files"
 
+  #### v INSERT YOUR FILE PATCHES v ####
   # REMOVE DEEP_BUFFER LINES
   ui_print "    Patching existing audio_policy files..."
   if [ -f $AUD_OUT_POL ] && [ -f $AUD_POL_CONF ]; then
@@ -285,6 +286,7 @@ audmodlib_patch() {
       fi
     done
   fi
+  #### ^ INSERT YOUR FILE PATCHES ^ ####
 }
 
 sys_mod_wipe() {
@@ -292,9 +294,8 @@ sys_mod_wipe() {
   ui_print " "
   ui_print "- Cleaning up previous installations -"
 
-  # RESTORE CONFIGS
+  # RESTORE BACKED UP CONFIGS
   if [ -f $AUD_POL.bak ] || [ -f $AUD_POL_CONF.bak ] || [ -f $AUD_OUT_POL.bak ] || [ -f $V_AUD_POL.bak ]; then
-    # RESTORE BACKED UP CONFIGS
     ui_print "   Restoring backed up audio_policy files..."
     for RESTORE in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
       if [ -f $RESTORE.bak ]; then
