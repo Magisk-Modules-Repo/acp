@@ -29,19 +29,6 @@ elif [ -d "$SYSTEM/vendor" ] || [ -L "/vendor" ]; then
   VENDOR=$SYSTEM/vendor
 fi
 
-### FILE LOCATIONS ###
-# AUDIO EFFECTS
-CONFIG_FILE=$SYSTEM/etc/audio_effects.conf
-VENDOR_CONFIG=$VENDOR/etc/audio_effects.conf
-HTC_CONFIG_FILE=$SYSTEM/etc/htc_audio_effects.conf
-OTHER_VENDOR_FILE=$SYSTEM/etc/audio_effects_vendor.conf
-OFFLOAD_CONFIG=$SYSTEM/etc/audio_effects_offload.conf
-# AUDIO POLICY
-AUD_POL=$SYSTEM/etc/audio_policy.conf
-AUD_POL_CONF=$SYSTEM/etc/audio_policy_configuration.xml
-AUD_OUT_POL=$VENDOR/etc/audio_output_policy.conf
-V_AUD_POL=$VENDOR/etc/audio_policy.conf
-
 suimg=$(ls /cache/su.img /data/su.img 2>/dev/null);
 
 if [ -d $SYSTEM/priv-app ]; then
@@ -180,19 +167,68 @@ target_size_check() {
 OUTFD=$2
 ZIP=$3
 
+### FILE LOCATIONS ###
+# AUDIO EFFECTS
+CONFIG_FILE=$SYSTEM/etc/audio_effects.conf
+VENDOR_CONFIG=$VENDOR/etc/audio_effects.conf
+HTC_CONFIG_FILE=$SYSTEM/etc/htc_audio_effects.conf
+OTHER_VENDOR_FILE=$SYSTEM/etc/audio_effects_vendor.conf
+OFFLOAD_CONFIG=$SYSTEM/etc/audio_effects_offload.conf
+# AUDIO POLICY
+AUD_POL=$SYSTEM/etc/audio_policy.conf
+AUD_POL_CONF=$SYSTEM/etc/audio_policy_configuration.xml
+AUD_OUT_POL=$VENDOR/etc/audio_output_policy.conf
+V_AUD_POL=$VENDOR/etc/audio_policy.conf
+
+##########################################################################################
+# 
+# Instructions:
+# 
+# 1. This is a unified installer for both Magisk and /system/ install, so be sure to
+#    follow the template provided for "magisk_", "audmodlib_patch", & "sys_"
+# 2. audmodlib and files with the prefix as such need to remain untouched unless
+#    an update has occured, however use audmodlib_patch to remove and then
+#    add the lines corresponding to your mod
+# 3. If applicable, make "APP1", etc. to be the same name as your .apk/app folder
+#    in system/app/ (i.e. APP1=Ax, APP2=ViPER4Android, APP3=AM3DZirene and so on)
+# 4. common/$MODID.sh, system/addon.d/99$MODID.sh & system/su.d/50$MODID.sh app specific
+#    scripts will be named the same as your MODID in config.sh (i.e. MODID=v4afx so
+#    common/$MODID.sh=v4afx.sh)
+# 5. Edit common/$MODID.sh to remove or restore the specific audio_effects or
+#    audio_policy files that were added in the audmodlib_patch portion of the installer
+# 6. You can obviously use your mod specific system.prop or post-fs-data.sh as part of
+#    the mod, but make sure not edit the designated audmodlib specific files
+# 7. DO NOT delete any of the credits for @ahrion or @topjohnwu mentioned in this script
+# 
+##########################################################################################
+
 magisk_mod_directory() {
+  ########################################################################################
+  # Make directories for Magisk install
+  ########################################################################################
+
+  ########## v DO NOT REMOVE v ##########
   #### PREPARE INSTALL ####
   ui_print " "
   ui_print "- Preparing installation -"
 
   # CREATING DIRECTORIES
   ui_print "   Creating directories..."
-
+  
   rm -rf $MODPATH 2>/dev/null
   mkdir -p $MODPATH
+  ########## ^ DO NOT REMOVE ^ ##########
+  
+  #### v INSERT YOUR DIRECTORY MAKING v ####
+  #### ^ INSERT YOUR DIRECTORY MAKING ^ ####
 }
 
 audmodlib() {
+  ########################################################################################
+  # Audio Modification Library / This is where the magick happens
+  ########################################################################################
+
+  ########## v DO NOT REMOVE v ##########
   ### CREATE AUDIO MODIFICATION LIBRARY ###
   ui_print " "
   ui_print "- Installing Audio Modification Library -"
@@ -266,11 +302,19 @@ audmodlib() {
   done
   
   set_perm_recursive  $AUDMODLIBPATH  0  0  0755  0644
+  ui_print "   ! AudModLib framework by @ahrion !"
+  ########## ^ DO NOT REMOVE ^ ##########
 }
 
 audmodlib_patch() {
+  ########################################################################################
+  # Audio Modification Library file patcher for Magisk install
+  ########################################################################################
+
+  ########## v DO NOT REMOVE v ##########
   #### PATCHING FILES ####
   ui_print "   Patching necessary cfg files"
+  ########## ^ DO NOT REMOVE ^ ##########
 
   #### v INSERT YOUR FILE PATCHES v ####
   # REMOVE DEEP_BUFFER LINES
@@ -290,10 +334,22 @@ audmodlib_patch() {
 }
 
 sys_mod_wipe() {
+  ########################################################################################
+  # Wipe before System install
+  ########################################################################################
+  
+  ########## v DO NOT REMOVE v ##########
   #### CLEANING UP ####
   ui_print " "
   ui_print "- Cleaning up previous installations -"
+  ########## ^ DO NOT REMOVE ^ ##########
+  
+  #### v INSERT YOUR FILE REMOVALS v ####
+  # REMOVE FILES
+  #ui_print "   Removing files..."
+  #### ^ INSERT YOUR FILE REMOVALS ^ ####
 
+  #### v INSERT YOUR REMOVE PATCH, RESTORE, & BACKUP v ####
   # RESTORE BACKED UP CONFIGS
   if [ -f $AUD_POL.bak ] || [ -f $AUD_POL_CONF.bak ] || [ -f $AUD_OUT_POL.bak ] || [ -f $V_AUD_POL.bak ]; then
     ui_print "   Restoring backed up audio_policy files..."
@@ -311,24 +367,24 @@ sys_mod_wipe() {
       cp -f $BACKUP $BACKUP.bak
     fi
   done
+  #### ^ INSERT YOUR REMOVE PATCH, RESTORE, & BACKUP ^ ####
 }
 
 sys_mod_directory() {
+  ########################################################################################
+  # Make directories for System install
+  ########################################################################################
+
+  ########## v DO NOT REMOVE v ##########
   #### PREPARE INSTALL ####
   ui_print " "
   ui_print "- Preparing installation -"
 
-  # EXTRACT FILES
-  ui_print "   Extracting installation files..."
-
-  cd /tmp
-  mkdir $MODID
-  cd $MODID
-  unzip -o "$ZIP"
-
   # CREATING DIRECTORIES
   ui_print "   Creating directories..."
+  ########## ^ DO NOT REMOVE ^ ##########
 
+  #### v INSERT YOUR DIRECTORY MAKING v ####
   if [ -d $SYSTEM/addon.d ]; then
     sys_mk_ch $SYSTEM/addon.d 0755
   fi
@@ -338,26 +394,41 @@ sys_mod_directory() {
       sys_mk_ch ${CFG%/*} 0755
 	fi
   done
+  #### ^ INSERT YOUR DIRECTORY MAKING ^ ####
 }
 
 sys_mod_copy() {
+  ########################################################################################
+  # Copy files over for System install
+  ########################################################################################
+
+  ########## v DO NOT REMOVE v ##########
   #### INSTALL FILES ####
   ui_print " "
   ui_print "- Installing scripts -"
+  ########## ^ DO NOT REMOVE ^ ##########
 
+  #### v INSERT YOUR FILE INSTALL v ####
   # INSTALL ROM BACKUP SCRIPT
   if [ -d $SYSTEM/addon.d ]; then
     ui_print "   Installing addon.d backup script..."
-    sys_mk_ch $SYSTEM/addon.d 0755
-    sys_cp_ch /tmp/$MODID/system/addon.d/99$MODID.sh $SYSTEM/addon.d/99$MODID.sh 0644
+    sys_cp_ch $INSTALLER/system/addon.d/99$MODID.sh $SYSTEM/addon.d/99$MODID.sh 0644
   fi
+  #### ^ INSERT YOUR FILE INSTALL ^ ####
 }
 
 sys_mod_patch() {
+  ########################################################################################
+  # Patch files for System install
+  ########################################################################################
+
+  ########## v DO NOT REMOVE v ##########
   #### PATCHING FILES ####
   ui_print " "
   ui_print "- Patching necessary cfg files -"
+  ########## ^ DO NOT REMOVE ^ ##########
 
+  #### v INSERT YOUR FILE PATCHES v ####
   # REMOVE DEEP_BUFFER LINES
   ui_print "   Patching existing audio_policy files..."
   if [ -f $AUD_OUT_POL ] && [ -f $AUD_POL_CONF ]; then
@@ -371,6 +442,7 @@ sys_mod_patch() {
     fi
     done
   fi
+  #### ^ INSERT YOUR FILE PATCHES ^ ####
 }
 
 readlink /proc/$$/fd/$OUTFD 2>/dev/null | grep /tmp >/dev/null
@@ -513,7 +585,6 @@ if (is_mounted /data); then
     # Patch files
     sys_mod_patch
     #### COMPLETING INSTALL ####
-    rm -rf /tmp/$MODID
     umount /data
     umount /su
     umount $SYSTEM
@@ -521,7 +592,7 @@ if (is_mounted /data); then
     ui_print " "
     ui_print "    --------- INSTALLATION SUCCESSFUL ---------"
     ui_print " "
-    ui_print "Brought to you by ahrion @ XDA Developers"
+    ui_print "Unified installer brought to you by ahrion @ XDA Developers"
 	ui_print " "
 	exit 0;
   fi
@@ -636,7 +707,7 @@ ui_print " "
 ui_print "    --------- INSTALLATION SUCCESSFUL ---------"
 
 ui_print " "
-ui_print "Brought to you by ahrion @ XDA Developers"
+ui_print "Unified installer brought to you by ahrion @ XDA Developers"
 
 # Please leave this message in your flashable zip for credits :)
 ui_print " "

@@ -49,9 +49,9 @@ if [ ! -d /magisk/$MODID ]; then
   AUD_POL_CONF=$SYSTEM/etc/audio_policy_configuration.xml
   AUD_OUT_POL=$VENDOR/etc/audio_output_policy.conf
   V_AUD_POL=$VENDOR/etc/audio_policy.conf
-  ########## v DO NOT REMOVE v ##########
+  ########## ^ DO NOT REMOVE ^ ##########
 
-  #### v INSERT YOUR FILE PATCHES v ####
+  #### v INSERT YOUR REMOVE PATCH OR RESTORE v ####
   # RESTORE BACKED UP CONFIGS
   if [ -f $AUD_POL.bak ] || [ -f $AUD_POL_CONF.bak ] || [ -f $AUD_OUT_POL.bak ] || [ -f $V_AUD_POL.bak ]; then
     for RESTORE in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
@@ -60,7 +60,7 @@ if [ ! -d /magisk/$MODID ]; then
       fi
     done
   fi
-  #### ^ INSERT YOUR FILE PATCHES ^ ####
+  #### ^ INSERT YOUR REMOVE PATCH OR RESTORE ^ ####
 
   rm -f /magisk/.core/post-fs-data.d/$MODID.sh
   reboot
