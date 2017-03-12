@@ -592,7 +592,7 @@ if (is_mounted /data); then
     ui_print " "
     ui_print "    --------- INSTALLATION SUCCESSFUL ---------"
     ui_print " "
-    ui_print "Unified installer brought to you by ahrion @ XDA Developers"
+    ui_print "Installer brought to you by ahrion @ XDA"
 	ui_print " "
 	exit 0;
   fi
@@ -707,7 +707,7 @@ ui_print " "
 ui_print "    --------- INSTALLATION SUCCESSFUL ---------"
 
 ui_print " "
-ui_print "Unified installer brought to you by ahrion @ XDA Developers"
+ui_print "Installer brought to you by ahrion @ XDA"
 
 # Please leave this message in your flashable zip for credits :)
 ui_print " "
