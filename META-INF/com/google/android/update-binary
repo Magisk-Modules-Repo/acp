@@ -388,13 +388,13 @@ sys_mod_directory() {
   if [ -d $SYSTEM/addon.d ]; then
     sys_mk_ch $SYSTEM/addon.d 0755
   fi
+  #### ^ INSERT YOUR DIRECTORY MAKING ^ ####
 
   for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
     if [ -f $CFG ]; then
       sys_mk_ch ${CFG%/*} 0755
 	fi
   done
-  #### ^ INSERT YOUR DIRECTORY MAKING ^ ####
 }
 
 sys_mod_copy() {
