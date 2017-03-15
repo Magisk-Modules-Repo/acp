@@ -349,7 +349,7 @@ sys_mod_wipe() {
   #ui_print "   Removing files..."
   #### ^ INSERT YOUR FILE REMOVALS ^ ####
 
-  #### v INSERT YOUR REMOVE PATCH, RESTORE, & BACKUP v ####
+  #### v INSERT YOUR REMOVE PATCH v ####
   # RESTORE BACKED UP CONFIGS
   if [ -f $AUD_POL.bak ] || [ -f $AUD_POL_CONF.bak ] || [ -f $AUD_OUT_POL.bak ] || [ -f $V_AUD_POL.bak ]; then
     ui_print "   Restoring backed up audio_policy files..."
@@ -359,7 +359,8 @@ sys_mod_wipe() {
       fi
     done
   fi
-  
+  #### ^ INSERT YOUR REMOVE PATCH ^ ####
+
   # BACKUP CONFIGS
   ui_print "   Backing up existing audio_policy cfg files..."
   for BACKUP in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
@@ -367,7 +368,6 @@ sys_mod_wipe() {
       cp -f $BACKUP $BACKUP.bak
     fi
   done
-  #### ^ INSERT YOUR REMOVE PATCH, RESTORE, & BACKUP ^ ####
 }
 
 sys_mod_directory() {
