@@ -6,10 +6,10 @@
 MODID=udbr
 #### ^ INSERT YOUR CONFIG.SH MODID ^ ####
 
+########## v DO NOT REMOVE v ##########
 rm -rf /cache/magisk/audmodlib
 
 if [ ! -d /magisk/$MODID ]; then
-  ########## v DO NOT REMOVE v ##########
   AUDMODLIBPATH=/magisk/audmodlib
 
   safe_mount() {

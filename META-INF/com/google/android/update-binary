@@ -224,7 +224,7 @@ magisk_mod_directory() {
 }
 
 audmodlib() {
-  ########################################################################################
+   ########################################################################################
   # Audio Modification Library / This is where the magick happens
   ########################################################################################
 
@@ -288,7 +288,7 @@ audmodlib() {
   cp -af $INSTALLER/common/audmodlibservice.sh $AUDMODLIBPATH/service.sh
 
   audmodlib_patch
-
+  
   for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
     if [ -f $CFG ]; then
       cp -af /cache/magisk/audmodlib$CFG.bak $AUDMODLIBPATH$CFG.bak
@@ -302,7 +302,8 @@ audmodlib() {
   done
   
   set_perm_recursive  $AUDMODLIBPATH  0  0  0755  0644
-  ui_print "! AudModLib framework by @ahrion !"
+
+  ui_print "   ! AudModLib framework by @ahrion !"
   ########## ^ DO NOT REMOVE ^ ##########
 }
 
@@ -319,7 +320,7 @@ audmodlib_patch() {
   #### v INSERT YOUR FILE PATCHES v ####
   # REMOVE DEEP_BUFFER LINES
   ui_print "    Patching existing audio_policy files..."
-  if [ -f $AUD_OUT_POL ] && [ -f $AUD_POL_CONF ]; then
+  if [ -f $TMPAUDMODLIBDIR$AUD_OUT_POL ] && [ -f $TMPAUDMODLIBDIR$AUD_POL_CONF ]; then
     # REMOVE DEEP_BUFFER
     sed -i '/Speaker/{n;s/deep_buffer,//;}' /cache/magisk/audmodlib$AUD_POL_CONF
   else
@@ -351,14 +352,12 @@ sys_mod_wipe() {
 
   #### v INSERT YOUR REMOVE PATCH v ####
   # RESTORE BACKED UP CONFIGS
-  if [ -f $AUD_POL.bak ] || [ -f $AUD_POL_CONF.bak ] || [ -f $AUD_OUT_POL.bak ] || [ -f $V_AUD_POL.bak ]; then
-    ui_print "   Restoring backed up audio_policy files..."
-    for RESTORE in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
-      if [ -f $RESTORE.bak ]; then
-        cp -f $RESTORE.bak $RESTORE
-      fi
-    done
-  fi
+  ui_print "   Restoring backed up audio_policy files..."
+  for RESTORE in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
+    if [ -f $RESTORE.bak ]; then
+      cp -f $RESTORE.bak $RESTORE
+    fi
+  done
   #### ^ INSERT YOUR REMOVE PATCH ^ ####
 
   # BACKUP CONFIGS
