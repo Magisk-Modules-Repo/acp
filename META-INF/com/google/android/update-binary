@@ -17,6 +17,7 @@ safe_mount /system
 
 SLOT=$(getprop ro.boot.slot_suffix 2>/tmp/null)
 if [ "$SLOT" ]; then
+  safe_mount /system/system
   SYSTEM=/system/system
 else
   SYSTEM=/system
@@ -26,6 +27,7 @@ if [ ! -d "$SYSTEM/vendor" ] || [ -L "$SYSTEM/vendor" ]; then
   safe_mount /vendor
   VENDOR=/vendor
 elif [ -d "$SYSTEM/vendor" ] || [ -L "/vendor" ]; then
+  safe_mount $SYSTEM/vendor
   VENDOR=$SYSTEM/vendor
 fi
 
@@ -180,31 +182,89 @@ AUD_POL_CONF=$SYSTEM/etc/audio_policy_configuration.xml
 AUD_OUT_POL=$VENDOR/etc/audio_output_policy.conf
 V_AUD_POL=$VENDOR/etc/audio_policy.conf
 
+magisk_install() {
+  MAGISK=true
+  MK_PRFX="mkdir -p"
+  CP_PRFX="cp -af"
+  UNIFY="$MODPATH"
+  MK_SFFX=""
+  CP_SFFX=""
+  PATCHINSTALL="$TMPAUDMODLIBDIR"
+  PATCH="/cache/magisk/audmodlib"
+}
+
+system_install() {
+  MAGISK=false
+  MK_PRFX="sys_mk_ch"
+  CP_PRFX="sys_cp_ch"
+  UNIFY=""
+  MK_SFFX=" 0755"
+  CP_SFFX=" 0644"
+  PATCHINSTALL=""
+  PATCH=""
+}
+
 ##########################################################################################
 # 
 # Instructions:
 # 
-# 1. This is a unified installer for both Magisk and /system/ install, so be sure to
-#    follow the template provided for "magisk_", "audmodlib_patch", & "sys_"
-# 2. audmodlib and files with the prefix as such need to remain untouched unless
-#    an update has occured, however use audmodlib_patch to remove and then
-#    add the lines corresponding to your mod
+# 1. This is a Unified installer for both Magisk and /system/ install, so be sure to
+#    follow the template provided for "app_install_logic", "system_mod_wipe",
+#    & "unified_mod_<xxxx>"
+# 2. magisk_audmodlib and files with the audmodlib prefix as such need to remain
+#    untouched unless an update has occured, however use unified_mod_patch to remove
+#    and then add the lines corresponding to your mod
 # 3. If applicable, make "APP1", etc. to be the same name as your .apk/app folder
 #    in system/app/ (i.e. APP1=Ax, APP2=ViPER4Android, APP3=AM3DZirene and so on)
 # 4. common/$MODID.sh, system/addon.d/99$MODID.sh & system/su.d/50$MODID.sh app specific
 #    scripts will be named the same as your MODID in config.sh (i.e. MODID=v4afx so
 #    common/$MODID.sh=v4afx.sh)
 # 5. Edit common/$MODID.sh to remove or restore the specific audio_effects or
-#    audio_policy files that were added in the audmodlib_patch portion of the installer
+#    audio_policy files that were added in the unified_mod_patch portion of the installer
 # 6. You can obviously use your mod specific system.prop or post-fs-data.sh as part of
 #    the mod, but make sure not edit the designated audmodlib specific files
 # 7. DO NOT delete any of the credits for @ahrion or @topjohnwu mentioned in this script
 # 
 ##########################################################################################
 
-magisk_mod_directory() {
+system_mod_wipe() {
   ########################################################################################
-  # Make directories for Magisk install
+  # Wipe before System install
+  ########################################################################################
+  
+  ########## v DO NOT REMOVE v ##########
+  #### CLEANING UP ####
+  ui_print " "
+  ui_print "- Cleaning up previous installations -"
+  ########## ^ DO NOT REMOVE ^ ##########
+  
+  #### v INSERT YOUR FILE REMOVALS v ####
+  # REMOVE FILES
+  #ui_print "   Removing files..."
+  #### ^ INSERT YOUR FILE REMOVALS ^ ####
+
+  #### v INSERT YOUR RESTORE AND BACKUP FUNCTIONS v ####
+  # RESTORE BACKED UP CONFIGS
+  ui_print "   Restoring backed up audio_policy files..."
+  for RESTORE in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
+    if [ -f $RESTORE.bak ]; then
+      cp -f $RESTORE.bak $RESTORE
+    fi
+  done
+
+  # BACKUP CONFIGS
+  ui_print "   Backing up restored audio_policy cfg files..."
+  for BACKUP in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
+    if [ -f $BACKUP ]; then
+      cp -f $BACKUP $BACKUP.bak
+    fi
+  done
+  #### ^ INSERT YOUR RESTORE AND BACKUP FUNCTIONS ^ ####
+}
+
+unified_mod_directory() {
+  ########################################################################################
+  # Make directories for Unified install
   ########################################################################################
 
   ########## v DO NOT REMOVE v ##########
@@ -215,17 +275,52 @@ magisk_mod_directory() {
   # CREATING DIRECTORIES
   ui_print "   Creating directories..."
   
-  rm -rf $MODPATH 2>/dev/null
-  mkdir -p $MODPATH
+  if [ "$MAGISK" = true ]; then
+    rm -rf $MODPATH 2>/dev/null
+    mkdir -p $MODPATH
+  fi
   ########## ^ DO NOT REMOVE ^ ##########
   
   #### v INSERT YOUR DIRECTORY MAKING v ####
+  if [ "$MAGISK" = false ]; then
+    if [ -d $SYSTEM/addon.d ]; then
+      sys_mk_ch $SYSTEM/addon.d 0755
+    fi
+
+    for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
+      if [ -f $CFG ]; then
+        sys_mk_ch ${CFG%/*} 0755
+      fi
+    done
+  fi
   #### ^ INSERT YOUR DIRECTORY MAKING ^ ####
 }
 
-audmodlib() {
+unified_mod_copy() {
+  ########################################################################################
+  # Copy files over for Unified install
+  ########################################################################################
+
+  ########## v DO NOT REMOVE v ##########
+  #### INSTALL FILES ####
+  if [ "$MAGISK" = false ]; then
+    ui_print " "
+    ui_print "- Installing scripts -"
+  ########## ^ DO NOT REMOVE ^ ##########
+
+  #### v INSERT YOUR FILE INSTALL v ####
+    # INSTALL ROM BACKUP SCRIPT
+    if [ -d $SYSTEM/addon.d ]; then
+      ui_print "   Installing addon.d backup script..."
+      sys_cp_ch $INSTALLER/system/addon.d/99$MODID.sh $SYSTEM/addon.d/99$MODID.sh 0644
+    fi
+  fi
+  #### ^ INSERT YOUR FILE INSTALL ^ ####
+}
+
+magisk_audmodlib() {
    ########################################################################################
-  # Audio Modification Library / This is where the magick happens
+  # Audio Modification Library / This is where the magick happens for Magisk
   ########################################################################################
 
   ########## v DO NOT REMOVE v ##########
@@ -268,7 +363,6 @@ audmodlib() {
 	fi
   done
 
-  # COPY OVER MAIN AUDIO_EFFECTS CFG FILE TO VENDOR FILE
   if [ -f $VENDOR_CONFIG ]; then
     cp -af /cache/magisk/audmodlib$CONFIG_FILE /cache/magisk/audmodlib$VENDOR_CONFIG
   fi
@@ -287,7 +381,7 @@ audmodlib() {
   cp -af $INSTALLER/common/audmodlib.prop $AUDMODLIBPATH/module.prop
   cp -af $INSTALLER/common/audmodlibservice.sh $AUDMODLIBPATH/service.sh
 
-  audmodlib_patch
+  unified_mod_patch
   
   for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
     if [ -f $CFG ]; then
@@ -303,13 +397,13 @@ audmodlib() {
   
   set_perm_recursive  $AUDMODLIBPATH  0  0  0755  0644
 
-  ui_print "   ! AudModLib framework by @ahrion !"
+  ui_print "   ! AudModLib framework by ahrion @ XDA !"
   ########## ^ DO NOT REMOVE ^ ##########
 }
 
-audmodlib_patch() {
+unified_mod_patch() {
   ########################################################################################
-  # Audio Modification Library file patcher for Magisk install
+  # Audio Modification Library file patcher for Unified install
   ########################################################################################
 
   ########## v DO NOT REMOVE v ##########
@@ -320,125 +414,15 @@ audmodlib_patch() {
   #### v INSERT YOUR FILE PATCHES v ####
   # REMOVE DEEP_BUFFER LINES
   ui_print "    Patching existing audio_policy files..."
-  if [ -f $TMPAUDMODLIBDIR$AUD_OUT_POL ] && [ -f $TMPAUDMODLIBDIR$AUD_POL_CONF ]; then
+  if [ -f $PATCHINSTALL$AUD_OUT_POL ] && [ -f $PATCHINSTALL$AUD_POL_CONF ]; then
     # REMOVE DEEP_BUFFER
-    sed -i '/Speaker/{n;s/deep_buffer,//;}' /cache/magisk/audmodlib$AUD_POL_CONF
+    sed -i '/Speaker/{n;s/deep_buffer,//;}' $PATCH$AUD_POL_CONF
   else
     for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
       if [ -f $CFG ]; then
         # REMOVE DEEP_BUFFER
-        sed -i '/deep_buffer {/,/}/d' /cache/magisk/audmodlib$CFG
+        sed -i '/deep_buffer {/,/}/d' $PATCH$CFG
       fi
-    done
-  fi
-  #### ^ INSERT YOUR FILE PATCHES ^ ####
-}
-
-sys_mod_wipe() {
-  ########################################################################################
-  # Wipe before System install
-  ########################################################################################
-  
-  ########## v DO NOT REMOVE v ##########
-  #### CLEANING UP ####
-  ui_print " "
-  ui_print "- Cleaning up previous installations -"
-  ########## ^ DO NOT REMOVE ^ ##########
-  
-  #### v INSERT YOUR FILE REMOVALS v ####
-  # REMOVE FILES
-  #ui_print "   Removing files..."
-  #### ^ INSERT YOUR FILE REMOVALS ^ ####
-
-  #### v INSERT YOUR REMOVE PATCH v ####
-  # RESTORE BACKED UP CONFIGS
-  ui_print "   Restoring backed up audio_policy files..."
-  for RESTORE in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
-    if [ -f $RESTORE.bak ]; then
-      cp -f $RESTORE.bak $RESTORE
-    fi
-  done
-  #### ^ INSERT YOUR REMOVE PATCH ^ ####
-
-  # BACKUP CONFIGS
-  ui_print "   Backing up existing audio_policy cfg files..."
-  for BACKUP in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
-    if [ -f $BACKUP ]; then
-      cp -f $BACKUP $BACKUP.bak
-    fi
-  done
-}
-
-sys_mod_directory() {
-  ########################################################################################
-  # Make directories for System install
-  ########################################################################################
-
-  ########## v DO NOT REMOVE v ##########
-  #### PREPARE INSTALL ####
-  ui_print " "
-  ui_print "- Preparing installation -"
-
-  # CREATING DIRECTORIES
-  ui_print "   Creating directories..."
-  ########## ^ DO NOT REMOVE ^ ##########
-
-  #### v INSERT YOUR DIRECTORY MAKING v ####
-  if [ -d $SYSTEM/addon.d ]; then
-    sys_mk_ch $SYSTEM/addon.d 0755
-  fi
-  #### ^ INSERT YOUR DIRECTORY MAKING ^ ####
-
-  for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
-    if [ -f $CFG ]; then
-      sys_mk_ch ${CFG%/*} 0755
-	fi
-  done
-}
-
-sys_mod_copy() {
-  ########################################################################################
-  # Copy files over for System install
-  ########################################################################################
-
-  ########## v DO NOT REMOVE v ##########
-  #### INSTALL FILES ####
-  ui_print " "
-  ui_print "- Installing scripts -"
-  ########## ^ DO NOT REMOVE ^ ##########
-
-  #### v INSERT YOUR FILE INSTALL v ####
-  # INSTALL ROM BACKUP SCRIPT
-  if [ -d $SYSTEM/addon.d ]; then
-    ui_print "   Installing addon.d backup script..."
-    sys_cp_ch $INSTALLER/system/addon.d/99$MODID.sh $SYSTEM/addon.d/99$MODID.sh 0644
-  fi
-  #### ^ INSERT YOUR FILE INSTALL ^ ####
-}
-
-sys_mod_patch() {
-  ########################################################################################
-  # Patch files for System install
-  ########################################################################################
-
-  ########## v DO NOT REMOVE v ##########
-  #### PATCHING FILES ####
-  ui_print " "
-  ui_print "- Patching necessary cfg files -"
-  ########## ^ DO NOT REMOVE ^ ##########
-
-  #### v INSERT YOUR FILE PATCHES v ####
-  # REMOVE DEEP_BUFFER LINES
-  ui_print "   Patching existing audio_policy files..."
-  if [ -f $AUD_OUT_POL ] && [ -f $AUD_POL_CONF ]; then
-    # REMOVE DEEP_BUFFER
-    sed -i '/Speaker/{n;s/deep_buffer,//;}' $AUD_POL_CONF
-  else
-    for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
-      if [ -f $CFG ]; then
-      # REMOVE DEEP_BUFFER
-      sed -i '/deep_buffer {/,/}/d' $CFG
-    fi
     done
   fi
   #### ^ INSERT YOUR FILE PATCHES ^ ####
@@ -502,6 +486,7 @@ AUDMODLIBPATH=$MOUNTPATH/$AUDMODLIBID
 mkdir -p $INSTALLER
 cd $INSTALLER
 unzip -o "$ZIP" "common/*" module.prop
+unzip -o "$ZIP" "system/*"
 
 ##########################################################################################
 # Main
@@ -576,13 +561,15 @@ if (is_mounted /data); then
     ui_print "   ! Magisk is not installed!"
     ui_print "    ! Installing on system!"
     # Wipe files
-    sys_mod_wipe
+    system_mod_wipe
+    # Install
+	system_install
     # Create mod paths
-    sys_mod_directory
+    unified_mod_directory
     # Copy files
-    sys_mod_copy
+    unified_mod_copy
     # Patch files
-    sys_mod_patch
+    unified_mod_patch
     #### COMPLETING INSTALL ####
     umount /data
     umount /su
@@ -632,11 +619,17 @@ if (! is_mounted $MOUNTPATH); then
   exit 1
 fi
 
+# Prepare install
+magisk_install
+
 # Create mod paths
-magisk_mod_directory
+unified_mod_directory
+
+# Copy files
+unified_mod_copy
 
 # Patch files
-audmodlib
+magisk_audmodlib
 
 # Handle replace folders
 for TARGET in $REPLACE; do
