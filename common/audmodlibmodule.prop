@@ -1,6 +1,6 @@
 id=AudModLib
 name=Audio Modification Library
-version=v1
+version=v1.0
 versionCode=1
 author=ahrion
 description=AudModLib is a framework that allows the seamless integration of multiple audio mods
