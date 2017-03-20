@@ -538,6 +538,11 @@ mount -o $WRITE $VENDOR 2>/dev/null
 mount -o $WRITE,remount $VENDOR 2>/dev/null
 mount -o $WRITE,remount $VENDOR $VENDOR 2>/dev/null
 
+if [ ! -f "$SYSTEM/build.prop" ]; then
+  ui_print "   ! Failed: $SYSTEM could not be mounted!"
+  exit 1
+fi
+
 API=`grep_prop ro.build.version.sdk`
 ABI=`grep_prop ro.product.cpu.abi | cut -c-3`
 ABI2=`grep_prop ro.product.cpu.abi2 | cut -c-3`
