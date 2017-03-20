@@ -160,7 +160,7 @@ request_size_check() {
 
 image_size_check() {
   e2fsck -yf $1
-  curBlocks=`e2fsck -n $1 2>/dev/null | cut -d, -f3 | cut -d\  -f2`;
+  curBlocks=`e2fsck -n $1 2>/dev/null | grep $1 | cut -d, -f3 | cut -d\  -f2`;
   curUsedM=`echo "$curBlocks" | cut -d/ -f1`
   curSizeM=`echo "$curBlocks" | cut -d/ -f1`
   curFreeM=$(((curSizeM - curUsedM) * 4 / 1024))
@@ -214,7 +214,7 @@ system_install() {
 # 
 # Instructions:
 # 
-# 1. This is a Unified installer for both Magisk and /system/ install, so be sure to
+# 1. This is a Unified installer for both Magisk and System install, so be sure to
 #    follow the template provided for "app_install_logic", "system_mod_wipe",
 #    & "unified_mod_<xxxx>"
 # 2. magisk_audmodlib and files with the audmodlib prefix as such need to remain
@@ -348,6 +348,8 @@ magisk_audmodlib() {
   elif [ -d /magisk/audmodlib ]; then
     TMPAUDMODLIBDIR=/magisk/audmodlib
   fi
+  
+  magisk_install
 
   for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
     if [ -f $CFG ]; then
@@ -384,7 +386,7 @@ magisk_audmodlib() {
   done
   
   cp -af $INSTALLER/common/audmodlibsystem.prop $AUDMODLIBPATH/system.prop
-  cp -af $INSTALLER/common/audmodlib.prop $AUDMODLIBPATH/module.prop
+  cp -af $INSTALLER/common/audmodlibmodule.prop $AUDMODLIBPATH/module.prop
   cp -af $INSTALLER/common/audmodlibservice.sh $AUDMODLIBPATH/service.sh
 
   unified_mod_patch
@@ -653,13 +655,13 @@ fi
 
 # Module info
 cp -af $INSTALLER/module.prop $MODPATH/module.prop
-cp -af $INSTALLER/common/audmodlib.prop $AUDMODLIBMODPATH/module.prop
+cp -af $INSTALLER/common/audmodlibmodule.prop $AUDMODLIBMODPATH/module.prop
 if $BOOTMODE; then
   # Update info for Magisk Manager
   mktouch /magisk/$MODID/update
   mktouch /magisk/$AUDMODLIBID/update
   cp -af $INSTALLER/module.prop /magisk/$MODID/module.prop
-  cp -af $INSTALLER/common/audmodlib.prop /magisk/$AUDMODLIBID/module.prop
+  cp -af $INSTALLER/common/audmodlibmodule.prop /magisk/$AUDMODLIBID/module.prop
 fi
 
 # post-fs-data mode scripts

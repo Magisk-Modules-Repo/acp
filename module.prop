@@ -6,4 +6,4 @@ author=ahrion
 description=deep_buffer Remover is a fix for when streaming apps (Spotify, Pandora, etc) do not process audio effects for various equalizer applications
 support=https://forum.xda-developers.com/android/software/soundmod-axon-7-dolby-atmos-t3412342
 donate=https://github.com/therealahrion/Collective-Dolby-Atmos-Ports
-template=2
+template=3

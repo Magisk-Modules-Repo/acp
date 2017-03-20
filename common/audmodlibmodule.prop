@@ -1,8 +1,9 @@
-id=audmodlib
+id=AudModLib
 name=Audio Modification Library
 version=v1
 versionCode=1
 author=ahrion
-description=Framework that allows the seamless integration of multiple audio mods.
+description=AudModLib is a framework that allows the seamless integration of multiple audio mods
 support=https://forum.xda-developers.com/android/software/soundmod-axon-7-dolby-atmos-t3412342
 donate=https://github.com/therealahrion/Collective-Dolby-Atmos-Ports
+template=3
