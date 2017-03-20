@@ -1,9 +1,9 @@
-id=Univd_bR
+id=udb_remover
 name=Universal deep_buffer Remover
-version=v1.0
+version=v2.0
 versionCode=1
 author=ahrion
-description=Universal deep_buffer remover.
+description=deep_buffer Remover is a fix for audio effects not processing for various equalizer applications.
 support=https://forum.xda-developers.com/android/software/soundmod-axon-7-dolby-atmos-t3412342
 donate=https://github.com/therealahrion/Collective-Dolby-Atmos-Ports
 template=2
