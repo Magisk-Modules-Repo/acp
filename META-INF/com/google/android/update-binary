@@ -11,8 +11,8 @@ umask 022
 ##########################################################################################
 
 safe_mount() {
-  IS_MOUNTED=$(cat /proc/mounts | grep "$1")
-  if [ "$IS_MOUNTED" ]; then
+  IS_MOUNT=$(cat /proc/mounts | grep "$1")
+  if [ "$IS_MOUNT" ]; then
     mount -o rw,remount $1
   else
     mount $1
@@ -59,7 +59,7 @@ grep_prop() {
   shift
   FILES=$@
   if [ -z "$FILES" ]; then
-    FILES='$SYSTEM/build.prop'
+    FILES="$SYSTEM/build.prop"
   fi
   cat $FILES 2>/dev/null | sed -n "$REGEX" | head -n 1
 }
@@ -537,11 +537,6 @@ ui_print "   Mounting $VENDOR($WRITE)..."
 mount -o $WRITE $VENDOR 2>/dev/null
 mount -o $WRITE,remount $VENDOR 2>/dev/null
 mount -o $WRITE,remount $VENDOR $VENDOR 2>/dev/null
-
-if [ ! -f '$SYSTEM/build.prop' ]; then
-  ui_print "   ! Failed: $SYSTEM could not be mounted!"
-  exit 1
-fi
 
 API=`grep_prop ro.build.version.sdk`
 ABI=`grep_prop ro.product.cpu.abi | cut -c-3`
