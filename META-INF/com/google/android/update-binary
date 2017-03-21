@@ -281,14 +281,14 @@ unified_mod_directory() {
   # CREATING DIRECTORIES
   ui_print "   Creating directories..."
   
-  if [ "$MAGISK" = true ]; then
+  if [ "$MAGISK" == true ]; then
     rm -rf $MODPATH 2>/dev/null
     mkdir -p $MODPATH
   fi
   ########## ^ DO NOT REMOVE ^ ##########
   
   #### v INSERT YOUR DIRECTORY MAKING v ####
-  if [ "$MAGISK" = false ]; then
+  if [ "$MAGISK" == false ]; then
     if [ -d $SYSTEM/addon.d ]; then
       sys_mk_ch $SYSTEM/addon.d 0755
     fi
@@ -309,7 +309,7 @@ unified_mod_copy() {
 
   ########## v DO NOT REMOVE v ##########
   #### INSTALL FILES ####
-  if [ "$MAGISK" = false ]; then
+  if [ "$MAGISK" == false ]; then
     ui_print " "
     ui_print "- Installing scripts -"
   ########## ^ DO NOT REMOVE ^ ##########
