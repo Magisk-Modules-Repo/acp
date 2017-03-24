@@ -8,5 +8,8 @@ This hack fixes when streaming apps (Spotify, Pandora, etc) do not process audio
 * Works with nearly every device, kernel, and rom.
 
 ## Change Log
+2.1
+    - AudModLib v1.1 hotfix for bootloops issues on some devices
+	
 2.0
     - Initial Magisk release

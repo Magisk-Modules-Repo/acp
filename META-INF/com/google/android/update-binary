@@ -384,8 +384,7 @@ magisk_audmodlib() {
       mkdir -p $AUDMODLIBPATH${CFG%/*}
 	fi
   done
-  
-  cp -af $INSTALLER/common/audmodlibsystem.prop $AUDMODLIBPATH/system.prop
+
   cp -af $INSTALLER/common/audmodlibmodule.prop $AUDMODLIBPATH/module.prop
   cp -af $INSTALLER/common/audmodlibservice.sh $AUDMODLIBPATH/service.sh
 
