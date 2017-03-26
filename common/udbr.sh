@@ -13,7 +13,7 @@ if [ ! -d /magisk/$MODID ]; then
   AUDMODLIBPATH=/magisk/audmodlib
 
   safe_mount() {
-    IS_MOUNTED=$(cat /proc/mounts | grep "$1")
+    IS_MOUNT=$(cat /proc/mounts | grep "$1">/dev/null)
     if [ "$IS_MOUNTED" ]; then
       mount -o rw,remount $1
     else
@@ -23,7 +23,7 @@ if [ ! -d /magisk/$MODID ]; then
 
   safe_mount /system
 
-  SLOT=$(getprop ro.boot.slot_suffix 2>/tmp/null)
+  SLOT=$(getprop ro.boot.slot_suffix 2>/dev/null)
   if [ "$SLOT" ]; then
     SYSTEM=/system/system
   else
@@ -36,6 +36,13 @@ if [ ! -d /magisk/$MODID ]; then
   elif [ -d "$SYSTEM/vendor" ] || [ -L "/vendor" ]; then
     VENDOR=$SYSTEM/vendor
   fi
+
+  mount -o rw $SYSTEM 2>/dev/null
+  mount -o rw,remount $SYSTEM 2>/dev/null
+  mount -o rw,remount $SYSTEM $SYSTEM 2>/dev/null
+  mount -o rw $VENDOR 2>/dev/null
+  mount -o rw,remount $VENDOR 2>/dev/null
+  mount -o rw,remount $VENDOR $VENDOR 2>/dev/null
 
   ### FILE LOCATIONS ###
   # AUDIO EFFECTS
@@ -64,4 +71,7 @@ if [ ! -d /magisk/$MODID ]; then
 
   rm -f /magisk/.core/post-fs-data.d/$MODID.sh
   reboot
+
+  umount $SYSTEM
+  umount $VENDOR 2>/dev/null
 fi

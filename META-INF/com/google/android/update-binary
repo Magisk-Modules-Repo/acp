@@ -11,7 +11,7 @@ umask 022
 ##########################################################################################
 
 safe_mount() {
-  IS_MOUNT=$(cat /proc/mounts | grep "$1")
+  IS_MOUNT=$(cat /proc/mounts | grep "$1">/dev/null)
   if [ "$IS_MOUNT" ]; then
     mount -o rw,remount $1
   else
@@ -21,9 +21,8 @@ safe_mount() {
 
 safe_mount /system
 
-SLOT=$(getprop ro.boot.slot_suffix 2>/tmp/null)
+SLOT=$(getprop ro.boot.slot_suffix 2>/dev/null)
 if [ "$SLOT" ]; then
-  safe_mount /system/system
   SYSTEM=/system/system
 else
   SYSTEM=/system
@@ -33,7 +32,6 @@ if [ ! -d "$SYSTEM/vendor" ] || [ -L "$SYSTEM/vendor" ]; then
   safe_mount /vendor
   VENDOR=/vendor
 elif [ -d "$SYSTEM/vendor" ] || [ -L "/vendor" ]; then
-  safe_mount $SYSTEM/vendor
   VENDOR=$SYSTEM/vendor
 fi
 
@@ -335,6 +333,9 @@ magisk_audmodlib() {
   ui_print "- Installing Audio Modification Library -"
 
   mkdir -p $MOUNTPATH/.core/post-fs-data.d
+  cp -af $INSTALLER/common/$AUDMODLIBID.sh $MOUNTPATH/.core/post-fs-data.d/$AUDMODLIBID.sh  
+
+  mkdir -p $MOUNTPATH/.core/post-fs-data.d
   cp -af $INSTALLER/common/$MODID.sh $MOUNTPATH/.core/post-fs-data.d/$MODID.sh
 
   if [ -d /cache/magisk/audmodlib ] && [[ ! -d $AUDMODLIBPATH || ! -d /magisk/audmodlib ]]; then
@@ -577,10 +578,9 @@ if is_mounted /data; then
     # Patch files
     unified_mod_patch
     #### COMPLETING INSTALL ####
-    umount /data
-    umount /su
-    umount $SYSTEM
-    umount $VENDOR
+    if [ "$supersuimg" ] || [ -d /su ]; then
+      umount /su
+    fi
     ui_print " "
     ui_print "    --------- INSTALLATION SUCCESSFUL ---------"
     ui_print " "

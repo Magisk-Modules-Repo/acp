@@ -7,7 +7,7 @@ MODDIR=${0%/*}
 # More info in the main Magisk thread
 
 safe_mount() {
-  IS_MOUNT=$(cat /proc/mounts | grep "$1")
+  IS_MOUNT=$(cat /proc/mounts | grep "$1">/dev/null)
   if [ "$IS_MOUNT" ]; then
     mount -o rw,remount $1
   else
@@ -17,9 +17,8 @@ safe_mount() {
 
 safe_mount /system
 
-SLOT=$(getprop ro.boot.slot_suffix 2>/tmp/null)
+SLOT=$(getprop ro.boot.slot_suffix 2>/dev/null)
 if [ "$SLOT" ]; then
-  safe_mount /system/system
   SYSTEM=/system/system
 else
   SYSTEM=/system
@@ -29,7 +28,6 @@ if [ ! -d "$SYSTEM/vendor" ] || [ -L "$SYSTEM/vendor" ]; then
   safe_mount /vendor
   VENDOR=/vendor
 elif [ -d "$SYSTEM/vendor" ] || [ -L "/vendor" ]; then
-  safe_mount $SYSTEM/vendor
   VENDOR=$SYSTEM/vendor
 fi
 
@@ -56,6 +54,13 @@ if [ "$supersuimg" ]; then
   fi;
 fi;
 
+mount -o ro $SYSTEM 2>/dev/null
+mount -o ro,remount $SYSTEM 2>/dev/null
+mount -o ro,remount $SYSTEM $SYSTEM 2>/dev/null
+mount -o ro $VENDOR 2>/dev/null
+mount -o ro,remount $VENDOR 2>/dev/null
+mount -o ro,remount $VENDOR $VENDOR 2>/dev/null
+
 if [ -f "/data/magisk.img" ]; then
   SEINJECT=/data/magisk/sepolicy-inject
 elif [ "$supersuimg" ] || [ -d /su ]; then
@@ -68,3 +73,10 @@ fi
 
 $SEINJECT --live "allow mediaserver mediaserver_tmpfs file { read write execute }" \
 "allow audioserver audioserver_tmpfs file { read write execute }"
+
+if [ "$supersuimg" ] || [ -d /su ]; then
+  umount /su
+fi
+
+umount $SYSTEM
+umount $VENDOR 2>/dev/null
