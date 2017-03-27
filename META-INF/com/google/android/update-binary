@@ -11,7 +11,7 @@ umask 022
 ##########################################################################################
 
 safe_mount() {
-  IS_MOUNT=$(cat /proc/mounts | grep "$1">/dev/null)
+  IS_MOUNT=$(cat /proc/mounts | grep "$1")
   if [ "$IS_MOUNT" ]; then
     mount -o rw,remount $1
   else
@@ -21,7 +21,7 @@ safe_mount() {
 
 safe_mount /system
 
-SLOT=$(getprop ro.boot.slot_suffix 2>/dev/null)
+SLOT=$(getprop ro.boot.slot_suffix 2>/tmp/null)
 if [ "$SLOT" ]; then
   SYSTEM=/system/system
 else
