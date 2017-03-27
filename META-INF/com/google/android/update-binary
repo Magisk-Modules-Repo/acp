@@ -578,9 +578,6 @@ if is_mounted /data; then
     # Patch files
     unified_mod_patch
     #### COMPLETING INSTALL ####
-    if [ "$supersuimg" ] || [ -d /su ]; then
-      umount /su
-    fi
     ui_print " "
     ui_print "    --------- INSTALLATION SUCCESSFUL ---------"
     ui_print " "
@@ -695,6 +692,9 @@ if [ "$curSizeM" -gt "$NEWDATASIZE" ]; then
 fi
 
 if ! $BOOTMODE; then
+  if [ "$supersuimg" ] || [ -d /su ]; then
+    umount /su
+  fi
   umount $SYSTEM
   umount $VENDOR 2>/dev/null
 fi
