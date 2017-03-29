@@ -12,6 +12,11 @@ This hack fixes when streaming apps (Spotify, Pandora, etc) do not process audio
 * Works with nearly every device, kernel, and rom
 
 ## Change Log
+v2.3
+	- AudModLib v1.3 update push which includes the script addition to allow various audio mods working with SELinux Enforcing
+	- Remove (audmodlib)service.sh and replace with pos-fs-data(.d) audmodlib.sh, which should fix when root may be lost upon installing certain mods
+	- System install will now have the same script updates as the AudModLib v1.3 to allow to work in SELinux Enforcing
+
 v2.2
 	- Added audmodlib.sh post-fs-data.d script
 	- Install script fixes
