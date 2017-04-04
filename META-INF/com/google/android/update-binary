@@ -515,12 +515,8 @@ ui_print "- Mounting filesystems -"
 
 ui_print "   Mounting /cache..."
 mount /cache 2>/dev/null
-mount -o rw,remount /cache 2>/dev/null
-mount -o rw,remount /cache /cache 2>/dev/null
 ui_print "   Mounting /data..."
 mount /data 2>/dev/null
-mount -o rw,remount /data 2>/dev/null
-mount -o rw,remount /data /data 2>/dev/null
 
 if [ "$supersuimg" ]; then
   if [ "$(supersu_is_mounted /su)" == 0 ]; then
@@ -543,14 +539,13 @@ else
   WRITE=rw
 fi
 
-ui_print "   Mounting $SYSTEM($WRITE)..."
-mount -o $WRITE $SYSTEM 2>/dev/null
-mount -o $WRITE,remount $SYSTEM 2>/dev/null
-mount -o $WRITE,remount $SYSTEM $SYSTEM 2>/dev/null
-ui_print "   Mounting $VENDOR($WRITE)..."
-mount -o $WRITE $VENDOR 2>/dev/null
-mount -o $WRITE,remount $VENDOR 2>/dev/null
-mount -o $WRITE,remount $VENDOR $VENDOR 2>/dev/null
+ui_print "   Mounting /system($WRITE)..."
+mount -o $WRITE /system 2>/dev/null
+if [ "$isABDevice" ]; then
+  mount -o rw,remount /system 2>/dev/null
+  ui_print "   Mounting /vendor(rw)..."
+  mount -o rw /vendor 2>/dev/null
+fi
 
 if [ ! -f "$SYSTEM/build.prop" ]; then
   ui_print "   ! Failed: $SYSTEM could not be mounted!"
