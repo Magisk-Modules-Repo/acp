@@ -12,7 +12,7 @@ umask 022
 
 # DETERMINE IF PIXEL (AB) DEVICE
 ABDeviceCheck=$(cat /proc/cmdline | grep slot_suffix | wc -l)
-if [ $ABDeviceCheck -gt 0 ]; then
+if [ "$ABDeviceCheck" -gt 0 ]; then
   isABDevice=true
   SLOT=$(for i in `cat /proc/cmdline`; do echo $i | grep slot_suffix | awk -F "=" '{print $2}';done)
   SYSTEM=/system/system
@@ -20,7 +20,7 @@ if [ $ABDeviceCheck -gt 0 ]; then
 else
   isABDevice=false
   SYSTEM=/system
-  VENDOR=$SYSTEM/VENDOR
+  VENDOR=$SYSTEM/vendor
 fi
 
 if [ -d $SYSTEM/priv-app ]; then
@@ -541,10 +541,11 @@ fi
 
 ui_print "   Mounting /system($WRITE)..."
 mount -o $WRITE /system 2>/dev/null
+ui_print "   Mounting /vendor($WRITE)..."
+mount -o $WRITE /vendor 2>/dev/null
 if [ "$isABDevice" ]; then
   mount -o rw,remount /system 2>/dev/null
-  ui_print "   Mounting /vendor(rw)..."
-  mount -o rw /vendor 2>/dev/null
+  mount -o rw,remount /vendor 2>/dev/null
 fi
 
 if [ ! -f "$SYSTEM/build.prop" ]; then
