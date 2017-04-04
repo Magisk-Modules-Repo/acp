@@ -533,15 +533,20 @@ if [ "$supersuimg" ]; then
   fi;
 fi;
 
-if [ -f /data/magisk.img ] || [ -d /magisk ]; then
+SPACE=" "
+if [ "$isABDevice" ]; then
+  ui_print "   ! A/B OTA device detected!"
+  WRITE=rw
+  SPACE="  "
+elif [ -f /data/magisk.img ] || [ -d /magisk ]; then
   WRITE=ro
-else
+elif [ ! -f /data/magisk.img ] || [ ! -d /magisk ]; then
   WRITE=rw
 fi
 
-ui_print "   Mounting /system($WRITE)..."
+ui_print "$SP  Mounting /system($WRITE)..."
 mount -o $WRITE /system 2>/dev/null
-ui_print "   Mounting /vendor($WRITE)..."
+ui_print "$SP  Mounting /vendor($WRITE)..."
 mount -o $WRITE /vendor 2>/dev/null
 if [ "$isABDevice" ]; then
   mount -o rw,remount /system 2>/dev/null
