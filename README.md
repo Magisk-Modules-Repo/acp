@@ -16,7 +16,7 @@ v2.4
 	- AudModLib v1.4 update which changes SELinux live patching to allow better compatibility between different devices, kernels, and roms; while also keeping the amount of "allowances" to a minumum
 	- Changed post-fs-data(.d)/service(.d) shell script names for cosmetic recognition
 	- Merge SuperSU shell script with MagiskSU post-fs-data(.d) script for less fragmentation
-	- Install script changes that include: major update to Pixel (AB) support, mounting changes, fixes & consolidation
+	- Install script changes that include: major update to Pixel (A/B OTA) support, mounting changes, fixes & consolidation
 
 v2.3
 	- AudModLib v1.3 update push which includes the script addition to allow various audio mods working with SELinux Enforcing

@@ -12,7 +12,7 @@ rm -rf /cache/magisk/audmodlib
 if [ ! -d /magisk/$MODID ]; then
   AUDMODLIBPATH=/magisk/audmodlib
 
-  # DETERMINE IF PIXEL (AB) DEVICE
+  # DETERMINE IF PIXEL (A/B OTA) DEVICE
   ABDeviceCheck=$(cat /proc/cmdline | grep slot_suffix | wc -l)
   if [ "$ABDeviceCheck" -gt 0 ]; then
     isABDevice=true
