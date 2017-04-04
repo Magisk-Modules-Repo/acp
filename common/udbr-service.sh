@@ -1,5 +1,5 @@
 #!/system/bin/sh
-# This script will be executed in post-fs-data mode
+# This script will be executed in late_start service mode
 # More info in the main Magisk thread
 
 #### v INSERT YOUR CONFIG.SH MODID v ####
@@ -12,17 +12,17 @@ rm -rf /cache/magisk/audmodlib
 if [ ! -d /magisk/$MODID ]; then
   AUDMODLIBPATH=/magisk/audmodlib
 
-  SLOT=$(getprop ro.boot.slot_suffix 2>/tmp/null)
-  if [ "$SLOT" ]; then
+  # DETERMINE IF PIXEL (AB) DEVICE
+  ABDeviceCheck=$(cat /proc/cmdline | grep slot_suffix | wc -l)
+  if [ $ABDeviceCheck -gt 0 ]; then
+    isABDevice=true
+    SLOT=$(for i in `cat /proc/cmdline`; do echo $i | grep slot_suffix | awk -F "=" '{print $2}';done)
     SYSTEM=/system/system
-  else
-    SYSTEM=/system
-  fi
-
-  if [ ! -d "$SYSTEM/vendor" ] || [ -L "$SYSTEM/vendor" ]; then
     VENDOR=/vendor
-  elif [ -d "$SYSTEM/vendor" ] || [ -L "/vendor" ]; then
-    VENDOR=$SYSTEM/vendor
+  else
+    isABDevice=false
+    SYSTEM=/system
+    VENDOR=$SYSTEM/VENDOR
   fi
 
   ### FILE LOCATIONS ###
@@ -50,6 +50,6 @@ if [ ! -d /magisk/$MODID ]; then
   fi
   #### ^ INSERT YOUR REMOVE PATCH OR RESTORE ^ ####
 
-  rm -f /magisk/.core/post-fs-data.d/$MODID.sh
+  rm -f /magisk/.core/service.d/$MODID.sh
   reboot
 fi

@@ -13,22 +13,21 @@ if [ ! -d /magisk/$MODID ]; then
   ########## ^ DO NOT REMOVE ^ ##########
 
   #### v INSERT YOUR REMOVE PATCH OR RESTORE v ####
-  rm /cache/audmodlib_run.log
-  #### ^ INSERT YOUR REMOVE PATCH OR RESTORE ^ ####
-
+  rm /cache/$MODID.log
   rm -f /magisk/.core/post-fs-data.d/$MODID.sh
+  #### ^ INSERT YOUR REMOVE PATCH OR RESTORE ^ ####
 else
-  SLOT=$(getprop ro.boot.slot_suffix 2>/tmp/null)
-  if [ "$SLOT" ]; then
+  # DETERMINE IF PIXEL (AB) DEVICE
+  ABDeviceCheck=$(cat /proc/cmdline | grep slot_suffix | wc -l)
+  if [ $ABDeviceCheck -gt 0 ]; then
+    isABDevice=true
+    SLOT=$(for i in `cat /proc/cmdline`; do echo $i | grep slot_suffix | awk -F "=" '{print $2}';done)
     SYSTEM=/system/system
-  else
-    SYSTEM=/system
-  fi
-
-  if [ ! -d "$SYSTEM/vendor" ] || [ -L "$SYSTEM/vendor" ]; then
     VENDOR=/vendor
-  elif [ -d "$SYSTEM/vendor" ] || [ -L "/vendor" ]; then
-    VENDOR=$SYSTEM/vendor
+  else
+    isABDevice=false
+    SYSTEM=/system
+    VENDOR=$SYSTEM/VENDOR
   fi
 
   supersuimg=$(ls /cache/su.img /data/su.img 2>/dev/null);
@@ -56,31 +55,38 @@ else
 
   if [ -f "/data/magisk.img" ]; then
     SEINJECT=/data/magisk/sepolicy-inject
+    SH=/magisk/.core/post-fs-data.d
   elif [ "$supersuimg" ] || [ -d /su ]; then
     SEINJECT=/su/bin/supolicy
+    SH=/su.d
   elif [ -d $SYSTEM/su ] || [ -f $SYSTEM/xbin/daemonsu ] || [ -f $SYSTEM/xbin/su ] || [ -f $SYSTEM/xbin/sugote ]; then
     SEINJECT=$SYSTEM/xbin/supolicy
+    SH=$SYSTEM/su.d
   elif [ -d $SYSTEM/etc/init.d ]; then
     SEINJECT=$SYSTEM/xbin/supolicy
+    SH=$SYSTEM/etc/init.d
   fi
-
-  LOG_FILE=/cache/audmodlib_run.log;
-  $SEINJECT --live "permissive priv_app audioserver" \
-  "permissive system_app audioserver" \
-  "permissive priv_app mediaserver" \
-  "permissive system_app mediaserver" \
-  "permissive priv_app property_socket" \
-  "permissive system_app property_socket" \
-  "allow audioserver audioserver_tmpfs file { open read write execute }" \
-  "allow mediaserver mediaserver_tmpfs file { open read write execute }" \
-  "allow priv_app init unix_stream_socket { connectto }" \
-  "allow system_app init unix_stream_socket { connectto }" \
-  "allow priv_app property_socket sock_file { getattr open read write execute }" \
-  "allow system_app property_socket sock_file { getattr open read write execute }"
   
-  if [ -e /cache/audmodlib_run.log ]; then
-    rm /cache/audmodlib_run.log
+  if [ -d $SYSTEM/priv-app ]; then
+    CONTEXT=priv_app
+  else
+    CONTEXT=system_app
   fi
 
-  echo "post-fs-data(.d) audmodlib.sh has run successfully $(date +"%m-%d-%Y %H:%M:%S")" | tee -a $LOG_FILE;
+  $SEINJECT --live "permissive $CONTEXT property_socket" \
+  "permissive untrusted_app property_socket" \
+  "allow audioserver audioserver_tmpfs file { read write execute }" \
+  "allow audioserver system_file file { execmod }" \
+  "allow mediaserver mediaserver_tmpfs file { read write execute }" \
+  "allow mediaserver system_file file { execmod }" \
+  "allow $CONTEXT init unix_stream_socket { connectto }" \
+  "allow $CONTEXT property_socket sock_file { getattr open read write execute }" \
+  "allow untrusted_app property_socket sock_file { getattr open read write execute }"
+
+  LOG_FILE=/cache/$MODID.log
+  if [ -e /cache/$MODID.log ]; then
+    rm /cache/$MODID.log
+  fi
+
+  echo "$SH/$MODID$EXT has run successfully $(date +"%m-%d-%Y %H:%M:%S")" | tee -a $LOG_FILE;
 fi

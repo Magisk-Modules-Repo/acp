@@ -10,37 +10,36 @@ umask 022
 # Functions
 ##########################################################################################
 
-safe_mount() {
-  IS_MOUNT=$(cat /proc/mounts | grep "$1")
-  if [ "$IS_MOUNT" ]; then
-    mount -o rw,remount $1
-  else
-    mount $1
-  fi
-}
-
-safe_mount /system
-
-SLOT=$(getprop ro.boot.slot_suffix 2>/tmp/null)
-if [ "$SLOT" ]; then
+# DETERMINE IF PIXEL (AB) DEVICE
+ABDeviceCheck=$(cat /proc/cmdline | grep slot_suffix | wc -l)
+if [ $ABDeviceCheck -gt 0 ]; then
+  isABDevice=true
+  SLOT=$(for i in `cat /proc/cmdline`; do echo $i | grep slot_suffix | awk -F "=" '{print $2}';done)
   SYSTEM=/system/system
-else
-  SYSTEM=/system
-fi
-
-if [ ! -d "$SYSTEM/vendor" ] || [ -L "$SYSTEM/vendor" ]; then
-  safe_mount /vendor
   VENDOR=/vendor
-elif [ -d "$SYSTEM/vendor" ] || [ -L "/vendor" ]; then
-  VENDOR=$SYSTEM/vendor
+else
+  isABDevice=false
+  SYSTEM=/system
+  VENDOR=$SYSTEM/VENDOR
 fi
-
-supersuimg=$(ls /cache/su.img /data/su.img 2>/dev/null);
 
 if [ -d $SYSTEM/priv-app ]; then
   APPDIR=priv-app
 else
   APPDIR=app
+fi
+
+supersuimg=$(ls /cache/su.img /data/su.img 2>/dev/null);
+
+# DETERMINE ROOT BOOT SCRIPT TYPE
+EXT=.sh
+if [ "$supersuimg" ] || [ -d /su ]; then
+  SH=/su.d
+elif [ -d $SYSTEM/su ] || [ -f $SYSTEM/xbin/daemonsu ] || [ -f $SYSTEM/xbin/su ] || [ -f $SYSTEM/xbin/sugote ]; then
+  SH=$SYSTEM/su.d
+elif [ -d $SYSTEM/etc/init.d ]; then
+  SH=$SYSTEM/etc/init.d
+  EXT=""
 fi
 
 ui_print() {
@@ -220,7 +219,7 @@ system_install() {
 #    and then add the lines corresponding to your mod
 # 3. If applicable, make "APP1", etc. to be the same name as your .apk/app folder
 #    in system/app/ (i.e. APP1=Ax, APP2=ViPER4Android, APP3=AM3DZirene and so on)
-# 4. common/$MODID.sh, system/addon.d/99$MODID.sh & system/su.d/50$MODID.sh app specific
+# 4. common/$MODID.sh, system/addon.d/$MODID.sh & system/su.d/$MODID.sh app specific
 #    scripts will be named the same as your MODID in config.sh (i.e. MODID=v4afx so
 #    common/$MODID.sh=v4afx.sh)
 # 5. Edit common/$MODID.sh to remove or restore the specific audio_effects or
@@ -244,7 +243,11 @@ system_mod_wipe() {
   
   #### v INSERT YOUR FILE REMOVALS v ####
   # REMOVE FILES
-  #ui_print "   Removing files..."
+  ui_print "   Removing files..."
+  rm -f $SYSTEM/addon.d/$MODID.sh
+  rm -f $SYSTEM/etc/init.d/$MODID
+  rm -f /su/su.d/$MODID.sh
+  rm -f $SYSTEM/su.d/$MODID.sh
   #### ^ INSERT YOUR FILE REMOVALS ^ ####
 
   #### v INSERT YOUR RESTORE AND BACKUP FUNCTIONS v ####
@@ -288,9 +291,9 @@ unified_mod_directory() {
   #### v INSERT YOUR DIRECTORY MAKING v ####
   if [ "$MAGISK" == false ]; then
     if [ -d $SYSTEM/addon.d ]; then
+      $MK_PRFX $SH$MK_SFFX
       sys_mk_ch $SYSTEM/addon.d 0755
     fi
-
     for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
       if [ -f $CFG ]; then
         sys_mk_ch ${CFG%/*} 0755
@@ -313,17 +316,27 @@ unified_mod_copy() {
   ########## ^ DO NOT REMOVE ^ ##########
 
   #### v INSERT YOUR FILE INSTALL v ####
+  #INSTALL SCRIPTS
+    if [ "$supersuimg" ] || [ -d /su ]; then
+      ui_print "   Installing scripts for systemless SuperSU..."
+    elif [ -d $SYSTEM/su ] || [ -f $SYSTEM/xbin/daemonsu ] || [ -f $SYSTEM/xbin/su ] || [ -f $SYSTEM/xbin/sugote ]; then
+      ui_print "   Installing scripts for system SuperSU..."
+    elif [ -d $SYSTEM/etc/init.d ]; then
+      ui_print "   Installing scripts for non root..."
+    fi
+    sys_cp_ch $INSTALLER/common/$AUDMODLIBID-post-fs-data.sh $SH/$AUDMODLIBID$EXT 0644
+
     # INSTALL ROM BACKUP SCRIPT
     if [ -d $SYSTEM/addon.d ]; then
       ui_print "   Installing addon.d backup script..."
-      sys_cp_ch $INSTALLER/system/addon.d/99$MODID.sh $SYSTEM/addon.d/99$MODID.sh 0644
+      sys_cp_ch $INSTALLER/system/addon.d/$MODID.sh $SYSTEM/addon.d/$MODID.sh 0644
     fi
   fi
   #### ^ INSERT YOUR FILE INSTALL ^ ####
 }
 
 magisk_audmodlib() {
-   ########################################################################################
+  ########################################################################################
   # Audio Modification Library / This is where the magick happens for Magisk
   ########################################################################################
 
@@ -332,11 +345,11 @@ magisk_audmodlib() {
   ui_print " "
   ui_print "- Installing Audio Modification Library -"
 
+  ui_print "   Installing scripts for MagiskSU..."
   mkdir -p $MOUNTPATH/.core/post-fs-data.d
-  cp -af $INSTALLER/common/$AUDMODLIBID.sh $MOUNTPATH/.core/post-fs-data.d/$AUDMODLIBID.sh  
-
-  mkdir -p $MOUNTPATH/.core/post-fs-data.d
-  cp -af $INSTALLER/common/$MODID.sh $MOUNTPATH/.core/post-fs-data.d/$MODID.sh
+  cp -af $INSTALLER/common/$AUDMODLIBID-post-fs-data.sh $MOUNTPATH/.core/post-fs-data.d/$AUDMODLIBID.sh
+  mkdir -p $MOUNTPATH/.core/service.d
+  cp -af $INSTALLER/common/$MODID-service.sh $MOUNTPATH/.core/service.d/$MODID.sh
 
   if [ -d /cache/magisk/audmodlib ] && [[ ! -d $AUDMODLIBPATH || ! -d /magisk/audmodlib ]]; then
     rm -rf /cache/magisk/audmodlib
@@ -399,7 +412,7 @@ magisk_audmodlib() {
   for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
     if [ -f $CFG ]; then
       cp -af /cache/magisk/audmodlib$CFG $AUDMODLIBPATH$CFG
-	fi
+    fi
   done
   
   set_perm_recursive  $AUDMODLIBPATH  0  0  0755  0644
@@ -689,12 +702,20 @@ if [ "$curSizeM" -gt "$NEWDATASIZE" ]; then
   resize2fs $IMG ${NEWDATASIZE}M
 fi
 
+umount /cache 2>/dev/null
+umount /data 2>/dev/null
+
 if ! $BOOTMODE; then
   if [ "$supersuimg" ] || [ -d /su ]; then
     umount /su
   fi
-  umount $SYSTEM
-  umount $VENDOR 2>/dev/null
+  umount /system
+  umount /vendor 2>/dev/null
+fi
+
+if [ "$isABDevice" ]; then
+  mount -o ro /system 2>/dev/null
+  mount -o ro /vendor 2>/dev/null
 fi
 
 ui_print " "
