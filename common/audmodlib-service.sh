@@ -1,5 +1,5 @@
 #!/system/bin/sh
-# This script will be executed in post-fs-data mode
+# This script will be executed in late_start service mode
 # More info in the main Magisk thread
 
 #### v INSERT YOUR CONFIG.SH MODID v ####
@@ -13,8 +13,8 @@ if [ ! -d /magisk/$MODID ]; then
   ########## ^ DO NOT REMOVE ^ ##########
 
   #### v INSERT YOUR REMOVE PATCH OR RESTORE v ####
-  rm /cache/$MODID-post-fs-data.log
-  rm -f /magisk/.core/post-fs-data.d/$MODID.sh
+  rm /cache/$MODID-service.log
+  rm -f /magisk/.core/service.d/$MODID.sh
   #### ^ INSERT YOUR REMOVE PATCH OR RESTORE ^ ####
 else
   # DETERMINE IF PIXEL (A/B OTA) DEVICE
@@ -54,7 +54,7 @@ else
 
   if [ -f "/data/magisk.img" ]; then
     SEINJECT=/data/magisk/sepolicy-inject
-    SH=/magisk/.core/post-fs-data.d
+    SH=/magisk/.core/service.d
   elif [ "$supersuimg" ] || [ -d /su ]; then
     SEINJECT=/su/bin/supolicy
     SH=/su.d
@@ -72,17 +72,12 @@ else
     CONTEXT=system_app
   fi
 
-  $SEINJECT --live "allow audioserver audioserver_tmpfs file { read write execute }" \
-  "allow audioserver system_file file { execmod }" \
-  "allow mediaserver mediaserver_tmpfs file { read write execute }" \
-  "allow mediaserver system_file file { execmod }" \
-  "allow $CONTEXT init unix_stream_socket { connectto }" \
-  "allow $CONTEXT property_socket sock_file { getattr open read write execute }"
+  $SEINJECT --live "permissive $CONTEXT property_socket"
 
-  LOG_FILE=/cache/$MODID-post-fs-data.log
-  if [ -e /cache/$MODID-post-fs-data.log ]; then
-    rm /cache/$MODID-post-fs-data.log
+  LOG_FILE=/cache/$MODID-service.log
+  if [ -e /cache/$MODID-service.log ]; then
+    rm /cache/$MODID-service.log
   fi
 
-  echo "$SH/$MODID-post-fs-data$EXT has run successfully $(date +"%m-%d-%Y %H:%M:%S")" | tee -a $LOG_FILE;
+  echo "$SH/$MODID-service$EXT has run successfully $(date +"%m-%d-%Y %H:%M:%S")" | tee -a $LOG_FILE;
 fi

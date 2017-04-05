@@ -14,13 +14,12 @@ umask 022
 ABDeviceCheck=$(cat /proc/cmdline | grep slot_suffix | wc -l)
 if [ "$ABDeviceCheck" -gt 0 ]; then
   isABDevice=true
-  SLOT=$(for i in `cat /proc/cmdline`; do echo $i | grep slot_suffix | awk -F "=" '{print $2}';done)
   SYSTEM=/system/system
   VENDOR=/vendor
 else
   isABDevice=false
   SYSTEM=/system
-  VENDOR=$SYSTEM/vendor
+  VENDOR=/system/vendor
 fi
 
 if [ -d $SYSTEM/priv-app ]; then
@@ -534,7 +533,7 @@ if [ "$supersuimg" ]; then
 fi;
 
 SPACE=" "
-if [ "$isABDevice" ]; then
+if [ $isABDevice == true ]; then
   ui_print "   ! A/B OTA device detected!"
   WRITE=rw
   SPACE="  "
@@ -544,14 +543,10 @@ elif [ ! -f /data/magisk.img ] || [ ! -d /magisk ]; then
   WRITE=rw
 fi
 
-ui_print "$SP  Mounting /system($WRITE)..."
+ui_print "$SPACE  Mounting /system($WRITE)..."
 mount -o $WRITE /system 2>/dev/null
-ui_print "$SP  Mounting /vendor($WRITE)..."
+ui_print "$SPACE  Mounting /vendor($WRITE)..."
 mount -o $WRITE /vendor 2>/dev/null
-if [ "$isABDevice" ]; then
-  mount -o rw,remount /system 2>/dev/null
-  mount -o rw,remount /vendor 2>/dev/null
-fi
 
 if [ ! -f "$SYSTEM/build.prop" ]; then
   ui_print "   ! Failed: $SYSTEM could not be mounted!"
@@ -714,7 +709,7 @@ if ! $BOOTMODE; then
   umount /vendor 2>/dev/null
 fi
 
-if [ "$isABDevice" ]; then
+if [ $isABDevice == true ]; then
   mount -o ro /system 2>/dev/null
   mount -o ro /vendor 2>/dev/null
 fi
