@@ -444,7 +444,8 @@ unified_mod_patch() {
     # REMOVE DEEP_BUFFER
 	sed -i 's/deep_buffer,//g' $PATCH$AUD_POL_CONF
 	sed -i 's/,deep_buffer//g' $PATCH$AUD_POL_CONF
-  elif for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
+  else
+    for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
       if [ -f $CFG ]; then
         # REMOVE DEEP_BUFFER
         sed -i '/deep_buffer {/,/}/d' $PATCH$CFG
