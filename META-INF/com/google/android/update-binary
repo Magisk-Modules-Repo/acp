@@ -220,7 +220,7 @@ script_install_logic() {
   # DETERMINE ROOT BOOT SCRIPT TYPE
   EXT=.sh
   if [ "$supersuimg" ] || [ -d /su ]; then
-    SH=/su.d
+    SH=/su/su.d
   elif [ -d $SYSTEM/su ] || [ -f $SYSTEM/xbin/daemonsu ] || [ -f $SYSTEM/xbin/su ] || [ -f $SYSTEM/xbin/sugote ]; then
     SH=$SYSTEM/su.d
   elif [ -d $SYSTEM/etc/init.d ]; then

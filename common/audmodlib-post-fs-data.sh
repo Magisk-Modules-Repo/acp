@@ -57,7 +57,7 @@ else
     SH=/magisk/.core/post-fs-data.d
   elif [ "$supersuimg" ] || [ -d /su ]; then
     SEINJECT=/su/bin/supolicy
-    SH=/su.d
+    SH=/su/su.d
   elif [ -d $SYSTEM/su ] || [ -f $SYSTEM/xbin/daemonsu ] || [ -f $SYSTEM/xbin/su ] || [ -f $SYSTEM/xbin/sugote ]; then
     SEINJECT=$SYSTEM/xbin/supolicy
     SH=$SYSTEM/su.d
