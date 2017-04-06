@@ -52,7 +52,7 @@ else
     fi;
   fi;
 
-  if [ -f "/data/magisk.img" ]; then
+  if [ -f /data/magisk.img ] || [ -d /magisk ]; then
     SEINJECT=/data/magisk/sepolicy-inject
     SH=/magisk/.core/service.d
   elif [ "$supersuimg" ] || [ -d /su ]; then

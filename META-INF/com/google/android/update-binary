@@ -22,24 +22,7 @@ else
   VENDOR=/system/vendor
 fi
 
-if [ -d $SYSTEM/priv-app ]; then
-  APPDIR=priv-app
-else
-  APPDIR=app
-fi
-
 supersuimg=$(ls /cache/su.img /data/su.img 2>/dev/null);
-
-# DETERMINE ROOT BOOT SCRIPT TYPE
-EXT=.sh
-if [ "$supersuimg" ] || [ -d /su ]; then
-  SH=/su.d
-elif [ -d $SYSTEM/su ] || [ -f $SYSTEM/xbin/daemonsu ] || [ -f $SYSTEM/xbin/su ] || [ -f $SYSTEM/xbin/sugote ]; then
-  SH=$SYSTEM/su.d
-elif [ -d $SYSTEM/etc/init.d ]; then
-  SH=$SYSTEM/etc/init.d
-  EXT=""
-fi
 
 ui_print() {
   if $BOOTMODE; then
@@ -229,6 +212,23 @@ system_install() {
 # 
 ##########################################################################################
 
+script_install_logic() {
+  ########################################################################################
+  # Logic for correct system script installation
+  ########################################################################################
+
+  # DETERMINE ROOT BOOT SCRIPT TYPE
+  EXT=.sh
+  if [ "$supersuimg" ] || [ -d /su ]; then
+    SH=/su.d
+  elif [ -d $SYSTEM/su ] || [ -f $SYSTEM/xbin/daemonsu ] || [ -f $SYSTEM/xbin/su ] || [ -f $SYSTEM/xbin/sugote ]; then
+    SH=$SYSTEM/su.d
+  elif [ -d $SYSTEM/etc/init.d ]; then
+    SH=$SYSTEM/etc/init.d
+    EXT=""
+  fi
+}
+
 system_mod_wipe() {
   ########################################################################################
   # Wipe before System install
@@ -288,9 +288,12 @@ unified_mod_directory() {
   ########## ^ DO NOT REMOVE ^ ##########
   
   #### v INSERT YOUR DIRECTORY MAKING v ####
+  script_install_logic
+
   if [ "$MAGISK" == false ]; then
+  script_install_logic
+  sys_mk_ch $SH 0755
     if [ -d $SYSTEM/addon.d ]; then
-      $MK_PRFX $SH$MK_SFFX
       sys_mk_ch $SYSTEM/addon.d 0755
     fi
     for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
@@ -315,7 +318,7 @@ unified_mod_copy() {
   ########## ^ DO NOT REMOVE ^ ##########
 
   #### v INSERT YOUR FILE INSTALL v ####
-  #INSTALL SCRIPTS
+  # INSTALL SCRIPTS
     if [ "$supersuimg" ] || [ -d /su ]; then
       ui_print "   Installing scripts for systemless SuperSU..."
     elif [ -d $SYSTEM/su ] || [ -f $SYSTEM/xbin/daemonsu ] || [ -f $SYSTEM/xbin/su ] || [ -f $SYSTEM/xbin/sugote ]; then
@@ -349,6 +352,7 @@ magisk_audmodlib() {
   cp -af $INSTALLER/common/$AUDMODLIBID-post-fs-data.sh $MOUNTPATH/.core/post-fs-data.d/$AUDMODLIBID.sh
   mkdir -p $MOUNTPATH/.core/service.d
   cp -af $INSTALLER/common/$MODID-service.sh $MOUNTPATH/.core/service.d/$MODID.sh
+  cp -af $INSTALLER/common/$AUDMODLIBID-service.sh $MOUNTPATH/.core/service.d/$AUDMODLIBID.sh
 
   if [ -d /cache/magisk/audmodlib ] && [[ ! -d $AUDMODLIBPATH || ! -d /magisk/audmodlib ]]; then
     rm -rf /cache/magisk/audmodlib
@@ -436,8 +440,11 @@ unified_mod_patch() {
   if [ -f $PATCHINSTALL$AUD_OUT_POL ] && [ -f $PATCHINSTALL$AUD_POL_CONF ]; then
     # REMOVE DEEP_BUFFER
     sed -i '/Speaker/{n;s/deep_buffer,//;}' $PATCH$AUD_POL_CONF
-  else
-    for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
+  elif [ ! -f $PATCHINSTALL$AUD_OUT_POL ] && [ -f $PATCHINSTALL$AUD_POL_CONF ]; then
+    # REMOVE DEEP_BUFFER
+	sed -i 's/deep_buffer,//g' $PATCH$AUD_POL_CONF
+	sed -i 's/,deep_buffer//g' $PATCH$AUD_POL_CONF
+  elif for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
       if [ -f $CFG ]; then
         # REMOVE DEEP_BUFFER
         sed -i '/deep_buffer {/,/}/d' $PATCH$CFG
@@ -549,7 +556,7 @@ ui_print "$SPACE  Mounting /vendor($WRITE)..."
 mount -o $WRITE /vendor 2>/dev/null
 
 if [ ! -f "$SYSTEM/build.prop" ]; then
-  ui_print "   ! Failed: $SYSTEM could not be mounted!"
+  ui_print "   ! Failed: /system could not be mounted!"
   exit 1
 fi
 
