@@ -217,8 +217,9 @@ script_install_logic() {
   # Logic for correct system script installation
   ########################################################################################
 
+  ########## v DO NOT REMOVE v ##########
   # DETERMINE ROOT BOOT SCRIPT TYPE
-  EXT=.sh
+  EXT=".sh"
   if [ "$supersuimg" ] || [ -d /su ]; then
     SH=/su/su.d
   elif [ -d $SYSTEM/su ] || [ -f $SYSTEM/xbin/daemonsu ] || [ -f $SYSTEM/xbin/su ] || [ -f $SYSTEM/xbin/sugote ]; then
@@ -227,6 +228,7 @@ script_install_logic() {
     SH=$SYSTEM/etc/init.d
     EXT=""
   fi
+  #### ^ INSERT MORE APPS IF MORE EXIST ^ ####
 }
 
 system_mod_wipe() {

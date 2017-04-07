@@ -52,7 +52,10 @@ else
     fi;
   fi;
 
+  # DETERMINE ROOT BOOT SCRIPT TYPE
+  EXT=".sh"
   if [ -f /data/magisk.img ] || [ -d /magisk ]; then
+    MAGISK=true
     SEINJECT=/data/magisk/sepolicy-inject
     SH=/magisk/.core/service.d
   elif [ "$supersuimg" ] || [ -d /su ]; then
@@ -64,6 +67,7 @@ else
   elif [ -d $SYSTEM/etc/init.d ]; then
     SEINJECT=$SYSTEM/xbin/supolicy
     SH=$SYSTEM/etc/init.d
+	EXT=""
   fi
   
   if [ -d $SYSTEM/priv-app ]; then

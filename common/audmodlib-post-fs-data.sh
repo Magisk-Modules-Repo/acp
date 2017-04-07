@@ -52,7 +52,10 @@ else
     fi;
   fi;
 
+  # DETERMINE ROOT BOOT SCRIPT TYPE
+  EXT=".sh"
   if [ -f /data/magisk.img ] || [ -d /magisk ]; then
+    MAGISK=true
     SEINJECT=/data/magisk/sepolicy-inject
     SH=/magisk/.core/post-fs-data.d
   elif [ "$supersuimg" ] || [ -d /su ]; then
@@ -64,6 +67,7 @@ else
   elif [ -d $SYSTEM/etc/init.d ]; then
     SEINJECT=$SYSTEM/xbin/supolicy
     SH=$SYSTEM/etc/init.d
+	EXT=""
   fi
   
   if [ -d $SYSTEM/priv-app ]; then
@@ -78,8 +82,8 @@ else
   "allow mediaserver system_file file { execmod }" \
   "allow $CONTEXT init unix_stream_socket { connectto }" \
   "allow $CONTEXT property_socket sock_file { getattr open read write execute }"
-  
-  if [[ ! -f /data/magisk.img ] || [ ! -d /magisk ]] && [[ "$supersuimg" ] || [ -d /su ]]; then
+
+  if [ ! $MAGISK == true ]; then
     $SEINJECT --live "permissive $CONTEXT property_socket"
   fi
 
