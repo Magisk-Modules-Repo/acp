@@ -194,7 +194,7 @@ system_install() {
 # Instructions:
 # 
 # 1. This is a Unified installer for both Magisk and System install, so be sure to
-#    follow the template provided for "app_install_logic", "system_mod_wipe",
+#    follow the template provided for "app_install_logic", "unified_mod_wipe",
 #    & "unified_mod_<xxxx>"
 # 2. magisk_audmodlib and files with the audmodlib prefix as such need to remain
 #    untouched unless an update has occured, however use unified_mod_patch to remove
@@ -231,7 +231,7 @@ script_install_logic() {
   ########## ^ DO NOT REMOVE ^ ##########
 }
 
-system_mod_wipe() {
+unified_mod_wipe() {
   ########################################################################################
   # Wipe before System install
   ########################################################################################
@@ -586,7 +586,7 @@ if is_mounted /data; then
     ui_print "   ! Magisk is not installed!"
     ui_print "    ! Installing on system!"
     # Wipe files
-    system_mod_wipe
+    unified_mod_wipe
     # Install
 	system_install
     # Create mod paths
@@ -637,6 +637,9 @@ if ! is_mounted $MOUNTPATH; then
   ui_print "   ! $IMG mount failed... abort"
   exit 1
 fi
+
+# Wipe files
+unified_mod_wipe
 
 # Prepare install
 magisk_install
