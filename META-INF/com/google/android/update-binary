@@ -156,16 +156,16 @@ ZIP=$3
 
 ### FILE LOCATIONS ###
 # AUDIO EFFECTS
-CONFIG_FILE=$SYSTEM/etc/audio_effects.conf
-VENDOR_CONFIG=$VENDOR/etc/audio_effects.conf
-HTC_CONFIG_FILE=$SYSTEM/etc/htc_audio_effects.conf
-OTHER_VENDOR_FILE=$SYSTEM/etc/audio_effects_vendor.conf
-OFFLOAD_CONFIG=$SYSTEM/etc/audio_effects_offload.conf
+CONFIG_FILE=/system/etc/audio_effects.conf
+VENDOR_CONFIG=/vendor/etc/audio_effects.conf
+HTC_CONFIG_FILE=/system/etc/htc_audio_effects.conf
+OTHER_VENDOR_FILE=/system/etc/audio_effects_vendor.conf
+OFFLOAD_CONFIG=/system/etc/audio_effects_offload.conf
 # AUDIO POLICY
-AUD_POL=$SYSTEM/etc/audio_policy.conf
-AUD_POL_CONF=$SYSTEM/etc/audio_policy_configuration.xml
-AUD_OUT_POL=$VENDOR/etc/audio_output_policy.conf
-V_AUD_POL=$VENDOR/etc/audio_policy.conf
+AUD_POL=/system/etc/audio_policy.conf
+AUD_POL_CONF=/system/etc/audio_policy_configuration.xml
+AUD_OUT_POL=/vendor/etc/audio_output_policy.conf
+V_AUD_POL=/vendor/etc/audio_policy.conf
 
 magisk_install() {
   MAGISK=true
@@ -223,12 +223,12 @@ script_install_logic() {
   if [ "$supersuimg" ] || [ -d /su ]; then
     SH=/su/su.d
   elif [ -d $SYSTEM/su ] || [ -f $SYSTEM/xbin/daemonsu ] || [ -f $SYSTEM/xbin/su ] || [ -f $SYSTEM/xbin/sugote ]; then
-    SH=$SYSTEM/su.d
+    SH=/system/su.d
   elif [ -d $SYSTEM/etc/init.d ]; then
-    SH=$SYSTEM/etc/init.d
+    SH=/system/etc/init.d
     EXT=""
   fi
-  #### ^ INSERT MORE APPS IF MORE EXIST ^ ####
+  ########## ^ DO NOT REMOVE ^ ##########
 }
 
 system_mod_wipe() {
@@ -245,10 +245,10 @@ system_mod_wipe() {
   #### v INSERT YOUR FILE REMOVALS v ####
   # REMOVE FILES
   ui_print "   Removing files..."
-  rm -f $SYSTEM/addon.d/$MODID.sh
-  rm -f $SYSTEM/etc/init.d/$MODID
+  rm -f /system/addon.d/$MODID.sh
+  rm -f /system/etc/init.d/$MODID
   rm -f /su/su.d/$MODID.sh
-  rm -f $SYSTEM/su.d/$MODID.sh
+  rm -f /system/su.d/$MODID.sh
   #### ^ INSERT YOUR FILE REMOVALS ^ ####
 
   #### v INSERT YOUR RESTORE AND BACKUP FUNCTIONS v ####
@@ -296,7 +296,7 @@ unified_mod_directory() {
   script_install_logic
   sys_mk_ch $SH 0755
     if [ -d $SYSTEM/addon.d ]; then
-      sys_mk_ch $SYSTEM/addon.d 0755
+      sys_mk_ch /system/addon.d 0755
     fi
     for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
       if [ -f $CFG ]; then
@@ -333,7 +333,7 @@ unified_mod_copy() {
     # INSTALL ROM BACKUP SCRIPT
     if [ -d $SYSTEM/addon.d ]; then
       ui_print "   Installing addon.d backup script..."
-      sys_cp_ch $INSTALLER/system/addon.d/$MODID.sh $SYSTEM/addon.d/$MODID.sh 0644
+      sys_cp_ch $INSTALLER/system/addon.d/$MODID.sh /system/addon.d/$MODID.sh 0644
     fi
   fi
   #### ^ INSERT YOUR FILE INSTALL ^ ####

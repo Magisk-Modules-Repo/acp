@@ -26,16 +26,16 @@ if [ ! -d /magisk/$MODID ]; then
 
   ### FILE LOCATIONS ###
   # AUDIO EFFECTS
-  CONFIG_FILE=$SYSTEM/etc/audio_effects.conf
-  VENDOR_CONFIG=$VENDOR/etc/audio_effects.conf
-  HTC_CONFIG_FILE=$SYSTEM/etc/htc_audio_effects.conf
-  OTHER_VENDOR_FILE=$SYSTEM/etc/audio_effects_vendor.conf
-  OFFLOAD_CONFIG=$SYSTEM/etc/audio_effects_offload.conf
+  CONFIG_FILE=/system/etc/audio_effects.conf
+  VENDOR_CONFIG=/vendor/etc/audio_effects.conf
+  HTC_CONFIG_FILE=/system/etc/htc_audio_effects.conf
+  OTHER_VENDOR_FILE=/system/etc/audio_effects_vendor.conf
+  OFFLOAD_CONFIG=/system/etc/audio_effects_offload.conf
   # AUDIO POLICY
-  AUD_POL=$SYSTEM/etc/audio_policy.conf
-  AUD_POL_CONF=$SYSTEM/etc/audio_policy_configuration.xml
-  AUD_OUT_POL=$VENDOR/etc/audio_output_policy.conf
-  V_AUD_POL=$VENDOR/etc/audio_policy.conf
+  AUD_POL=/system/etc/audio_policy.conf
+  AUD_POL_CONF=/system/etc/audio_policy_configuration.xml
+  AUD_OUT_POL=/vendor/etc/audio_output_policy.conf
+  V_AUD_POL=/vendor/etc/audio_policy.conf
   ########## ^ DO NOT REMOVE ^ ##########
 
   #### v INSERT YOUR REMOVE PATCH OR RESTORE v ####

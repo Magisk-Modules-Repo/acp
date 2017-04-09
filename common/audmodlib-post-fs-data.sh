@@ -63,28 +63,28 @@ else
     SH=/su/su.d
   elif [ -d $SYSTEM/su ] || [ -f $SYSTEM/xbin/daemonsu ] || [ -f $SYSTEM/xbin/su ] || [ -f $SYSTEM/xbin/sugote ]; then
     SEINJECT=$SYSTEM/xbin/supolicy
-    SH=$SYSTEM/su.d
+    SH=/system/su.d
   elif [ -d $SYSTEM/etc/init.d ]; then
     SEINJECT=$SYSTEM/xbin/supolicy
-    SH=$SYSTEM/etc/init.d
-	EXT=""
+    SH=/system/etc/init.d
+    EXT=""
   fi
   
   if [ -d $SYSTEM/priv-app ]; then
-    CONTEXT=priv_app
+    SOURCE=priv_app
   else
-    CONTEXT=system_app
+    SOURCE=system_app
   fi
 
   $SEINJECT --live "allow audioserver audioserver_tmpfs file { read write execute }" \
   "allow audioserver system_file file { execmod }" \
   "allow mediaserver mediaserver_tmpfs file { read write execute }" \
   "allow mediaserver system_file file { execmod }" \
-  "allow $CONTEXT init unix_stream_socket { connectto }" \
-  "allow $CONTEXT property_socket sock_file { getattr open read write execute }"
+  "allow $SOURCE init unix_stream_socket { connectto }" \
+  "allow $SOURCE property_socket sock_file { getattr open read write execute }"
 
   if [ ! $MAGISK == true ]; then
-    $SEINJECT --live "permissive $CONTEXT property_socket"
+    $SEINJECT --live "permissive $SOURCE property_socket"
   fi
 
   LOG_FILE=/cache/$MODID-post-fs-data.log

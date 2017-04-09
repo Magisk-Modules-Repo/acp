@@ -63,20 +63,20 @@ else
     SH=/su/su.d
   elif [ -d $SYSTEM/su ] || [ -f $SYSTEM/xbin/daemonsu ] || [ -f $SYSTEM/xbin/su ] || [ -f $SYSTEM/xbin/sugote ]; then
     SEINJECT=$SYSTEM/xbin/supolicy
-    SH=$SYSTEM/su.d
+    SH=/system/su.d
   elif [ -d $SYSTEM/etc/init.d ]; then
     SEINJECT=$SYSTEM/xbin/supolicy
-    SH=$SYSTEM/etc/init.d
-	EXT=""
+    SH=/system/etc/init.d
+    EXT=""
   fi
   
   if [ -d $SYSTEM/priv-app ]; then
-    CONTEXT=priv_app
+    SOURCE=priv_app
   else
-    CONTEXT=system_app
+    SOURCE=system_app
   fi
 
-  $SEINJECT --live "permissive $CONTEXT property_socket"
+  $SEINJECT --live "permissive $SOURCE audio_prop"
 
   LOG_FILE=/cache/$MODID-service.log
   if [ -e /cache/$MODID-service.log ]; then
