@@ -156,16 +156,26 @@ ZIP=$3
 
 ### FILE LOCATIONS ###
 # AUDIO EFFECTS
-CONFIG_FILE=/system/etc/audio_effects.conf
-VENDOR_CONFIG=/vendor/etc/audio_effects.conf
-HTC_CONFIG_FILE=/system/etc/htc_audio_effects.conf
-OTHER_VENDOR_FILE=/system/etc/audio_effects_vendor.conf
-OFFLOAD_CONFIG=/system/etc/audio_effects_offload.conf
+CONFIG_FILE=$SYSTEM/etc/audio_effects.conf
+HTC_CONFIG_FILE=$SYSTEM/etc/htc_audio_effects.conf
+OTHER_V_FILE=$SYSTEM/etc/audio_effects_vendor.conf
+OFFLOAD_CONFIG=$SYSTEM/etc/audio_effects_offload.conf
+V_CONFIG_FILE=$VENDOR/etc/audio_effects.conf
 # AUDIO POLICY
-AUD_POL=/system/etc/audio_policy.conf
-AUD_POL_CONF=/system/etc/audio_policy_configuration.xml
-AUD_OUT_POL=/vendor/etc/audio_output_policy.conf
-V_AUD_POL=/vendor/etc/audio_policy.conf
+A2DP_AUD_POL=$SYSTEM/etc/a2dp_audio_policy_configuration.xml
+AUD_POL=$SYSTEM/etc/audio_policy.conf
+AUD_POL_CONF=$SYSTEM/etc/audio_policy_configuration.xml
+AUD_POL_VOL=$SYSTEM/etc/audio_policy_volumes.xml
+SUB_AUD_POL=$SYSTEM/etc/r_submix_audio_policy_configuration.xml
+USB_AUD_POL=$SYSTEM/etc/usb_audio_policy_configuration.xml
+V_AUD_OUT_POL=$VENDOR/etc/audio_output_policy.conf
+V_AUD_POL=$VENDOR/etc/audio_policy.conf
+# MIXER PATHS
+MIX_PATH=$SYSTEM/etc/mixer_paths.xml
+MIX_PATH_TASH=$SYSTEM/etc/mixer_paths_tasha.xml
+STRIGG_MIX_PATH=$SYSTEM/sound_trigger_mixer_paths.xml
+STRIGG_MIX_PATH_9330=$SYSTEM/sound_trigger_mixer_paths_wcd9330.xml
+V_MIX_PATH=$VENDOR/etc/mixer_paths.xml
 
 magisk_install() {
   MAGISK=true
@@ -174,7 +184,7 @@ magisk_install() {
   UNIFY="$MODPATH"
   MK_SFFX=""
   CP_SFFX=""
-  PATCHINSTALL="$TMPAUDMODLIBDIR"
+  PATCHINSTALL=""
   PATCH="/cache/magisk/audmodlib"
 }
 
@@ -223,9 +233,9 @@ script_install_logic() {
   if [ "$supersuimg" ] || [ -d /su ]; then
     SH=/su/su.d
   elif [ -d $SYSTEM/su ] || [ -f $SYSTEM/xbin/daemonsu ] || [ -f $SYSTEM/xbin/su ] || [ -f $SYSTEM/xbin/sugote ]; then
-    SH=/system/su.d
+    SH=$SYSTEM/su.d
   elif [ -d $SYSTEM/etc/init.d ]; then
-    SH=/system/etc/init.d
+    SH=$SYSTEM/etc/init.d
     EXT=""
   fi
   ########## ^ DO NOT REMOVE ^ ##########
@@ -245,16 +255,16 @@ unified_mod_wipe() {
   #### v INSERT YOUR FILE REMOVALS v ####
   # REMOVE FILES
   ui_print "   Removing files..."
-  rm -f /system/addon.d/$MODID.sh
-  rm -f /system/etc/init.d/$MODID
+  rm -f $SYSTEM/addon.d/$MODID.sh
+  rm -f $SYSTEM/etc/init.d/$MODID
   rm -f /su/su.d/$MODID.sh
-  rm -f /system/su.d/$MODID.sh
+  rm -f $SYSTEM/su.d/$MODID.sh
   #### ^ INSERT YOUR FILE REMOVALS ^ ####
 
   #### v INSERT YOUR RESTORE AND BACKUP FUNCTIONS v ####
   # RESTORE BACKED UP CONFIGS
   ui_print "   Restoring backed up audio_policy files..."
-  for RESTORE in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
+  for RESTORE in $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL; do
     if [ -f $RESTORE.bak ]; then
       cp -f $RESTORE.bak $RESTORE
     fi
@@ -262,7 +272,7 @@ unified_mod_wipe() {
 
   # BACKUP CONFIGS
   ui_print "   Backing up restored audio_policy cfg files..."
-  for BACKUP in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
+  for BACKUP in $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL; do
     if [ -f $BACKUP ]; then
       cp -f $BACKUP $BACKUP.bak
     fi
@@ -296,9 +306,9 @@ unified_mod_directory() {
   script_install_logic
   sys_mk_ch $SH 0755
     if [ -d $SYSTEM/addon.d ]; then
-      sys_mk_ch /system/addon.d 0755
+      sys_mk_ch $SYSTEM/addon.d 0755
     fi
-    for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
+    for CFG in $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
       if [ -f $CFG ]; then
         sys_mk_ch ${CFG%/*} 0755
       fi
@@ -333,7 +343,7 @@ unified_mod_copy() {
     # INSTALL ROM BACKUP SCRIPT
     if [ -d $SYSTEM/addon.d ]; then
       ui_print "   Installing addon.d backup script..."
-      sys_cp_ch $INSTALLER/system/addon.d/$MODID.sh /system/addon.d/$MODID.sh 0644
+      sys_cp_ch $INSTALLER/system/addon.d/$MODID.sh $SYSTEM/addon.d/$MODID.sh 0644
     fi
   fi
   #### ^ INSERT YOUR FILE INSTALL ^ ####
@@ -359,24 +369,16 @@ magisk_audmodlib() {
   if [ -d /cache/magisk/audmodlib ] && [[ ! -d $AUDMODLIBPATH || ! -d /magisk/audmodlib ]]; then
     rm -rf /cache/magisk/audmodlib
   fi
-
-  if [ ! -d /cache/magisk/audmodlib ] && [[ ! -d $AUDMODLIBPATH || ! -d /magisk/audmodlib ]]; then
-    TMPAUDMODLIBDIR=""
-  elif [ -d $AUDMODLIBPATH ]; then
-    TMPAUDMODLIBDIR=$AUDMODLIBPATH
-  elif [ -d /magisk/audmodlib ]; then
-    TMPAUDMODLIBDIR=/magisk/audmodlib
-  fi
   
   magisk_install
 
-  for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
+  for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
     if [ -f $CFG ]; then
       mkdir -p /cache/magisk/audmodlib${CFG%/*}
-	fi
+    fi
   done
 
-  for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
+  for CFG in $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
     if [ ! -f $CFG.bak ]; then
       cp -af $CFG /cache/magisk/audmodlib$CFG.bak
     else
@@ -384,21 +386,28 @@ magisk_audmodlib() {
     fi
   done
 
-  for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
-    if [ -f $CFG ]; then
-      cp -af $TMPAUDMODLIBDIR$CFG /cache/magisk/audmodlib$CFG
+  for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
+    if [ -f $CFG ] && [ -d $AUDMODLIBPATH$CFG ]; then
+	  PATCHINSTALL=$AUDMODLIBPATH
+      cp -af $AUDMODLIBPATH$CFG /cache/magisk/audmodlib$CFG
+    elif [ -f $CFG ] && [ -d /magisk/audmodlib$CFG ]; then
+	  PATCHINSTALL=/magisk/audmodlib
+      cp -af /cache/magisk/audmodlib$CFG /cache/magisk/audmodlib$CFG
+    elif [ -f $CFG ] && [[ ! -d $AUDMODLIBPATH$CFG || ! -d /magisk/audmodlib$CFG ]]; then
+	  PATCHINSTALL=""
+      cp -af $CFG /cache/magisk/audmodlib$CFG
 	fi
   done
 
-  if [ -f $VENDOR_CONFIG ]; then
-    cp -af /cache/magisk/audmodlib$CONFIG_FILE /cache/magisk/audmodlib$VENDOR_CONFIG
+  if [ -f $V_CONFIG_FILE ]; then
+    cp -af /cache/magisk/audmodlib$CONFIG_FILE /cache/magisk/audmodlib$V_CONFIG_FILE
   fi
   
   set_perm_recursive  /cache/magisk/audmodlib  0  0  0755  0644
 
   mkdir -p $AUDMODLIBPATH
 
-  for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
+  for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
     if [ -f $CFG ]; then
       mkdir -p $AUDMODLIBPATH${CFG%/*}
 	fi
@@ -408,13 +417,13 @@ magisk_audmodlib() {
 
   unified_mod_patch
   
-  for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
+  for CFG in $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
     if [ -f $CFG ]; then
       cp -af /cache/magisk/audmodlib$CFG.bak $AUDMODLIBPATH$CFG.bak
 	fi
   done
   
-  for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
+  for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
     if [ -f $CFG ]; then
       cp -af /cache/magisk/audmodlib$CFG $AUDMODLIBPATH$CFG
     fi
@@ -439,15 +448,15 @@ unified_mod_patch() {
   #### v INSERT YOUR FILE PATCHES v ####
   # REMOVE DEEP_BUFFER LINES
   ui_print "    Patching existing audio_policy files..."
-  if [ -f $PATCHINSTALL$AUD_OUT_POL ] && [ -f $PATCHINSTALL$AUD_POL_CONF ]; then
+  if [ -f $PATCHINSTALL$V_AUD_OUT_POL ] && [ -f $PATCHINSTALL$AUD_POL_CONF ]; then
     # REMOVE DEEP_BUFFER
     sed -i '/Speaker/{n;s/deep_buffer,//;}' $PATCH$AUD_POL_CONF
-  elif [ ! -f $PATCHINSTALL$AUD_OUT_POL ] && [ -f $PATCHINSTALL$AUD_POL_CONF ]; then
+  elif [ ! -f $PATCHINSTALL$V_AUD_OUT_POL ] && [ -f $PATCHINSTALL$AUD_POL_CONF ]; then
     # REMOVE DEEP_BUFFER
 	sed -i 's/deep_buffer,//g' $PATCH$AUD_POL_CONF
 	sed -i 's/,deep_buffer//g' $PATCH$AUD_POL_CONF
   else
-    for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
+    for CFG in $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL; do
       if [ -f $CFG ]; then
         # REMOVE DEEP_BUFFER
         sed -i '/deep_buffer {/,/}/d' $PATCH$CFG

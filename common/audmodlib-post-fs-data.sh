@@ -62,10 +62,10 @@ else
     SEINJECT=/su/bin/supolicy
     SH=/su/su.d
   elif [ -d $SYSTEM/su ] || [ -f $SYSTEM/xbin/daemonsu ] || [ -f $SYSTEM/xbin/su ] || [ -f $SYSTEM/xbin/sugote ]; then
-    SEINJECT=$SYSTEM/xbin/supolicy
+    SEINJECT=/system/xbin/supolicy
     SH=/system/su.d
   elif [ -d $SYSTEM/etc/init.d ]; then
-    SEINJECT=$SYSTEM/xbin/supolicy
+    SEINJECT=/system/xbin/supolicy
     SH=/system/etc/init.d
     EXT=""
   fi
