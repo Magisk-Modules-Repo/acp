@@ -370,6 +370,14 @@ magisk_audmodlib() {
     rm -rf /cache/magisk/audmodlib
   fi
   
+  if [ ! -d /cache/magisk/audmodlib ] && [[ ! -d $AUDMODLIBPATH || ! -d /magisk/audmodlib ]]; then
+    SOURCEDIR=""
+  elif [ -d $AUDMODLIBPATH ]; then
+    SOURCEDIR=$AUDMODLIBPATH
+  elif [ -d /magisk/audmodlib ]; then
+    SOURCEDIR=/magisk/audmodlib
+  fi
+
   magisk_install
 
   for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
@@ -387,15 +395,8 @@ magisk_audmodlib() {
   done
 
   for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
-    if [ -f $CFG ] && [ ! -d /cache/magisk/audmodlib ] && [[ ! -d $AUDMODLIBPATH || ! -d /magisk/audmodlib ]]; then
-	  PATCHINSTALL=""
-      cp -af $CFG /cache/magisk/audmodlib$CFG
-    elif [ -f $CFG ] && [ -d $AUDMODLIBPATH ]; then
-	  PATCHINSTALL=$AUDMODLIBPATH
-      cp -af $AUDMODLIBPATH$CFG /cache/magisk/audmodlib$CFG
-    elif [ -f $CFG ] && [ -d /magisk/audmodlib ]; then
-	  PATCHINSTALL=/magisk/audmodlib
-      cp -af /magisk/audmodlib$CFG /cache/magisk/audmodlib$CFG
+    if [ -f $CFG ]; then
+      cp -af $SOURCEDIR$CFG /cache/magisk/audmodlib$CFG
 	fi
   done
 
