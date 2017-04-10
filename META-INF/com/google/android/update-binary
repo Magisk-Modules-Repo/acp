@@ -184,7 +184,7 @@ magisk_install() {
   UNIFY="$MODPATH"
   MK_SFFX=""
   CP_SFFX=""
-  PATCHINSTALL=""
+  SOURCEDIR="$SOURCEDIR"
   PATCH="/cache/magisk/audmodlib"
 }
 
@@ -195,7 +195,7 @@ system_install() {
   UNIFY=""
   MK_SFFX=" 0755"
   CP_SFFX=" 0644"
-  PATCHINSTALL=""
+  SOURCEDIR=""
   PATCH=""
 }
 
@@ -449,10 +449,10 @@ unified_mod_patch() {
   #### v INSERT YOUR FILE PATCHES v ####
   # REMOVE DEEP_BUFFER LINES
   ui_print "    Patching existing audio_policy files..."
-  if [ -f $PATCHINSTALL$V_AUD_OUT_POL ] && [ -f $PATCHINSTALL$AUD_POL_CONF ]; then
+  if [ -f $SOURCEDIR$V_AUD_OUT_POL ] && [ -f $SOURCEDIR$AUD_POL_CONF ]; then
     # REMOVE DEEP_BUFFER
     sed -i '/Speaker/{n;s/deep_buffer,//;}' $PATCH$AUD_POL_CONF
-  elif [ ! -f $PATCHINSTALL$V_AUD_OUT_POL ] && [ -f $PATCHINSTALL$AUD_POL_CONF ]; then
+  elif [ ! -f $SOURCEDIR$V_AUD_OUT_POL ] && [ -f $SOURCEDIR$AUD_POL_CONF ]; then
     # REMOVE DEEP_BUFFER
 	sed -i 's/deep_buffer,//g' $PATCH$AUD_POL_CONF
 	sed -i 's/,deep_buffer//g' $PATCH$AUD_POL_CONF
