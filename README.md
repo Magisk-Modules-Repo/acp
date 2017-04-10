@@ -17,7 +17,7 @@ v2.4
 	- AudModLib v1.4: changed post-fs-data(.d)/service(.d) shell script names for cosmetic recognition
 	- AudModLib v1.4: merge SuperSU shell script with MagiskSU post-fs-data(.d) script for less fragmentation
 	- AudModLib v1.4: added /cache/audmodlib.log to determine if script has run successfully
-	- AudModLib v1.4: various mixer_paths files are now included in the framework
+	- AudModLib v1.4: more audio policy files and various mixer_paths files are now included in the framework
 	- Install script changes that include: major update to Pixel (A/B OTA) support, mounting changes, improved script efficiency, fixes & consolidation
 	- Add more deep_buffer remover compatibility between differing devices and ROMs
 
