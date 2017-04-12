@@ -181,22 +181,22 @@ magisk_install() {
   MAGISK=true
   MK_PRFX="mkdir -p"
   CP_PRFX="cp -af"
-  UNIFY="$MODPATH"
+  UNITY="$MODPATH"
   MK_SFFX=""
   CP_SFFX=""
   SOURCEDIR="$SOURCEDIR"
-  PATCH="/cache/magisk/audmodlib"
+  UNITYPATCH="/cache/magisk/audmodlib"
 }
 
 system_install() {
   MAGISK=false
   MK_PRFX="sys_mk_ch"
   CP_PRFX="sys_cp_ch"
-  UNIFY=""
+  UNITY=""
   MK_SFFX=" 0755"
   CP_SFFX=" 0644"
   SOURCEDIR=""
-  PATCH=""
+  UNITYPATCH=""
 }
 
 ##########################################################################################
@@ -303,12 +303,13 @@ unified_mod_directory() {
   script_install_logic
 
   if [ "$MAGISK" == false ]; then
-  script_install_logic
-  sys_mk_ch $SH 0755
+    script_install_logic
+    sys_mk_ch $SH 0755
     if [ -d $SYSTEM/addon.d ]; then
       sys_mk_ch $SYSTEM/addon.d 0755
     fi
-    for CFG in $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
+
+    for CFG in $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL; do
       if [ -f $CFG ]; then
         sys_mk_ch ${CFG%/*} 0755
       fi
@@ -451,16 +452,16 @@ unified_mod_patch() {
   ui_print "    Patching existing audio_policy files..."
   if [ -f $SOURCEDIR$V_AUD_OUT_POL ] && [ -f $SOURCEDIR$AUD_POL_CONF ]; then
     # REMOVE DEEP_BUFFER
-    sed -i '/Speaker/{n;s/deep_buffer,//;}' $PATCH$AUD_POL_CONF
+    sed -i '/Speaker/{n;s/deep_buffer,//;}' $UNITYPATCH$AUD_POL_CONF
   elif [ ! -f $SOURCEDIR$V_AUD_OUT_POL ] && [ -f $SOURCEDIR$AUD_POL_CONF ]; then
     # REMOVE DEEP_BUFFER
-    sed -i 's/deep_buffer,//g' $PATCH$AUD_POL_CONF
-    sed -i 's/,deep_buffer//g' $PATCH$AUD_POL_CONF
+    sed -i 's/deep_buffer,//g' $UNITYPATCH$AUD_POL_CONF
+    sed -i 's/,deep_buffer//g' $UNITYPATCH$AUD_POL_CONF
   else
     for CFG in $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL; do
       if [ -f $CFG ]; then
         # REMOVE DEEP_BUFFER
-        sed -i '/deep_buffer {/,/}/d' $PATCH$CFG
+        sed -i '/deep_buffer {/,/}/d' $UNITYPATCH$CFG
       fi
     done
   fi
