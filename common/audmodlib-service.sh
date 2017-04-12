@@ -45,9 +45,9 @@ else
       for i in 0 1 2 3 4 5 6 7; do
         test "$(supersu_is_mounted /su)" == 1 && break;
         loop=/dev/block/loop$i;
-	    mknod $loop b 7 $i;
-	    losetup $loop $supersuimg;
-	    mount -t ext4 -o loop $loop /su; 2>/dev/null
+        mknod $loop b 7 $i;
+        losetup $loop $supersuimg;
+        mount -t ext4 -o loop $loop /su; 2>/dev/null
       done;
     fi;
   fi;
