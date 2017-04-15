@@ -722,9 +722,6 @@ if [ "$curSizeM" -gt "$NEWDATASIZE" ]; then
   resize2fs $IMG ${NEWDATASIZE}M
 fi
 
-umount /cache 2>/dev/null
-umount /data 2>/dev/null
-
 if ! $BOOTMODE; then
   if [ "$supersuimg" ] || [ -d /su ]; then
     umount /su
