@@ -84,7 +84,7 @@ else
   "allow $SOURCE property_socket sock_file { getattr open read write execute }"
 
   if [ ! $MAGISK == true ]; then
-    $SEINJECT --live "permissive $SOURCE property_socket"
+    $SEINJECT --live "permissive $SOURCE audio_prop"
   fi
 
   LOG_FILE=/cache/$MODID-post-fs-data.log

@@ -402,10 +402,6 @@ magisk_audmodlib() {
       cp -af $SOURCEDIR$CFG /cache/magisk/audmodlib$CFG
     fi
   done
-
-  if [ -f $V_CONFIG_FILE ]; then
-    cp -af /cache/magisk/audmodlib$CONFIG_FILE /cache/magisk/audmodlib$V_CONFIG_FILE
-  fi
   
   set_perm_recursive  /cache/magisk/audmodlib  0  0  0755  0644
 
