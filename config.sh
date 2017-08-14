@@ -53,7 +53,7 @@ print_modname() {
   ui_print "      *    Universal deep_buffer Remover     *"
   ui_print "      ****************************************"
   ui_print "      *         Universal - Patcher          *"
-  ui_print "      *             Version 2.4              *"
+  ui_print "      *             Version 2.5              *"
   ui_print "      *              by ahrion               *"
   ui_print "      ****************************************"
   ui_print " "
