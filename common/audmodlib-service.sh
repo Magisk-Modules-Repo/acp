@@ -21,14 +21,25 @@ else
   ABDeviceCheck=$(cat /proc/cmdline | grep slot_suffix | wc -l)
   if [ "$ABDeviceCheck" -gt 0 ]; then
     isABDevice=true
-    SYSTEM=/system/system
-    VENDOR=/vendor
+    if [ -d "/system_root" ]; then
+        ROOT=/system_root
+        SYS=$ROOT/system
+    else
+        ROOT=""
+        SYS=$ROOT/system/system
+    fi
   else
     isABDevice=false
-    SYSTEM=/system
-    VENDOR=/system/vendor
+    ROOT=""
+    SYS=$ROOT/system
   fi
 
+  if [ $isABDevice == true ] || [ ! -d $SYS/vendor ]; then
+    VEN=/vendor
+  else
+    VEN=$SYS/vendor
+  fi
+  
   supersuimg=$(ls /cache/su.img /data/su.img 2>/dev/null);
 
   supersu_is_mounted() {
@@ -54,28 +65,37 @@ else
 
   # DETERMINE ROOT BOOT SCRIPT TYPE
   EXT=".sh"
-  if [ -f /data/magisk.img ] || [ -d /magisk ]; then
+  if [ -f /data/magisk.img ] || [ -f /cache/magisk.img ] || [ -d /magisk ]; then
     MAGISK=true
-    SEINJECT=/data/magisk/sepolicy-inject
-    SH=/magisk/.core/service.d
+    SEINJECT=magiskpolicy
+    SH=/magisk/.core/post-fs-data.d
   elif [ "$supersuimg" ] || [ -d /su ]; then
-    SEINJECT=/su/bin/supolicy
-    SH=/su/su.d
-  elif [ -d $SYSTEM/su ] || [ -f $SYSTEM/xbin/daemonsu ] || [ -f $SYSTEM/xbin/su ] || [ -f $SYSTEM/xbin/sugote ]; then
-    SEINJECT=$SYSTEM/xbin/supolicy
-    SH=$SYSTEM/su.d
-  elif [ -d $SYSTEM/etc/init.d ]; then
-    SEINJECT=$SYSTEM/xbin/supolicy
-    SH=$SYSTEM/etc/init.d
+	  SEINJECT=/su/bin/supolicy
+	  SH=/su/su.d
+  elif [ -d $SYS/su ] || [ -f $SYS/xbin/daemonsu ] || [ -f $SYS/xbin/sugote ]; then
+    SEINJECT=$SYS/xbin/supolicy
+    SH=$SYS/su.d
+  elif [ -f $SYS/xbin/su ]; then
+  	if [ "$(cat $SYS/xbin/su | grep SuperSU)" ]; then
+      SEINJECT=$SYS/xbin/supolicy
+  	  SH=$SYS/su.d
+  	else
+      SEINJECT=/sepolicy
+  	  SH=$SYS/etc/init.d
+      EXT=""
+  	fi
+  else
+    SEINJECT=/sepolicy
+    SH=$SYS/etc/init.d
     EXT=""
   fi
-  
-  if [ -d $SYSTEM/priv-app ]; then
+
+  if [ -d $SYS/priv-app ]; then
     SOURCE=priv_app
   else
     SOURCE=system_app
   fi
-
+  
   $SEINJECT --live "permissive $SOURCE audio_prop"
 
   LOG_FILE=/cache/$MODID-service.log
