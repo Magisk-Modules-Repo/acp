@@ -791,8 +791,6 @@ fi
 
 # MAGISKBIN must exist, binaries and utility functions are placed there
 [ -f $MAGISKBIN/magisk -a -f $MAGISKBIN/busybox -a -f $MAGISKBIN/util_functions.sh ] || require_new_magisk
-# Check that user is on latest magisk version														  
-[ ! "$(grep "1350" $MAGISKBIN/magisk)" ] && require_new_magisk
 
 # We need busybox/binaries to be setup
 $BOOTMODE && boot_actions || recovery_actions											 
