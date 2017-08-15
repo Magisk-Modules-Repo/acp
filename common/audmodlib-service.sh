@@ -96,6 +96,13 @@ else
     SOURCE=system_app
   fi
   
+  $SEINJECT --live "allow audioserver audioserver_tmpfs file { read write execute }" \
+  "allow audioserver system_file file { execmod }" \
+  "allow mediaserver mediaserver_tmpfs file { read write execute }" \
+  "allow mediaserver system_file file { execmod }" \
+  "allow $SOURCE init unix_stream_socket { connectto }" \
+  "allow $SOURCE property_socket sock_file { getattr open read write execute }"
+  
   $SEINJECT --live "permissive $SOURCE audio_prop"
 
   LOG_FILE=/cache/$MODID-service.log

@@ -1,3 +1,3 @@
-# Add props you had in previous versions you no longer want here
+# Add props you had in previous versions you no longer want here or ones other audmodlib modules may have that could conflict with your own
 # Use 'setprop' as command (starting at line 4), Ex: setprop name.of.prop value
 #
