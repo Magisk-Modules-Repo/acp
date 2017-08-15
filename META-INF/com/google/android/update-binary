@@ -496,8 +496,8 @@ magisk_audmodlib() {
 
   ui_print "   Installing scripts for MagiskSU..."
   mkdir -p $MOUNTPATH/.core/service.d
-  cp -af $INSTALLER/common/$AUDMODLIBID-service.sh $MOUNTPATH/.core/service.d/$AUDMODLIBID.sh
-  cp -af $INSTALLER/common/$MODID-service.sh $MOUNTPATH/.core/service.d/$MODID.sh
+  sys_cp_ch $INSTALLER/common/$AUDMODLIBID-service.sh $MOUNTPATH/.core/service.d/$AUDMODLIBID.sh 0755
+  sys_cp_ch $INSTALLER/common/$MODID-service.sh $MOUNTPATH/.core/service.d/$MODID.sh 0755
 
   if [ -d /cache/magisk/audmodlib ] && [[ ! -d $AUDMODLIBPATH || ! -d /magisk/audmodlib ]]; then
     rm -rf /cache/magisk/audmodlib
