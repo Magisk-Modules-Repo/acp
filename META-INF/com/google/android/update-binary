@@ -459,7 +459,7 @@ unity_mod_copy() {
     else
       ui_print "   Installing scripts for phh's su or non root..."
     fi
-    sys_cp_ch $INSTALLER/common/$AUDMODLIBID-service.sh $SH/$AUDMODLIBID$EXT 0644
+    sys_cp_ch $INSTALLER/common/$AUDMODLIBID-service.sh $SH/$AUDMODLIBID$EXT 0700
 
     # INSTALL ROM BACKUP SCRIPT
     if [ -d $SYS/addon.d ]; then
