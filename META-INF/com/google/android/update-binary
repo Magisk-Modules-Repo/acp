@@ -606,7 +606,8 @@ unity_mod_patch() {
       fi
     done
   fi
-
+  
+  if [ "$MAGISK" == false ]; then
     # COPY OVER MAIN AUDIO_EFFECTS CFG FILE TO VENDOR FILE
     if [ -f $V_CONFIG_FILE ]; then
       cp -af $CONFIG_FILE $V_CONFIG_FILE
