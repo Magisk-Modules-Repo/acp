@@ -68,7 +68,7 @@ case "$1" in
       backup_file $S/$FILE
     done
   ;;
-  restore)+
+  restore)
     list_files | while read FILE REPLACEMENT; do
       R=""
       [ -n "$REPLACEMENT" ] && R="$S/$REPLACEMENT"

@@ -54,7 +54,7 @@ print_modname() {
   ui_print "      ****************************************"
   ui_print "      *         Universal - Patcher          *"
   ui_print "      *             Version 2.5              *"
-  ui_print "      *              by ahrion               *"
+  ui_print "      *         by ahrion, zackptg5          *"
   ui_print "      ****************************************"
   ui_print " "
 }
