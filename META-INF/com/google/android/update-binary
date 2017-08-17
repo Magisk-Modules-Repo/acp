@@ -281,8 +281,12 @@ script_install_logic() {
   ########## ^ DO NOT REMOVE ^ ##########
 }
 
-########## v DO NOT REMOVE v ##########
 unity_prop_removal() {
+  ########################################################################################
+  # Logic for unity prop removals
+  ########################################################################################
+
+  ########## v DO NOT REMOVE v ##########
   if [ "$MAGISK" == true ]; then
 		rm -f $SYS/etc/init.d/$AUDMODLIBID-props
 		rm -f /su/su.d/$AUDMODLIBID-props.sh
@@ -310,11 +314,15 @@ unity_prop_removal() {
   	  done
     fi
   fi
+  ########## ^ DO NOT REMOVE ^ ##########
 }
-########## ^ DO NOT REMOVE ^ ##########
 
-########## v DO NOT REMOVE v ##########
 unity_prop_copy() {
+  ########################################################################################
+  # Logic for unity prop install
+  ########################################################################################
+  
+  ########## v DO NOT REMOVE v ##########
   if [ "$MAGISK" == true ]; then
 	AMLPROP="$AUDMODLIBPATH/system.prop"
   	#AMLPROP="$MOUNTPATH/.core/props/audmodlib-props.prop"
@@ -353,12 +361,12 @@ unity_prop_copy() {
   	  restorecon $AMLPROP
   	fi
   fi
+  ########## ^ DO NOT REMOVE ^ ##########
 }
-########## ^ DO NOT REMOVE ^ ##########
 
 unity_mod_wipe() {
   ########################################################################################
-  # Wipe before System install
+  # Wipe for unity un(install)
   ########################################################################################
   
   ########## v DO NOT REMOVE v ##########
