@@ -209,3 +209,15 @@ require_new_magisk() {
   ui_print "***********************************"
   exit 1
 }
+
+mod_exist() {
+  echo "MODULE: $MOD_VER"
+  if [ -f "$MOD_VER" ]; then
+    echo "MODULE: FOUND"
+    if [ "$(cat $MOD_VER)" == "$(cat $INSTALLER/module.prop)" ]; then
+      ui_print " "
+      ui_print "   ! Current version detected. Uninstalling!"
+      ACTION=Uninstall
+    fi
+  fi
+}

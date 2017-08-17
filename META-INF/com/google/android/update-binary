@@ -3,7 +3,7 @@
 #
 # Unity Installer v2.0
 # by ahrion & Zackptg5
-# 
+#
 ##########################################################################################
 
 # Detect whether in boot mode
@@ -19,7 +19,7 @@ umask 022
 
 OUTFD=$2
 ZIP=$3
-		
+
 # DETERMINE IF PIXEL (A/B OTA) DEVICE
 ABDeviceCheck=$(cat /proc/cmdline | grep slot_suffix | wc -l)
 if [ "$ABDeviceCheck" -gt 0 ]; then
@@ -51,7 +51,7 @@ mkdir -p $INSTALLER
 unzip -o "$ZIP" module.prop config.sh 'common/*' -d $INSTALLER 2>/dev/null
 
 # Load utility fuctions
-. $INSTALLER/common/util_functions.sh																		  
+. $INSTALLER/common/util_functions.sh
 get_outfd
 
 if is_mounted /data; then
@@ -78,7 +78,7 @@ supersu_is_mounted() {
 }
 
 # MAKE SYS DIR
-sys_mk_ch() { 
+sys_mk_ch() {
   mkdir -p "$1"
   chmod "$2" "$1"
 }
@@ -216,6 +216,7 @@ magisk_install() {
   CP_SFFX=""
   SOURCEDIR="$SOURCEDIR"
   UNITYPATCH="/cache/magisk/audmodlib"
+  MOD_VER="$MODPATH/module.prop"
 }
 
 system_install() {
@@ -227,12 +228,13 @@ system_install() {
   CP_SFFX=" 0644"
   SOURCEDIR=""
   UNITYPATCH=""
+  MOD_VER="$SYS/etc/$MODID-module.prop"
 }
 
 ##########################################################################################
-# 
+#
 # Instructions:
-# 
+#
 # 1. This is the unity installer for both Magisk and System install, so be sure to
 #    follow the template provided for "app_install_logic", "unity_mod_wipe",
 #    & "unity_mod_<xxxx>"
@@ -252,7 +254,7 @@ system_install() {
 # 8. You can obviously use your mod specific system.prop or post-fs-data.sh as part of
 #    the mod, but make sure not edit the designated audmodlib specific files
 # 9. DO NOT delete any of the credits for @ahrion or @topjohnwu mentioned in this script
-# 
+#
 ##########################################################################################
 
 script_install_logic() {
@@ -321,7 +323,7 @@ unity_prop_copy() {
   ########################################################################################
   # Logic for unity prop install
   ########################################################################################
-  
+
   ########## v DO NOT REMOVE v ##########
   if [ "$MAGISK" == true ]; then
 	AMLPROP="$AUDMODLIBPATH/system.prop"
@@ -368,13 +370,13 @@ unity_mod_wipe() {
   ########################################################################################
   # Wipe for unity un(install)
   ########################################################################################
-  
+
   ########## v DO NOT REMOVE v ##########
   #### CLEANING UP ####
   ui_print " "
   ui_print "- Cleaning up previous installations -"
   ########## ^ DO NOT REMOVE ^ ##########
-  
+
   #### v INSERT YOUR FILE REMOVALS v ####
   # REMOVE FILES
   ui_print "   Removing files..."
@@ -417,13 +419,13 @@ unity_mod_directory() {
 
   # CREATING DIRECTORIES
   ui_print "   Creating directories..."
-  
+
   if [ "$MAGISK" == true ]; then
     rm -rf $MODPATH 2>/dev/null
     mkdir -p $MODPATH
   fi
   ########## ^ DO NOT REMOVE ^ ##########
-  
+
   #### v INSERT YOUR DIRECTORY MAKING v ####
   if [ "$MAGISK" == false ]; then
     sys_mk_ch $SH 0755
@@ -478,14 +480,16 @@ unity_mod_copy() {
     fi
 	# CREATE FILE CONTAINING LIST OF ALL INSTALLED MOD FILES
 	touch $INFO
-    echo "$SH/$AUDMODLIBID$EXT" > $INFO
-  	echo "$SH/$AUDMODLIBID-props$EXT" >> $INFO
-  fi
-  
+  echo "$SH/$AUDMODLIBID$EXT" > $INFO
+  echo "$SH/$AUDMODLIBID-props$EXT" >> $INFO
+	# COPY MODULE>PROP FILE FOR VERSION CHECKING
+	$CP_PRFX $INSTALLER/module.prop $MOD_VER_PATH/$MODID-module.prop
+	fi
+
   # ADD BUILDPROPS
   ui_print "   Adding build props..."
   unity_prop_copy $INSTALLER/common/audmodlib-props.prop
-  
+
   if [ "$MAGISK" == false ]; then
     sed -i 's/\/system\///g' $INFO
   fi
@@ -510,7 +514,7 @@ magisk_audmodlib() {
   if [ -d /cache/magisk/audmodlib ] && [[ ! -d $AUDMODLIBPATH || ! -d /magisk/audmodlib ]]; then
     rm -rf /cache/magisk/audmodlib
   fi
-  
+
   if [ ! -d /cache/magisk/audmodlib ] && [[ ! -d $AUDMODLIBPATH || ! -d /magisk/audmodlib ]]; then
     SOURCEDIR=""
   elif [ -d /cache/magisk/audmodlib ]; then
@@ -544,7 +548,7 @@ magisk_audmodlib() {
       cp -af $SOURCEDIR$CFG /cache/magisk/audmodlib$CFG
     fi
   done
-  
+
   set_perm_recursive  /cache/magisk/audmodlib  0  0  0755  0644
 
   if [ -f $V_CONFIG_FILE ]; then
@@ -560,24 +564,24 @@ magisk_audmodlib() {
   done
 
   unity_mod_patch
-  
+
   for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
     if [ -f $CFG.bak ]; then
       cp -af /cache/magisk/audmodlib$CFG.bak $AUDMODLIBPATH$CFG.bak
     fi
   done
-  
+
   for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
     if [ -f $CFG ]; then
       cp -af /cache/magisk/audmodlib$CFG $AUDMODLIBPATH$CFG
     fi
   done
-  
+
   # COPY OVER MAIN AUDIO_EFFECTS CFG FILE TO VENDOR FILE
   if [ -f $V_CONFIG_FILE ]; then
     cp -af /cache/magisk/audmodlib$CONFIG_FILE /cache/magisk/audmodlib$V_CONFIG_FILE
   fi
-  
+
   set_perm_recursive  $AUDMODLIBPATH  0  0  0755  0644
 
   ui_print "   ! AudModLib framework by ahrion @ XDA !"
@@ -614,7 +618,7 @@ unity_mod_patch() {
       fi
     done
   fi
-  
+
   if [ "$MAGISK" == false ]; then
     # COPY OVER MAIN AUDIO_EFFECTS CFG FILE TO VENDOR FILE
     if [ -f $V_CONFIG_FILE ]; then
@@ -628,16 +632,16 @@ unity_uninstall() {
   ########################################################################################
   # Uninstall for Magisk install
   ########################################################################################
-  
+
   ########## v DO NOT REMOVE v ##########
   #### CLEANING UP ####
   ui_print " "
   ui_print "- Cleaning up previous installations -"
- 
+
   # REMOVE PROPS
   ui_print "   Removing build props..."
   unity_prop_removal $INSTALLER/common/$AUDMODLIBID-props.prop
-  
+
   # REMOVE FILES
   ui_print "   Removing files..."
   if [ "$MAGISK" == true ]; then
@@ -646,7 +650,7 @@ unity_uninstall() {
     rm -rf /magisk/$MODID
   fi
   ########## ^ DO NOT REMOVE ^ ##########
-  
+
   #### v INSERT YOUR FILE REMOVALS v ####
   if [ "$MAGISK" == true ]; then
     rm -f /magisk/.core/service.d/$MODID.sh
@@ -725,29 +729,32 @@ if is_mounted /data; then
     system_install
     script_install_logic
     app_install_logic
-	
+
+		# Determine if mod is already installed. If same version is installed, uninstall
+		mod_exist
+
 	if [ "$ACTION" == "Install" ]; then
       ui_print " "
       ui_print "   ! Magisk is not installed!"
       ui_print "    ! Installing on system!"
-	  
+
       # Remove props
       ui_print " "
       ui_print "- Removing obsolete props-"
       unity_prop_removal $INSTALLER/common/$AUDMODLIBID-props-remove.prop
-	  
+
       # Wipe files
       unity_mod_wipe
-	  
+
       # Create mod paths
       unity_mod_directory
-	  
+
       # Copy files
       unity_mod_copy
-	  
+
       # Patch files
       unity_mod_patch
-	  
+
       #### COMPLETING INSTALL ####
       ui_print " "
       ui_print "    --------- INSTALLATION SUCCESSFUL ---------"
@@ -759,10 +766,10 @@ if is_mounted /data; then
       ui_print " "
       ui_print "   ! Magisk is not installed!"
       ui_print "    ! Uninstalling on system!"
-	  
+
       # Uninstall
       unity_uninstall
-	  
+
       #### COMPLETING UNINSTALL ####
       ui_print " "
       ui_print "    --------- RESTORATION SUCCESSFUL ---------"
@@ -780,7 +787,7 @@ else
   ui_print "* Installation will still proceed *"
   ui_print "*  But please make sure you have  *"
   ui_print "*        Magisk installed!!       *"
-  ui_print "*         !!Using Cache!!         *"  
+  ui_print "*         !!Using Cache!!         *"
   ui_print "***********************************"
   ui_print " "
 fi
@@ -789,7 +796,7 @@ fi
 [ -f $MAGISKBIN/magisk -a -f $MAGISKBIN/busybox -a -f $MAGISKBIN/util_functions.sh ] || require_new_magisk
 
 # We need busybox/binaries to be setup
-$BOOTMODE && boot_actions || recovery_actions											 
+$BOOTMODE && boot_actions || recovery_actions
 
 request_zip_size_check "$ZIP"
 if [ -f "$IMG" ]; then
@@ -813,8 +820,11 @@ is_mounted $MOUNTPATH || abort"     $IMG mount failed..."
 # Prepare (Un)install
 magisk_install
 app_install_logic
-  
-if [ "$ACTION" == "Install" ]; then   
+
+# Determine if mod is already installed. If same version is installed, uninstall
+mod_exist
+
+if [ "$ACTION" == "Install" ]; then
   # Remove props
   unity_prop_removal $INSTALLER/common/$AUDMODLIBID-props-remove.prop
 
