@@ -456,7 +456,7 @@ unity_mod_wipe() {
 	fi
   done
 
-  if [ "$MAGISK" == false ]; then
+  if [ "$MAGISK" == false ] && [ "$MODID" != "audmodlib" ]; then
     # REMOVE LIBRARIES & EFFECTS
     ui_print "   Removing library & effect lines..."
 
@@ -518,11 +518,13 @@ unity_mod_directory() {
     if [ -d $SYS/addon.d ]; then
       sys_mk_ch $SYS/addon.d 0755
     fi
-    for CFG in $CONFIG_FILE $V_CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_DTP $MIX_PATH_i2s $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
-      if [ -f $CFG ]; then
-        sys_mk_ch ${CFG%/*} 0755
-      fi
-    done
+    if [ "$MODID" != "audmodlib" ]; then
+	  for CFG in $CONFIG_FILE $V_CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_DTP $MIX_PATH_i2s $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
+        if [ -f $CFG ]; then
+          sys_mk_ch ${CFG%/*} 0755
+        fi
+      done
+	fi
   fi
   
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
@@ -629,20 +631,20 @@ magisk_audmodlib() {
   ui_print "   Installing scripts for MagiskSU..."
   mkdir -p $MOUNTPATH/.core/service.d
   sys_cp_ch $INSTALLER/common/$AMLID/$AMLID-service.sh $MOUNTPATH/.core/service.d/$AMLID.sh 0755
-  sys_cp_ch $INSTALLER/common/$MODID-service.sh $MOUNTPATH/.core/service.d/$MODID.sh 0755
+  test "$MODID" != "audmodlib" && sys_cp_ch $INSTALLER/common/$MODID-service.sh $MOUNTPATH/.core/service.d/$MODID.sh 0755
 
-  if [ -d /cache/magisk/audmodlib ] && [[ ! -d $AMLPATH || ! -d /magisk/audmodlib ]]; then
-    rm -rf /cache/magisk/audmodlib
+  if [ "$MODID" != "audmodlib" ]; then
+    if [ -d /cache/magisk/audmodlib ] && [[ ! -d $AMLPATH || ! -d /magisk/audmodlib ]]; then
+      rm -rf /cache/magisk/audmodlib
+    fi
   fi
 
   if [ ! -d /cache/magisk/audmodlib ] && [[ ! -d $AMLPATH || ! -d /magisk/audmodlib ]]; then
     SOURCEDIR=""
   elif [ -d /cache/magisk/audmodlib ]; then
     SOURCEDIR=/cache/magisk/audmodlib
-  elif [ -d $AMLPATH ]; then
+  elif [ -d $AMLPATH ] || [ -d /magisk/audmodlib ]; then
     SOURCEDIR=$AMLPATH
-  elif [ -d /magisk/audmodlib ]; then
-    SOURCEDIR=/magisk/audmodlib
   fi
 
   for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
@@ -681,22 +683,20 @@ magisk_audmodlib() {
     fi
   done
 
-  unity_mod_patch
-
-  for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
-    if [ -f $CFG ] && [ ! "$(cat /cache/magisk/audmodlib$CFG | grep ' proxy {')" ]; then
-      sed -i 's/^libraries {/libraries {\n  proxy {#\n    path \/system\/lib\/soundfx\/libeffectproxy.so\n  }/g' /cache/magisk/audmodlib$CFG
-    fi
-  done
+  if [ "$MODID" != "audmodlib" ]; then
+	unity_mod_patch
+    for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
+      if [ -f $CFG ] && [ ! "$(cat /cache/magisk/audmodlib$CFG | grep ' proxy {')" ]; then
+        sed -i 's/^libraries {/libraries {\n  proxy {#\n    path \/system\/lib\/soundfx\/libeffectproxy.so\n  }/g' /cache/magisk/audmodlib$CFG
+      fi
+    done																					   
+  fi
 
   for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
     if [ -f $CFG.bak ]; then
       cp -af /cache/magisk/audmodlib$CFG.bak $AMLPATH$CFG.bak
     fi
-  done
-
-  for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
-    if [ -f $CFG ]; then
+	if [ -f $CFG ]; then
       cp -af /cache/magisk/audmodlib$CFG $AMLPATH$CFG
     fi
   done
@@ -816,22 +816,24 @@ unity_uninstall() {
   rm -f /su/su.d/$MODID.sh
   rm -f $SYS/su.d/$MODID.sh
 
-  # RESTORE CONFIGS, LIBRARIES, & EFFECTS
-  ui_print "   Restoring necessary cfg files"
-  if [ "$MAGISK" == true ]; then
-	if [ -d $AMLPATH ] || [ -d /magisk/audmodlib ]; then
+  if [ "$MODID" != "audmodlib" ]; then
+    # RESTORE CONFIGS, LIBRARIES, & EFFECTS
+    ui_print "   Restoring necessary cfg files"
+    if [ "$MAGISK" == true ]; then
+	  if [ -d $AMLPATH ] || [ -d /magisk/audmodlib ]; then
+	    source $INPUT_PATCHES_REM
+	  fi
+    else
 	  source $INPUT_PATCHES_REM
-	fi
-  else
-	source $INPUT_PATCHES_REM
-  fi
-
-  for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
-    if [ -f $CFG ] && [ "$(cat $CFG | grep ' proxy {#')" ]; then
-      # REMOVE LIBRARIES
-      sed -i '/proxy {/,/}/d' $UNITYPATCH$CFG
     fi
-  done
+
+    for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
+      if [ -f $CFG ] && [ "$(cat $CFG | grep ' proxy {#')" ]; then
+        # REMOVE LIBRARIES
+        sed -i '/proxy {/,/}/d' $UNITYPATCH$CFG
+      fi
+    done
+  fi
   
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
 	if [ "$(grep "TIMEOFEXEC=7" $INPUT_RULES$NUM.sh)" ]; then
@@ -886,7 +888,7 @@ if is_mounted /data ; then
       unity_mod_copy
 
       # Patch files
-      unity_mod_patch
+      test "$MODID" != "audmodlib" && unity_mod_patch
 
       #### COMPLETING INSTALL ####
       ui_print " "
@@ -985,7 +987,8 @@ if [ "$ACTION" == "Install" ]; then
   if [ "$SYSOVER" == true ]; then
   
 	# Patch files
-	unity_mod_patch
+    test "$MODID" != "audmodlib" && unity_mod_patch
+
 	
   else
   
@@ -995,12 +998,14 @@ if [ "$ACTION" == "Install" ]; then
     # Handle replace folders
     for TARGET in $REPLACE; do
       mktouch $MODPATH$TARGET/.replace
-	  mktouch $AMLPATH$TARGET/.replace
+	  test "$MODID" != "audmodlib" && mktouch $AMLPATH$TARGET/.replace
     done
 
     # Auto Mount
     $AUTOMOUNT && touch $MODPATH/auto_mount
-    $AUTOMOUNT && touch $AMLPATH/auto_mount
+    if [ "$MODID" != "audmodlib" ]; then
+	  $AUTOMOUNT && touch $AMLPATH/auto_mount
+	fi
 	
   fi
 
@@ -1013,9 +1018,9 @@ if [ "$ACTION" == "Install" ]; then
   if $BOOTMODE; then
     # Update info for Magisk Manager
     mktouch /magisk/$MODID/update
-    mktouch /magisk/$AMLID/update
+    test "$MODID" != "audmodlib" && mktouch /magisk/$AMLID/update
     cp -af $INSTALLER/module.prop /magisk/$MODID/module.prop
-    cp -af $INSTALLER/common/$AMLID/audmodlibmodule.prop /magisk/$AMLID/module.prop
+    test "$MODID" != "audmodlib" && cp -af $INSTALLER/common/$AMLID/audmodlibmodule.prop /magisk/$AMLID/module.prop
   fi
 
   # post-fs-data mode scripts
