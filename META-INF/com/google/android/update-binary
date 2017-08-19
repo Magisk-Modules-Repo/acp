@@ -288,7 +288,11 @@ magisk_install() {
   CP_SFFX=""
   SOURCEDIR="$SOURCEDIR"
   UNITYPATCH="/cache/magisk/audmodlib"
-  MOD_VER="$MODPATH/module.prop"
+  if $BOOTMODE; then
+    MOD_VER="/magisk/$MODID/module.prop"
+  else
+    MOD_VER="$MODPATH/module.prop"
+  fi
 }
 
 system_install() {
