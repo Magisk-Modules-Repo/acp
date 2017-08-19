@@ -322,7 +322,7 @@ app_install_logic() {
       eval APPPATH$(eval "echo $NUM")=$APPDIR/$(eval "echo \$APP$(eval "echo $NUM")")
     else
       APPTXT=" and apps for Lollipop and below"
-    eval APPPATH$(eval "echo $NUM")=$APPDIR/$(eval "echo \$APP$(eval "echo $NUM")")
+      eval APPPATH$(eval "echo $NUM")=$APPDIR/$(eval "echo \$APP$(eval "echo $NUM")")
     fi
     NUM=$((NUM+1))
   done
@@ -363,14 +363,14 @@ unity_prop_remove() {
     #AMLPROP="$MOUNTPATH/.core/props/audmodlib-props.prop"
     sed -i "s/setprop //g" $1
     sed -i "s/ /=/g" $1
-    else
-      AMLPROP="$SH/unity-props$EXT"
+  else
+    AMLPROP="$SH/unity-props$EXT"
     for AMLSCRIPT in $SYS/etc/init.d/unity-props /su/su.d/unity-props.sh $SYS/su.d/unity-props.sh; do
       if [ "$AMLPROP" != "$AMLSCRIPT" ]; then
         rm -f $AMLSCRIPT
       fi
     done
-      fi
+  fi
   if [ -f $AMLPROP ]; then
     if [ "$(cat $1)" ]; then
       NEWPROPS="$(cat $1)"
@@ -410,14 +410,14 @@ unity_prop_copy() {
     do
       PRESENT="false"
       printf '%s\n' "$OLDPROPS" | {
-     while IFS= read -r lineold
-     do
-       if [ "$linenew" == "$lineold" ]; then
-          present="true"
-       fi
-     done
+        while IFS= read -r lineold
+        do
+          if [ "$linenew" == "$lineold" ]; then
+            PRESENT="true"
+          fi
+        done
         if [ $PRESENT == "false" ]; then
-       sed -i -e "\$a$linenew" $AMLPROP
+          sed -i -e "\$a$linenew" $AMLPROP
         fi
        }
     done
@@ -427,7 +427,7 @@ unity_prop_copy() {
     fi
   fi
 }
-    
+
 unity_mod_wipe() {
   ########################################################################################
   # Wipe for unity install
@@ -481,7 +481,7 @@ unity_mod_wipe() {
       fi
     done
   fi
-  
+
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
     if [ "$(grep "TIMEOFEXEC=3" $INPUT_RULES$NUM.sh)" ]; then
       ui_print "   Running custom rules..."
@@ -526,7 +526,7 @@ unity_mod_directory() {
       done
     fi
   fi
-  
+
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
     if [ "$(grep "TIMEOFEXEC=4" $INPUT_RULES$NUM.sh)" ]; then
       ui_print "   Running custom rules..."
@@ -547,9 +547,9 @@ unity_mod_copy() {
   # INSTALL SCRIPTS
   if [ "$MAGISK" == false ]; then
     if [ "$SYSOVER" == true ]; then
-    ui_print "   Installing scripts for Magisk SU..."
+      ui_print "   Installing scripts for Magisk SU..."
     elif [ "$supersuimg" ] || [ -d /su ]; then
-        ui_print "   Installing scripts for systemless SuperSU..."
+      ui_print "   Installing scripts for systemless SuperSU..."
     elif [ -d $SYS/su ] || [ -f $SYS/xbin/daemonsu ] || [ -f $SYS/xbin/sugote ]; then
       ui_print "   Installing scripts for system SuperSU..."
     elif [ -f $SYS/xbin/su ]; then
@@ -561,13 +561,13 @@ unity_mod_copy() {
     else
       ui_print "   Installing scripts for phh's su or non root..."
     fi
-    
+
     # CREATE FILE CONTAINING LIST OF ALL INSTALLED MOD FILES
     touch $INFO
 
     # COPY MODULE.PROP FILE FOR VERSION CHECKING
     $CP_PRFX $INSTALLER/module.prop $MOD_VER$CP_SFFX
-    
+
     if [ "$SYSOVER" == false ]; then
       sys_cp_ch $INSTALLER/common/$AMLID/$AMLID-service.sh $SH/$AMLID$EXT 0700
       echo "$SH/$AMLID$EXT" >> $INFO
@@ -581,7 +581,7 @@ unity_mod_copy() {
     if [ -d $SYS/addon.d ]; then
       ui_print "   Installing addon.d backup script..."
       sys_cp_ch $INSTALLER/system/addon.d/$MODID.sh $SYS/addon.d/$MODID.sh 0644
-      else
+    else
       ui_print "   ! Addon.d not detected. Backup script not installed..."
     fi
   fi
@@ -783,7 +783,7 @@ unity_uninstall() {
         if [ "$(dirname $LINE)" == "/su/su.d" ]; then
           sys_rm_ch $LINE
         else
-        sys_rm_ch $SYS/$LINE
+          sys_rm_ch $SYS/$LINE
         fi
       done
       rm -f $INFO
@@ -801,11 +801,11 @@ unity_uninstall() {
     cat $INPUT_FILE_WIPE | while read LINE; do
       if [ "$(echo "$LINE" | cut -c-3)" == "FOL" ]; then
         if [ -e "$(eval "echo $LINE" | cut -c4-).tar" ]; then
-      tar -xf "$(eval "echo $LINE" | cut -c4-).tar" -C "$(dirname "$(eval "echo $LINE" | cut -c4-)")"
+          tar -xf "$(eval "echo $LINE" | cut -c4-).tar" -C "$(dirname "$(eval "echo $LINE" | cut -c4-)")"
         fi
       else
         if [ -e "$(eval "echo $LINE").bak" ]; then
-      mv -f "$(eval "echo $LINE").bak" "$(eval "echo $LINE")"
+          mv -f "$(eval "echo $LINE").bak" "$(eval "echo $LINE")"
         fi
       fi
     done
@@ -871,11 +871,11 @@ if is_mounted /data ; then
       ui_print "- Removing obsolete props-"
       unity_prop_remove $INPUT_PROPS_REM
       NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
-    if [ "$(grep "TIMEOFEXEC=1" $INPUT_RULES$NUM.sh)" ]; then
-      ui_print "   Running custom rules..."
-      NUM=$((NUM+1))
-    fi
-    NUM=$((NUM+1))
+        if [ "$(grep "TIMEOFEXEC=1" $INPUT_RULES$NUM.sh)" ]; then
+          ui_print "   Running custom rules..."
+          unity_prop_remove $INPUT_RULES$NUM.sh
+        fi
+        NUM=$((NUM+1))
       done
 
       # Wipe files
@@ -985,13 +985,12 @@ if [ "$ACTION" == "Install" ]; then
   unity_mod_copy
 
   if [ "$SYSOVER" == true ]; then
-  
+
     # Patch files
     test "$MODID" != "audmodlib" && unity_mod_patch
 
-    
   else
-  
+
     # Patch files
     magisk_audmodlib
 
@@ -1006,7 +1005,7 @@ if [ "$ACTION" == "Install" ]; then
     if [ "$MODID" != "audmodlib" ]; then
       $AUTOMOUNT && touch $AMLPATH/auto_mount
     fi
-    
+
   fi
 
   # prop files
