@@ -104,8 +104,8 @@ sys_cp_ch() {
 # COPY SYS FILE (BUT BACKUP OLD ONES FIRST)
 sys_cpbak_ch() {
   if [ -f "$2" ]; then
-	mv -f "$2" "$2.bak"
-	echo "$2.bak" >> $INFO
+    mv -f "$2" "$2.bak"
+    echo "$2.bak" >> $INFO
   fi
   echo "$2" >> $INFO
   cp "$1" "$2"
@@ -115,7 +115,7 @@ sys_cpbak_ch() {
 # REMOVE MOD FILE
 sys_rm_ch() {
   if [ -e "$1.bak" ]; then
-	mv -f "$1.bak" "$1"
+    mv -f "$1.bak" "$1"
   else
     rm -f "$1"
   fi
@@ -124,7 +124,7 @@ sys_rm_ch() {
 # BACKUP/REMOVE FILE
 sys_wipe_ch() {
   if [ -f "$1" ] && [ ! -e "$1.bak" ]; then
-	mv -f "$1" "$1.bak"
+    mv -f "$1" "$1.bak"
   else
     rm -f "$1"
   fi
@@ -133,7 +133,7 @@ sys_wipe_ch() {
 # BACKUP/REMOVE FOLDER
 sys_wipefol_ch() {
   if [ -d "$1" ] && [ ! -e "$1.tar" ]; then
-	tar -cf "$1.tar" "$1"
+    tar -cf "$1.tar" "$1"
   else
     rm -rf "$1"
   fi
@@ -252,12 +252,12 @@ INPUT_RULES=$INSTALLER/common/unity-customrules
 # REMOVE COMMENTS FROM USER INPUT FILES AND ADD PROPER VARIABLES
 for FIL in $INPUT_FILE $INPUT_FILE_WIPE $INPUT_PATCHES $INPUT_PATCHES_REM $INPUT_PATCHES_WIPE $INPUT_PROPS $INPUT_PROPS_REM $INPUT_VAR; do
   if [ -f $FIL ]; then
-	sed -i '1,8d' $FIL
-	sed -i 's/$SYS\/$VEN/$VEN/g' $FIL
+    sed -i '1,8d' $FIL
+    sed -i 's/$SYS\/$VEN/$VEN/g' $FIL
   else
     ui_print "   !$FIL missing!"
-	ui_print "   !Copy it back to above and try again!"
-	exit 1
+    ui_print "   !Copy it back to above and try again!"
+    exit 1
   fi
 done
 # IMPORT USER VARIABLES
@@ -265,13 +265,13 @@ source $INPUT_VAR
 # REMOVE COMMENTS FOR USER CUSTOM RULES AND ADD PROPER VARIABLES
 NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
   if [ -f $INPUT_RULES$NUM.sh ]; then
-	sed -i '1,8d' $INPUT_RULES$NUM.sh
-	sed -i 's/$SYS\/$VEN/$VEN/g' $INPUT_RULES$NUM.sh
+    sed -i '1,8d' $INPUT_RULES$NUM.sh
+    sed -i 's/$SYS\/$VEN/$VEN/g' $INPUT_RULES$NUM.sh
   else
     ui_print " "
     ui_print "   !Less customrules files than specified in uservariables file!"
-	ui_print "    !Change it to the correct number and try again!"
-	exit 1
+    ui_print "    !Change it to the correct number and try again!"
+    exit 1
   fi
   NUM=$((NUM+1))
 done
@@ -322,9 +322,9 @@ app_install_logic() {
       eval APPPATH$(eval "echo $NUM")=$APPDIR/$(eval "echo \$APP$(eval "echo $NUM")")
     else
       APPTXT=" and apps for Lollipop and below"
-	  eval APPPATH$(eval "echo $NUM")=$APPDIR/$(eval "echo \$APP$(eval "echo $NUM")")
+    eval APPPATH$(eval "echo $NUM")=$APPDIR/$(eval "echo \$APP$(eval "echo $NUM")")
     fi
-	NUM=$((NUM+1))
+    NUM=$((NUM+1))
   done
 }
 
@@ -335,16 +335,16 @@ script_install_logic() {
   # DETERMINE ROOT BOOT SCRIPT TYPE
   EXT=".sh"
   if [ "$supersuimg" ] || [ -d /su ]; then
-	  SH=/su/su.d
+    SH=/su/su.d
   elif [ -d $SYS/su ] || [ -f $SYS/xbin/daemonsu ] || [ -f $SYS/xbin/sugote ]; then
     SH=$SYS/su.d
   elif [ -f $SYS/xbin/su ]; then
-  	if [ "$(cat $SYS/xbin/su | grep SuperSU)" ]; then
-  	  SH=$SYS/su.d
-  	else
-  	  SH=$SYS/etc/init.d
+    if [ "$(cat $SYS/xbin/su | grep SuperSU)" ]; then
+      SH=$SYS/su.d
+    else
+      SH=$SYS/etc/init.d
       EXT=""
-  	fi
+    fi
   else
     SH=$SYS/etc/init.d
     EXT=""
@@ -356,30 +356,30 @@ unity_prop_remove() {
   # Logic for unity prop removals
   ########################################################################################
   if [ "$MAGISK" == true ] || [ "$SYSOVER" == true ]; then
-		rm -f $SYS/etc/init.d/unity-props
-		rm -f /su/su.d/unity-props.sh
-		rm -f $SYS/su.d/unity-props.sh
-		AMLPROP="$AMLPATH/system.prop"
-		#AMLPROP="$MOUNTPATH/.core/props/audmodlib-props.prop"
-		sed -i "s/setprop //g" $1
-		sed -i "s/ /=/g" $1
-	else
-    	AMLPROP="$SH/unity-props$EXT"
-		for AMLSCRIPT in $SYS/etc/init.d/unity-props /su/su.d/unity-props.sh $SYS/su.d/unity-props.sh; do
-		  if [ "$AMLPROP" != "$AMLSCRIPT" ]; then
-				rm -f $AMLSCRIPT
-		  fi
-		done
-	  fi
+    rm -f $SYS/etc/init.d/unity-props
+    rm -f /su/su.d/unity-props.sh
+    rm -f $SYS/su.d/unity-props.sh
+    AMLPROP="$AMLPATH/system.prop"
+    #AMLPROP="$MOUNTPATH/.core/props/audmodlib-props.prop"
+    sed -i "s/setprop //g" $1
+    sed -i "s/ /=/g" $1
+    else
+      AMLPROP="$SH/unity-props$EXT"
+    for AMLSCRIPT in $SYS/etc/init.d/unity-props /su/su.d/unity-props.sh $SYS/su.d/unity-props.sh; do
+      if [ "$AMLPROP" != "$AMLSCRIPT" ]; then
+        rm -f $AMLSCRIPT
+      fi
+    done
+      fi
   if [ -f $AMLPROP ]; then
     if [ "$(cat $1)" ]; then
-  	  NEWPROPS="$(cat $1)"
-  	  printf '%s\n' "$NEWPROPS" | while IFS= read -r linenew
-  	  do
-  	    if [ "$(cat $AMLPROP | grep "$linenew")" ]; then
-  	  	    sed -i "/$linenew/d" $AMLPROP
+      NEWPROPS="$(cat $1)"
+      printf '%s\n' "$NEWPROPS" | while IFS= read -r linenew
+      do
+        if [ "$(cat $AMLPROP | grep "$linenew")" ]; then
+          sed -i "/$linenew/d" $AMLPROP
         fi
-  	  done
+      done
     fi
   fi
 }
@@ -389,45 +389,45 @@ unity_prop_copy() {
   # Logic for unity prop install
   ########################################################################################
   if [ "$MAGISK" == true ] || [ "$SYSOVER" == true ]; then
-	AMLPROP="$AMLPATH/system.prop"
-  	#AMLPROP="$MOUNTPATH/.core/props/audmodlib-props.prop"
-  	NEWDIR="$AMLPATH"
-	#NEWDIR="$MOUNTPATH/.core/props"
-  	sed -i "s/setprop //g" $1
-  	sed -i "s/ /=/g" $1
+    AMLPROP="$AMLPATH/system.prop"
+    #AMLPROP="$MOUNTPATH/.core/props/audmodlib-props.prop"
+    NEWDIR="$AMLPATH"
+    #NEWDIR="$MOUNTPATH/.core/props"
+    sed -i "s/setprop //g" $1
+    sed -i "s/ /=/g" $1
   else
     AMLPROP="$SH/unity-props$EXT"
     NEWDIR="$SH"
   fi
   if [ "$(sed -n '4,$p' $1)" ]; then
-  	if [ ! -f $AMLPROP ]; then
-  		mkdir -p $NEWDIR
-  		echo "#!/system/bin/sh" > $AMLPROP
-  	fi
+    if [ ! -f $AMLPROP ]; then
+      mkdir -p $NEWDIR
+      echo "#!/system/bin/sh" > $AMLPROP
+    fi
     OLDPROPS="$(cat $AMLPROP)"
     NEWPROPS="$(cat $1)"
     printf '%s\n' "$NEWPROPS" | while IFS= read -r linenew
     do
-  	  PRESENT="false"
-  	  printf '%s\n' "$OLDPROPS" | {
-    	  while IFS= read -r lineold
-    	  do
-    	    if [ "$linenew" == "$lineold" ]; then
-    		  PRESENT="true"
-    	    fi
-    	  done
-    	  if [ $PRESENT == "false" ]; then
-    	    sed -i -e "\$a$linenew" $AMLPROP
-    	  fi
+      PRESENT="false"
+      printf '%s\n' "$OLDPROPS" | {
+     while IFS= read -r lineold
+     do
+       if [ "$linenew" == "$lineold" ]; then
+          present="true"
+       fi
+     done
+        if [ $PRESENT == "false" ]; then
+       sed -i -e "\$a$linenew" $AMLPROP
+        fi
        }
     done
-  	if [ "$MAGISK" == false ]; then
-  	  chmod 0700 $AMLPROP
-  	  restorecon $AMLPROP
-  	fi
+    if [ "$MAGISK" == false ]; then
+      chmod 0700 $AMLPROP
+      restorecon $AMLPROP
+    fi
   fi
 }
-
+    
 unity_mod_wipe() {
   ########################################################################################
   # Wipe for unity install
@@ -439,21 +439,21 @@ unity_mod_wipe() {
   # REMOVE FILES
   ui_print "   Removing files..."
   if [ "$MAGISK" == "false" ]; then
-	rm -f $SYS/etc/init.d/$MODID
-	rm -f $SYS/etc/init.d/$AMLID
-	rm -f $SYS/addon.d/$MODID.sh
-	rm -f /su/su.d/$MODID.sh
-	rm -f /su/su.d/$AMLID.sh
-	rm -f $SYS/su.d/$MODID.sh
-	rm -f $SYS/su.d/$AMLID.sh
-	source $INPUT_PATCHES_WIPE
+    rm -f $SYS/etc/init.d/$MODID
+    rm -f $SYS/etc/init.d/$AMLID
+    rm -f $SYS/addon.d/$MODID.sh
+    rm -f /su/su.d/$MODID.sh
+    rm -f /su/su.d/$AMLID.sh
+    rm -f $SYS/su.d/$MODID.sh
+    rm -f $SYS/su.d/$AMLID.sh
+    source $INPUT_PATCHES_WIPE
   fi
   cat $INPUT_FILE_WIPE | while read LINE; do
-	if [ "$(echo "$LINE" | cut -c-3)" == "FOL" ] && [ -d "$(echo "$LINE" | cut -c-3)" ]; then
-	  $RMFOL_PRFX $(eval "echo $LINE" | cut -c4-)$RMFOL_SFFX
-	else
-	  test -f "$(eval "echo $LINE")" && $RM_PRFX $(eval "echo $LINE")
-	fi
+    if [ "$(echo "$LINE" | cut -c-3)" == "FOL" ] && [ -d "$(echo "$LINE" | cut -c-3)" ]; then
+      $RMFOL_PRFX $(eval "echo $LINE" | cut -c4-)$RMFOL_SFFX
+    else
+      test -f "$(eval "echo $LINE")" && $RM_PRFX $(eval "echo $LINE")
+    fi
   done
 
   if [ "$MAGISK" == false ] && [ "$MODID" != "audmodlib" ]; then
@@ -484,10 +484,10 @@ unity_mod_wipe() {
   
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
     if [ "$(grep "TIMEOFEXEC=3" $INPUT_RULES$NUM.sh)" ]; then
-	  ui_print "   Running custom rules..."
-	  source $INPUT_RULES$NUM.sh
-	fi
-	NUM=$((NUM+1))
+      ui_print "   Running custom rules..."
+      source $INPUT_RULES$NUM.sh
+    fi
+    NUM=$((NUM+1))
   done
 }
 
@@ -509,8 +509,8 @@ unity_mod_directory() {
   test "$SYSOVER" == "true" && mkdir -p $AMLPATH
 
   cat $INPUT_FILE | while read LINE; do
-	LINE=$(echo $LINE | sed 's/.* //')
-	$MK_PRFX $(dirname "$(eval "echo $LINE")")$MK_SFFX
+    LINE=$(echo $LINE | sed 's/.* //')
+    $MK_PRFX $(dirname "$(eval "echo $LINE")")$MK_SFFX
   done
 
   if [ "$MAGISK" == false ]; then
@@ -519,20 +519,20 @@ unity_mod_directory() {
       sys_mk_ch $SYS/addon.d 0755
     fi
     if [ "$MODID" != "audmodlib" ]; then
-	  for CFG in $CONFIG_FILE $V_CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_DTP $MIX_PATH_i2s $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
+      for CFG in $CONFIG_FILE $V_CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_DTP $MIX_PATH_i2s $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
         if [ -f $CFG ]; then
           sys_mk_ch ${CFG%/*} 0755
         fi
       done
-	fi
+    fi
   fi
   
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
-	if [ "$(grep "TIMEOFEXEC=4" $INPUT_RULES$NUM.sh)" ]; then
-	  ui_print "   Running custom rules..."
-	  source $INPUT_RULES$NUM.sh
-	fi
-	NUM=$((NUM+1))
+    if [ "$(grep "TIMEOFEXEC=4" $INPUT_RULES$NUM.sh)" ]; then
+      ui_print "   Running custom rules..."
+      source $INPUT_RULES$NUM.sh
+    fi
+    NUM=$((NUM+1))
   done
 }
 
@@ -547,72 +547,72 @@ unity_mod_copy() {
   # INSTALL SCRIPTS
   if [ "$MAGISK" == false ]; then
     if [ "$SYSOVER" == true ]; then
-		ui_print "   Installing scripts for Magisk SU..."
-	elif [ "$supersuimg" ] || [ -d /su ]; then
-	    ui_print "   Installing scripts for systemless SuperSU..."
-  	elif [ -d $SYS/su ] || [ -f $SYS/xbin/daemonsu ] || [ -f $SYS/xbin/sugote ]; then
-  	  ui_print "   Installing scripts for system SuperSU..."
-  	elif [ -f $SYS/xbin/su ]; then
-  	  if [ "$(cat $SYS/xbin/su | grep SuperSU)" ]; then
-  	    ui_print "   Installing scripts for system SuperSU..."
-  	  else
-  	    ui_print "   Installing scripts for LineageOS SU..."
-  	  fi
-	else
+    ui_print "   Installing scripts for Magisk SU..."
+    elif [ "$supersuimg" ] || [ -d /su ]; then
+        ui_print "   Installing scripts for systemless SuperSU..."
+    elif [ -d $SYS/su ] || [ -f $SYS/xbin/daemonsu ] || [ -f $SYS/xbin/sugote ]; then
+      ui_print "   Installing scripts for system SuperSU..."
+    elif [ -f $SYS/xbin/su ]; then
+      if [ "$(cat $SYS/xbin/su | grep SuperSU)" ]; then
+        ui_print "   Installing scripts for system SuperSU..."
+      else
+        ui_print "   Installing scripts for LineageOS SU..."
+      fi
+    else
       ui_print "   Installing scripts for phh's su or non root..."
     fi
-	
-	# CREATE FILE CONTAINING LIST OF ALL INSTALLED MOD FILES
-  	touch $INFO
+    
+    # CREATE FILE CONTAINING LIST OF ALL INSTALLED MOD FILES
+    touch $INFO
 
     # COPY MODULE.PROP FILE FOR VERSION CHECKING
     $CP_PRFX $INSTALLER/module.prop $MOD_VER$CP_SFFX
-	
-	if [ "$SYSOVER" == false ]; then
-	  sys_cp_ch $INSTALLER/common/$AMLID/$AMLID-service.sh $SH/$AMLID$EXT 0700
-	  echo "$SH/$AMLID$EXT" >> $INFO
+    
+    if [ "$SYSOVER" == false ]; then
+      sys_cp_ch $INSTALLER/common/$AMLID/$AMLID-service.sh $SH/$AMLID$EXT 0700
+      echo "$SH/$AMLID$EXT" >> $INFO
       echo "$SH/unity-props$EXT" >> $INFO
-	else
-	  mkdir -p $MOUNTPATH/.core/service.d
-	  sys_cp_ch $INSTALLER/common/$AMLID/$AMLID-service.sh $MOUNTPATH/.core/service.d/$AMLID.sh 0755
-	fi
+    else
+      mkdir -p $MOUNTPATH/.core/service.d
+      sys_cp_ch $INSTALLER/common/$AMLID/$AMLID-service.sh $MOUNTPATH/.core/service.d/$AMLID.sh 0755
+    fi
 
     # INSTALL ROM BACKUP SCRIPT
     if [ -d $SYS/addon.d ]; then
       ui_print "   Installing addon.d backup script..."
       sys_cp_ch $INSTALLER/system/addon.d/$MODID.sh $SYS/addon.d/$MODID.sh 0644
-	  else
+      else
       ui_print "   ! Addon.d not detected. Backup script not installed..."
     fi
   fi
 
   # INSTALL APPS & LIBRARIES
   if [ "$APPINSTALL" == "true" ]; then
-	ui_print "   Installing libraries$APPTXT..."
+    ui_print "   Installing libraries$APPTXT..."
   else
-	ui_print "   Installing libraries..."
+    ui_print "   Installing libraries..."
   fi
   cat $INPUT_FILE | while read LINE; do
-	$CP_PRFX $INSTALLER$(eval "echo $LINE")$CP_SFFX
+    $CP_PRFX $INSTALLER$(eval "echo $LINE")$CP_SFFX
   done
 
   # ADD BUILDPROPS
   ui_print "   Adding build props..."
   unity_prop_copy $INPUT_PROPS
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
-	if [ "$(grep "TIMEOFEXEC=2" $INPUT_RULES$NUM.sh)" ]; then
-	  ui_print "   Running custom rules..."
-	  unity_prop_copy $INPUT_RULES$NUM.sh
-	fi
-	NUM=$((NUM+1))
+    if [ "$(grep "TIMEOFEXEC=2" $INPUT_RULES$NUM.sh)" ]; then
+      ui_print "   Running custom rules..."
+      unity_prop_copy $INPUT_RULES$NUM.sh
+    fi
+    NUM=$((NUM+1))
   done
 
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
-	if [ "$(grep "TIMEOFEXEC=5" $INPUT_RULES$NUM.sh)" ]; then
-	  ui_print "   Running custom rules..."
-	  source $INPUT_RULES$NUM.sh
-	fi
-	NUM=$((NUM+1))
+    if [ "$(grep "TIMEOFEXEC=5" $INPUT_RULES$NUM.sh)" ]; then
+      ui_print "   Running custom rules..."
+      source $INPUT_RULES$NUM.sh
+    fi
+    NUM=$((NUM+1))
   done
   
   if [ "$MAGISK" == false ]; then
@@ -655,12 +655,12 @@ magisk_audmodlib() {
 
   for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
     if [ -f $CFG ]; then
-	  if [ ! -f $CFG.bak ]; then
+      if [ ! -f $CFG.bak ]; then
         cp -af $CFG /cache/magisk/audmodlib$CFG.bak
       else
         cp -af $CFG.bak /cache/magisk/audmodlib$CFG.bak
       fi
-	fi
+    fi
   done
 
   for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
@@ -684,19 +684,19 @@ magisk_audmodlib() {
   done
 
   if [ "$MODID" != "audmodlib" ]; then
-	unity_mod_patch
+    unity_mod_patch
     for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
       if [ -f $CFG ] && [ ! "$(cat /cache/magisk/audmodlib$CFG | grep ' proxy {')" ]; then
         sed -i 's/^libraries {/libraries {\n  proxy {#\n    path \/system\/lib\/soundfx\/libeffectproxy.so\n  }/g' /cache/magisk/audmodlib$CFG
       fi
-    done																					   
+    done
   fi
 
   for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
     if [ -f $CFG.bak ]; then
       cp -af /cache/magisk/audmodlib$CFG.bak $AMLPATH$CFG.bak
     fi
-	if [ -f $CFG ]; then
+    if [ -f $CFG ]; then
       cp -af /cache/magisk/audmodlib$CFG $AMLPATH$CFG
     fi
   done
@@ -743,11 +743,11 @@ unity_mod_patch() {
   fi
   
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
-	if [ "$(grep "TIMEOFEXEC=6" $INPUT_RULES$NUM.sh)" ]; then
-	  ui_print "   Running custom rules..."
-	  source $INPUT_RULES$NUM.sh
-	fi
-	NUM=$((NUM+1))
+    if [ "$(grep "TIMEOFEXEC=6" $INPUT_RULES$NUM.sh)" ]; then
+      ui_print "   Running custom rules..."
+      source $INPUT_RULES$NUM.sh
+    fi
+    NUM=$((NUM+1))
   done
 }
 
@@ -776,38 +776,38 @@ unity_uninstall() {
   elif [ "$MAGISK" == false ]; then
     if [ -f $INFO ]; then
       ui_print "   System install detected, removing files..."
-	  if [ "$SYSOVER" == false ]; then 
+      if [ "$SYSOVER" == false ]; then 
         sed -i '1,2d' $INFO
-	  fi
+      fi
       cat $INFO | while read LINE; do
         if [ "$(dirname $LINE)" == "/su/su.d" ]; then
-         	sys_rm_ch $LINE
+          sys_rm_ch $LINE
         else
-    		sys_rm_ch $SYS/$LINE
+        sys_rm_ch $SYS/$LINE
         fi
       done
       rm -f $INFO
       for DIR in $SYS/app/$APP1 $SYS/priv-app/$APP1; do
-    	  if [ -d "$DIR" ]; then
-      		if [ "$(ls -A "$DIR")" == "" ]; then
-      		  rm -rf $DIR
-      		fi
-    	  fi
-    	done		
+        if [ -d "$DIR" ]; then
+          if [ "$(ls -A "$DIR")" == "" ]; then
+            rm -rf $DIR
+          fi
+        fi
+      done
     else
       ui_print "   ! Mod not detected. Removing scripts..."
     fi
-	# RESTORE WIPED FILES/FOLDERS
-	cat $INPUT_FILE_WIPE | while read LINE; do
-	  if [ "$(echo "$LINE" | cut -c-3)" == "FOL" ]; then
-	    if [ -e "$(eval "echo $LINE" | cut -c4-).tar" ]; then
-		  tar -xf "$(eval "echo $LINE" | cut -c4-).tar" -C "$(dirname "$(eval "echo $LINE" | cut -c4-)")"
-	    fi
-	  else
-	    if [ -e "$(eval "echo $LINE").bak" ]; then
-		  mv -f "$(eval "echo $LINE").bak" "$(eval "echo $LINE")"
-	    fi
-	  fi
+    # RESTORE WIPED FILES/FOLDERS
+    cat $INPUT_FILE_WIPE | while read LINE; do
+      if [ "$(echo "$LINE" | cut -c-3)" == "FOL" ]; then
+        if [ -e "$(eval "echo $LINE" | cut -c4-).tar" ]; then
+      tar -xf "$(eval "echo $LINE" | cut -c4-).tar" -C "$(dirname "$(eval "echo $LINE" | cut -c4-)")"
+        fi
+      else
+        if [ -e "$(eval "echo $LINE").bak" ]; then
+      mv -f "$(eval "echo $LINE").bak" "$(eval "echo $LINE")"
+        fi
+      fi
     done
   fi
 
@@ -820,11 +820,11 @@ unity_uninstall() {
     # RESTORE CONFIGS, LIBRARIES, & EFFECTS
     ui_print "   Restoring necessary cfg files"
     if [ "$MAGISK" == true ]; then
-	  if [ -d $AMLPATH ] || [ -d /magisk/audmodlib ]; then
-	    source $INPUT_PATCHES_REM
-	  fi
+      if [ -d $AMLPATH ] || [ -d /magisk/audmodlib ]; then
+        source $INPUT_PATCHES_REM
+      fi
     else
-	  source $INPUT_PATCHES_REM
+      source $INPUT_PATCHES_REM
     fi
 
     for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
@@ -836,11 +836,11 @@ unity_uninstall() {
   fi
   
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
-	if [ "$(grep "TIMEOFEXEC=7" $INPUT_RULES$NUM.sh)" ]; then
-	  ui_print "   Running custom rules..."
-	  source $INPUT_RULES$NUM.sh
-	fi
-	NUM=$((NUM+1))
+    if [ "$(grep "TIMEOFEXEC=7" $INPUT_RULES$NUM.sh)" ]; then
+      ui_print "   Running custom rules..."
+      source $INPUT_RULES$NUM.sh
+    fi
+    NUM=$((NUM+1))
   done
 }
 
@@ -856,27 +856,27 @@ if is_mounted /data ; then
     # Prepare (Un)Install
     system_install
     script_install_logic
-	test "$APPINSTALL" == "true" && app_install_logic
+    test "$APPINSTALL" == "true" && app_install_logic
 
     # Determine if mod is already installed. If same version is installed, uninstall
     mod_exist
 
-	if [ "$ACTION" == "Install" ]; then
+    if [ "$ACTION" == "Install" ]; then
       ui_print " "
       ui_print "   ! Magisk is not installed!"
       ui_print "    ! Installing on system!"
 
       # Remove props
-	  ui_print " "
+      ui_print " "
       ui_print "- Removing obsolete props-"
       unity_prop_remove $INPUT_PROPS_REM
-	  NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
-		if [ "$(grep "TIMEOFEXEC=1" $INPUT_RULES$NUM.sh)" ]; then
-		  ui_print "   Running custom rules..."
-		  unity_prop_remove $INPUT_RULES$NUM.sh
-		fi
-		NUM=$((NUM+1))
-	  done
+      NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
+    if [ "$(grep "TIMEOFEXEC=1" $INPUT_RULES$NUM.sh)" ]; then
+      ui_print "   Running custom rules..."
+      NUM=$((NUM+1))
+    fi
+    NUM=$((NUM+1))
+      done
 
       # Wipe files
       unity_mod_wipe
@@ -968,11 +968,11 @@ if [ "$ACTION" == "Install" ]; then
   # Remove props
   unity_prop_remove $INPUT_PROPS_REM
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
-	if [ "$(grep "TIMEOFEXEC=1" $INPUT_RULES$NUM.sh)" ]; then
-	  ui_print "   Running custom rules..."
-	  unity_prop_remove $INPUT_RULES$NUM.sh
-	fi
-	NUM=$((NUM+1))
+    if [ "$(grep "TIMEOFEXEC=1" $INPUT_RULES$NUM.sh)" ]; then
+      ui_print "   Running custom rules..."
+      unity_prop_remove $INPUT_RULES$NUM.sh
+    fi
+    NUM=$((NUM+1))
   done
 
   # Wipe files
@@ -986,10 +986,10 @@ if [ "$ACTION" == "Install" ]; then
 
   if [ "$SYSOVER" == true ]; then
   
-	# Patch files
+    # Patch files
     test "$MODID" != "audmodlib" && unity_mod_patch
 
-	
+    
   else
   
     # Patch files
@@ -998,15 +998,15 @@ if [ "$ACTION" == "Install" ]; then
     # Handle replace folders
     for TARGET in $REPLACE; do
       mktouch $MODPATH$TARGET/.replace
-	  test "$MODID" != "audmodlib" && mktouch $AMLPATH$TARGET/.replace
+      test "$MODID" != "audmodlib" && mktouch $AMLPATH$TARGET/.replace
     done
 
     # Auto Mount
     $AUTOMOUNT && touch $MODPATH/auto_mount
     if [ "$MODID" != "audmodlib" ]; then
-	  $AUTOMOUNT && touch $AMLPATH/auto_mount
-	fi
-	
+      $AUTOMOUNT && touch $AMLPATH/auto_mount
+    fi
+    
   fi
 
   # prop files
