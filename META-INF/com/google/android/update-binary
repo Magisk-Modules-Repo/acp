@@ -47,7 +47,7 @@ case $(basename $ZIP) in
   *system*|*System*|*SYSTEM*) SYSOVER=true;;
   *) SYSOVER=false;;
 esac;
-											
+
 # Mount /data and /cache to access MAGISKBIN
 mount /data 2>/dev/null
 mount /cache 2>/dev/null
@@ -62,7 +62,7 @@ mkdir -p $INSTALLER
 unzip -o "$ZIP" module.prop config.sh 'common/*' -d $INSTALLER 2>/dev/null
 
 # Load utility fuctions
-. $INSTALLER/common/util_functions.sh
+. $INSTALLER/common/audmodlib/util_functions.sh
 get_outfd
 
 if is_mounted /data; then
@@ -121,6 +121,24 @@ sys_rm_ch() {
   fi
 }
 
+# BACKUP/REMOVE FILE
+sys_wipe_ch() {
+  if [ -f "$1" ] && [ ! -e "$1.bak" ]; then
+	mv -f "$1" "$1.bak"
+  else
+    rm -f "$1"
+  fi
+}
+
+# BACKUP/REMOVE FOLDER
+sys_wipefol_ch() {
+  if [ -d "$1" ] && [ ! -e "$1.tar" ]; then
+	tar -cf "$1.tar" "$1"
+  else
+    rm -rf "$1"
+  fi
+}
+
 ##########################################################################################
 # Prepare
 ##########################################################################################
@@ -130,7 +148,7 @@ sys_rm_ch() {
 . $INSTALLER/config.sh
 
 MODPATH=$MOUNTPATH/$MODID
-AUDMODLIBPATH=$MOUNTPATH/$AUDMODLIBID
+AMLPATH=$MOUNTPATH/$AMLID
 
 # Print mod name
 print_modname
@@ -220,11 +238,51 @@ if [ -d $SYS/addon.d ]; then
 else
   INFO=$SYS/etc/$MODID-files
 fi
+# USER INPUT FILES
+INPUT_FILE=$INSTALLER/common/unity-files.sh
+INPUT_FILE_WIPE=$INSTALLER/common/unity-files-wipe.sh
+INPUT_PATCHES=$INSTALLER/common/unity-patches.sh
+INPUT_PATCHES_REM=$INSTALLER/common/unity-patches-remove.sh
+INPUT_PATCHES_WIPE=$INSTALLER/common/unity-patches-wipe.sh
+INPUT_PROPS=$INSTALLER/common/unity-props.prop
+INPUT_PROPS_REM=$INSTALLER/common/unity-props-remove.prop
+INPUT_VAR=$INSTALLER/common/unity-uservariables.sh
+INPUT_RULES=$INSTALLER/common/unity-customrules
+
+# REMOVE COMMENTS FROM USER INPUT FILES AND ADD PROPER VARIABLES
+for FIL in $INPUT_FILE $INPUT_FILE_WIPE $INPUT_PATCHES $INPUT_PATCHES_REM $INPUT_PATCHES_WIPE $INPUT_PROPS $INPUT_PROPS_REM $INPUT_VAR; do
+  if [ -f $FIL ]; then
+	sed -i '1,8d' $FIL
+	sed -i 's/$SYS\/$VEN/$VEN/g' $FIL
+  else
+    ui_print "   !$FIL missing!"
+	ui_print "   !Copy it back to above and try again!"
+	exit 1
+  fi
+done
+# IMPORT USER VARIABLES
+source $INPUT_VAR
+# REMOVE COMMENTS FOR USER CUSTOM RULES AND ADD PROPER VARIABLES
+NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
+  if [ -f $INPUT_RULES$NUM.sh ]; then
+	sed -i '1,8d' $INPUT_RULES$NUM.sh
+	sed -i 's/$SYS\/$VEN/$VEN/g' $INPUT_RULES$NUM.sh
+  else
+    ui_print " "
+    ui_print "   !Less customrules files than specified in uservariables file!"
+	ui_print "    !Change it to the correct number and try again!"
+	exit 1
+  fi
+  NUM=$((NUM+1))
+done
 
 magisk_install() {
   MAGISK=true
   MK_PRFX="mkdir -p"
   CP_PRFX="cp -af"
+  RM_PRFX=mktouch
+  RMFOL_PRFX=mktouch
+  RMFOL_SFFX=/.replace
   UNITY="$MODPATH"
   MK_SFFX=""
   CP_SFFX=""
@@ -237,6 +295,9 @@ system_install() {
   MAGISK=false
   MK_PRFX="sys_mk_ch"
   CP_PRFX="sys_cpbak_ch"
+  RM_PRFX="sys_wipe_ch"
+  RMFOL_PRFX="sys_wipefol_ch"
+  RMFOL_SFFX=""
   UNITY=""
   MK_SFFX=" 0755"
   CP_SFFX=" 0644"
@@ -245,38 +306,32 @@ system_install() {
   MOD_VER="$SYS/etc/$MODID-module.prop"
 }
 
-##########################################################################################
-#
-# Instructions:
-#
-# 1. This is the unity installer for both Magisk and System install, so be sure to
-#    follow the template provided for "app_install_logic", "unity_mod_wipe",
-#    & "unity_mod_<xxxx>"
-# 2. magisk_audmodlib and files with the audmodlib prefix as such need to remain
-#    untouched unless an update has occured, however use unity_mod_patch to remove
-#    and then add the lines corresponding to your mod
-# 3. The exception to this are the audmodlib-prop files. Put any build props you want to
-#    add/remove into the corresponding file according to the instructions in it
-# 4. If applicable, make "APP1", etc. to be the same name as your .apk/app folder
-#    in system/app/ (i.e. APP1=Ax, APP2=ViPER4Android, APP3=AM3DZirene and so on)
-# 5. common/$MODID.sh, system/addon.d/$MODID.sh & system/su.d/$MODID.sh app specific
-#    scripts will be named the same as your MODID in config.sh (i.e. MODID=v4afx so
-#    common/$MODID.sh=v4afx.sh)
-# 6. Edit common/$MODID.sh to remove or restore the specific audio_effects or
-#    audio_policy files that were added in the unity_mod_patch portion of the installer
-# 7. Add any libraries/effects to remove to the unity_uninstaller
-# 8. You can obviously use your mod specific system.prop or post-fs-data.sh as part of
-#    the mod, but make sure not edit the designated audmodlib specific files
-# 9. DO NOT delete any of the credits for @ahrion or @topjohnwu mentioned in this script
-#
-##########################################################################################
+app_install_logic() {
+  ########################################################################################
+  # Logic for correct application installation
+  ########################################################################################
+  if [ -d $SYS/priv-app ]; then
+    APPDIR=priv-app
+  else
+    APPDIR=app
+  fi
+
+  NUM=1; while [ $NUM -le $NUMOFAPPS ]; do
+    if [ "$API" -ge "21" ]; then
+      APPTXT=" and apps for Lollipop and above"
+      eval APPPATH$(eval "echo $NUM")=$APPDIR/$(eval "echo \$APP$(eval "echo $NUM")")
+    else
+      APPTXT=" and apps for Lollipop and below"
+	  eval APPPATH$(eval "echo $NUM")=$APPDIR/$(eval "echo \$APP$(eval "echo $NUM")")
+    fi
+	NUM=$((NUM+1))
+  done
+}
 
 script_install_logic() {
   ########################################################################################
   # Logic for correct system script installation
   ########################################################################################
-
-  ########## v DO NOT REMOVE v ##########
   # DETERMINE ROOT BOOT SCRIPT TYPE
   EXT=".sh"
   if [ "$supersuimg" ] || [ -d /su ]; then
@@ -294,34 +349,31 @@ script_install_logic() {
     SH=$SYS/etc/init.d
     EXT=""
   fi
-  ########## ^ DO NOT REMOVE ^ ##########
 }
 
-unity_prop_removal() {
+unity_prop_remove() {
   ########################################################################################
   # Logic for unity prop removals
   ########################################################################################
-
-  ########## v DO NOT REMOVE v ##########
   if [ "$MAGISK" == true ] || [ "$SYSOVER" == true ]; then
-		rm -f $SYS/etc/init.d/$AUDMODLIBID-props
-		rm -f /su/su.d/$AUDMODLIBID-props.sh
-		rm -f $SYS/su.d/$AUDMODLIBID-props.sh
-		AMLPROP="$AUDMODLIBPATH/system.prop"
+		rm -f $SYS/etc/init.d/unity-props
+		rm -f /su/su.d/unity-props.sh
+		rm -f $SYS/su.d/unity-props.sh
+		AMLPROP="$AMLPATH/system.prop"
 		#AMLPROP="$MOUNTPATH/.core/props/audmodlib-props.prop"
 		sed -i "s/setprop //g" $1
 		sed -i "s/ /=/g" $1
 	else
-    	AMLPROP="$SH/$AUDMODLIBID-props$EXT"
-		for AMLSCRIPT in $SYS/etc/init.d/$AUDMODLIBID-props /su/su.d/$AUDMODLIBID-props.sh $SYS/su.d/$AUDMODLIBID-props.sh; do
+    	AMLPROP="$SH/unity-props$EXT"
+		for AMLSCRIPT in $SYS/etc/init.d/unity-props /su/su.d/unity-props.sh $SYS/su.d/unity-props.sh; do
 		  if [ "$AMLPROP" != "$AMLSCRIPT" ]; then
 				rm -f $AMLSCRIPT
 		  fi
 		done
 	  fi
   if [ -f $AMLPROP ]; then
-    if [ "$(sed -n '4,$p' $1)" ]; then
-  	  NEWPROPS="$(sed -n '4,$ p' $1)"
+    if [ "$(cat $1)" ]; then
+  	  NEWPROPS="$(cat $1)"
   	  printf '%s\n' "$NEWPROPS" | while IFS= read -r linenew
   	  do
   	    if [ "$(cat $AMLPROP | grep "$linenew")" ]; then
@@ -330,24 +382,21 @@ unity_prop_removal() {
   	  done
     fi
   fi
-  ########## ^ DO NOT REMOVE ^ ##########
 }
 
 unity_prop_copy() {
   ########################################################################################
   # Logic for unity prop install
   ########################################################################################
-
-  ########## v DO NOT REMOVE v ##########
   if [ "$MAGISK" == true ] || [ "$SYSOVER" == true ]; then
-	AMLPROP="$AUDMODLIBPATH/system.prop"
+	AMLPROP="$AMLPATH/system.prop"
   	#AMLPROP="$MOUNTPATH/.core/props/audmodlib-props.prop"
-  	NEWDIR="$AUDMODLIBPATH"
+  	NEWDIR="$AMLPATH"
 	#NEWDIR="$MOUNTPATH/.core/props"
   	sed -i "s/setprop //g" $1
   	sed -i "s/ /=/g" $1
   else
-    AMLPROP="$SH/$AUDMODLIBID-props$EXT"
+    AMLPROP="$SH/unity-props$EXT"
     NEWDIR="$SH"
   fi
   if [ "$(sed -n '4,$p' $1)" ]; then
@@ -355,8 +404,8 @@ unity_prop_copy() {
   		mkdir -p $NEWDIR
   		echo "#!/system/bin/sh" > $AMLPROP
   	fi
-    OLDPROPS="$(sed -n '2,$ p' $AMLPROP)"
-    NEWPROPS="$(sed -n '4,$ p' $1)"
+    OLDPROPS="$(cat $AMLPROP)"
+    NEWPROPS="$(cat $1)"
     printf '%s\n' "$NEWPROPS" | while IFS= read -r linenew
     do
   	  PRESENT="false"
@@ -377,56 +426,75 @@ unity_prop_copy() {
   	  restorecon $AMLPROP
   	fi
   fi
-  ########## ^ DO NOT REMOVE ^ ##########
 }
 
 unity_mod_wipe() {
   ########################################################################################
-  # Wipe for unity un(install)
+  # Wipe for unity install
   ########################################################################################
-
-  ########## v DO NOT REMOVE v ##########
   #### CLEANING UP ####
   ui_print " "
   ui_print "- Cleaning up previous installations -"
-  ########## ^ DO NOT REMOVE ^ ##########
-
-  #### v INSERT YOUR FILE REMOVALS v ####
+  
   # REMOVE FILES
   ui_print "   Removing files..."
-  rm -f $SYS/addon.d/$MODID.sh
-  rm -f $SYS/etc/init.d/$MODID
-  rm -f /su/su.d/$MODID.sh
-  rm -f $SYS/su.d/$MODID.sh
-  #### ^ INSERT YOUR FILE REMOVALS ^ ####
+  if [ "$MAGISK" == "false" ]; then
+	rm -f $SYS/etc/init.d/$MODID
+	rm -f $SYS/etc/init.d/$AMLID
+	rm -f $SYS/addon.d/$MODID.sh
+	rm -f /su/su.d/$MODID.sh
+	rm -f /su/su.d/$AMLID.sh
+	rm -f $SYS/su.d/$MODID.sh
+	rm -f $SYS/su.d/$AMLID.sh
+	source $INPUT_PATCHES_WIPE
+  fi
+  cat $INPUT_FILE_WIPE | while read LINE; do
+	if [ "$(echo "$LINE" | cut -c-3)" == "FOL" ] && [ -d "$(echo "$LINE" | cut -c-3)" ]; then
+	  $RMFOL_PRFX $(eval "echo $LINE" | cut -c4-)$RMFOL_SFFX
+	else
+	  test -f "$(eval "echo $LINE")" && $RM_PRFX $(eval "echo $LINE")
+	fi
+  done
 
-  #### v INSERT YOUR RESTORE AND BACKUP FUNCTIONS v ####
   if [ "$MAGISK" == false ]; then
-    # RESTORE BACKED UP CONFIGS
-    ui_print "   Restoring backed up audio_policy files..."
-    for RESTORE in $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL; do
-      if [ -f $RESTORE.bak ]; then
-        cp -f $RESTORE.bak $RESTORE
+    # REMOVE LIBRARIES & EFFECTS
+    ui_print "   Removing library & effect lines..."
+
+    for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
+      if [ -f $CFG ] && [ "$(cat $CFG | grep ' proxy {#')" ]; then
+        # REMOVE LIBRARIES
+        sed -i '/proxy {/,/}/d' $CFG
       fi
     done
 
+    # REPLACE VENDOR FILE WITH PREVIOUS BACKUP
+    if [ -f $V_CONFIG_FILE ] && [ -f $V_CONFIG_FILE.bak ]; then
+      # RESTORE BACKED UP CONFIGS
+      cp -af $V_CONFIG_FILE.bak $V_CONFIG_FILE
+    fi
+
     # BACKUP CONFIGS
-    ui_print "   Backing up restored audio_policy cfg files..."
-    for BACKUP in $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL; do
+    ui_print "   Backing up existing audio_effects cfg files..."
+    for BACKUP in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
       if [ -f $BACKUP ]; then
         cp -f $BACKUP $BACKUP.bak
       fi
     done
   fi
-  #### ^ INSERT YOUR RESTORE AND BACKUP FUNCTIONS ^ ####
+  
+  NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
+    if [ "$(grep "TIMEOFEXEC=3" $INPUT_RULES$NUM.sh)" ]; then
+	  ui_print "   Running custom rules..."
+	  source $INPUT_RULES$NUM.sh
+	fi
+	NUM=$((NUM+1))
+  done
 }
 
 unity_mod_directory() {
   ########################################################################################
   # Make directories for unity install
   ########################################################################################
-
-  ########## v DO NOT REMOVE v ##########
   #### PREPARE INSTALL ####
   ui_print " "
   ui_print "- Preparing installation -"
@@ -437,38 +505,43 @@ unity_mod_directory() {
   if [ "$MAGISK" == true ] || [ "$SYSOVER" == true ]; then
     rm -rf $MODPATH 2>/dev/null
     mkdir -p $MODPATH
-	mkdir -p $AUDMODLIBPATH
   fi
-  ########## ^ DO NOT REMOVE ^ ##########
+  test "$SYSOVER" == "true" && mkdir -p $AMLPATH
 
-  #### v INSERT YOUR DIRECTORY MAKING v ####
+  cat $INPUT_FILE | while read LINE; do
+	LINE=$(echo $LINE | sed 's/.* //')
+	$MK_PRFX $(dirname "$(eval "echo $LINE")")$MK_SFFX
+  done
+
   if [ "$MAGISK" == false ]; then
     sys_mk_ch $SH 0755
     if [ -d $SYS/addon.d ]; then
       sys_mk_ch $SYS/addon.d 0755
     fi
-
-    for CFG in $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL; do
+    for CFG in $CONFIG_FILE $V_CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_DTP $MIX_PATH_i2s $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
       if [ -f $CFG ]; then
         sys_mk_ch ${CFG%/*} 0755
       fi
     done
   fi
-  #### ^ INSERT YOUR DIRECTORY MAKING ^ ####
+  
+  NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
+	if [ "$(grep "TIMEOFEXEC=4" $INPUT_RULES$NUM.sh)" ]; then
+	  ui_print "   Running custom rules..."
+	  source $INPUT_RULES$NUM.sh
+	fi
+	NUM=$((NUM+1))
+  done
 }
 
 unity_mod_copy() {
   ########################################################################################
   # Copy files over for unity install
   ########################################################################################
-
-  ########## v DO NOT REMOVE v ##########
   #### INSTALL FILES ####
   ui_print " "
-  ui_print "- Installing scripts -"
-  ########## ^ DO NOT REMOVE ^ ##########
+  ui_print "- Installing apps, libs, & scripts -"
 
-  #### v INSERT YOUR FILE INSTALL v ####
   # INSTALL SCRIPTS
   if [ "$MAGISK" == false ]; then
     if [ "$SYSOVER" == true ]; then
@@ -483,7 +556,7 @@ unity_mod_copy() {
   	  else
   	    ui_print "   Installing scripts for LineageOS SU..."
   	  fi
-    else
+	else
       ui_print "   Installing scripts for phh's su or non root..."
     fi
 	
@@ -491,66 +564,86 @@ unity_mod_copy() {
   	touch $INFO
 
     # COPY MODULE.PROP FILE FOR VERSION CHECKING
-    $CP_PRFX $INSTALLER/module.prop $MOD_VER
+    $CP_PRFX $INSTALLER/module.prop $MOD_VER$CP_SFFX
 	
 	if [ "$SYSOVER" == false ]; then
-	  sys_cp_ch $INSTALLER/common/$AUDMODLIBID-service.sh $SH/$AUDMODLIBID$EXT 0700
-	  echo "$SH/$AUDMODLIBID$EXT" > $INFO
-      echo "$SH/$AUDMODLIBID-props$EXT" >> $INFO
+	  sys_cp_ch $INSTALLER/common/$AMLID/$AMLID-service.sh $SH/$AMLID$EXT 0700
+	  echo "$SH/$AMLID$EXT" >> $INFO
+      echo "$SH/unity-props$EXT" >> $INFO
 	else
 	  mkdir -p $MOUNTPATH/.core/service.d
-	  sys_cp_ch $INSTALLER/common/$AUDMODLIBID-service.sh $MOUNTPATH/.core/service.d/$AUDMODLIBID.sh 0755
+	  sys_cp_ch $INSTALLER/common/$AMLID/$AMLID-service.sh $MOUNTPATH/.core/service.d/$AMLID.sh 0755
 	fi
-	
+
     # INSTALL ROM BACKUP SCRIPT
     if [ -d $SYS/addon.d ]; then
       ui_print "   Installing addon.d backup script..."
       sys_cp_ch $INSTALLER/system/addon.d/$MODID.sh $SYS/addon.d/$MODID.sh 0644
-	else
+	  else
       ui_print "   ! Addon.d not detected. Backup script not installed..."
     fi
   fi
 
+  # INSTALL APPS & LIBRARIES
+  if [ "$APPINSTALL" == "true" ]; then
+	ui_print "   Installing libraries$APPTXT..."
+  else
+	ui_print "   Installing libraries..."
+  fi
+  cat $INPUT_FILE | while read LINE; do
+	$CP_PRFX $INSTALLER$(eval "echo $LINE")$CP_SFFX
+  done
+
   # ADD BUILDPROPS
   ui_print "   Adding build props..."
-  unity_prop_copy $INSTALLER/common/audmodlib-props.prop
+  unity_prop_copy $INPUT_PROPS
+  NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
+	if [ "$(grep "TIMEOFEXEC=2" $INPUT_RULES$NUM.sh)" ]; then
+	  ui_print "   Running custom rules..."
+	  unity_prop_copy $INPUT_RULES$NUM.sh
+	fi
+	NUM=$((NUM+1))
+  done
 
+  NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
+	if [ "$(grep "TIMEOFEXEC=5" $INPUT_RULES$NUM.sh)" ]; then
+	  ui_print "   Running custom rules..."
+	  source $INPUT_RULES$NUM.sh
+	fi
+	NUM=$((NUM+1))
+  done
+  
   if [ "$MAGISK" == false ]; then
     sed -i 's/\/system\///g' $INFO
   fi
-  #### ^ INSERT YOUR FILE INSTALL ^ ####
 }
 
 magisk_audmodlib() {
   ########################################################################################
   # Audio Modification Library / This is where the magick happens for Magisk
   ########################################################################################
-
-  ########## v DO NOT REMOVE v ##########
   ### CREATE AUDIO MODIFICATION LIBRARY ###
   ui_print " "
   ui_print "- Installing Audio Modification Library -"
 
   ui_print "   Installing scripts for MagiskSU..."
   mkdir -p $MOUNTPATH/.core/service.d
-  sys_cp_ch $INSTALLER/common/$AUDMODLIBID-service.sh $MOUNTPATH/.core/service.d/$AUDMODLIBID.sh 0755
+  sys_cp_ch $INSTALLER/common/$AMLID/$AMLID-service.sh $MOUNTPATH/.core/service.d/$AMLID.sh 0755
   sys_cp_ch $INSTALLER/common/$MODID-service.sh $MOUNTPATH/.core/service.d/$MODID.sh 0755
 
-  if [ -d /cache/magisk/audmodlib ] && [[ ! -d $AUDMODLIBPATH || ! -d /magisk/audmodlib ]]; then
+  if [ -d /cache/magisk/audmodlib ] && [[ ! -d $AMLPATH || ! -d /magisk/audmodlib ]]; then
     rm -rf /cache/magisk/audmodlib
   fi
 
-  if [ ! -d /cache/magisk/audmodlib ] && [[ ! -d $AUDMODLIBPATH || ! -d /magisk/audmodlib ]]; then
+  if [ ! -d /cache/magisk/audmodlib ] && [[ ! -d $AMLPATH || ! -d /magisk/audmodlib ]]; then
     SOURCEDIR=""
   elif [ -d /cache/magisk/audmodlib ]; then
     SOURCEDIR=/cache/magisk/audmodlib
-  elif [ -d $AUDMODLIBPATH ]; then
-    SOURCEDIR=$AUDMODLIBPATH
+  elif [ -d $AMLPATH ]; then
+    SOURCEDIR=$AMLPATH
   elif [ -d /magisk/audmodlib ]; then
     SOURCEDIR=/magisk/audmodlib
   fi
-
-  magisk_install
 
   for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
     if [ -f $CFG ]; then
@@ -559,7 +652,7 @@ magisk_audmodlib() {
   done
 
   for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
-	if [ -f $CFG ]; then
+    if [ -f $CFG ]; then
 	  if [ ! -f $CFG.bak ]; then
         cp -af $CFG /cache/magisk/audmodlib$CFG.bak
       else
@@ -575,6 +668,8 @@ magisk_audmodlib() {
   done
 
   set_perm_recursive  /cache/magisk/audmodlib  0  0  0755  0644
+  
+  mkdir -p $AMLPATH
 
   if [ -f $V_CONFIG_FILE ]; then
     cp -af /cache/magisk/audmodlib$CONFIG_FILE /cache/magisk/audmodlib$V_CONFIG_FILE
@@ -582,21 +677,27 @@ magisk_audmodlib() {
 
   for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
     if [ -f $CFG ]; then
-      mkdir -p $AUDMODLIBPATH${CFG%/*}
+      mkdir -p $AMLPATH${CFG%/*}
     fi
   done
 
   unity_mod_patch
 
+  for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
+    if [ -f $CFG ] && [ ! "$(cat /cache/magisk/audmodlib$CFG | grep ' proxy {')" ]; then
+      sed -i 's/^libraries {/libraries {\n  proxy {#\n    path \/system\/lib\/soundfx\/libeffectproxy.so\n  }/g' /cache/magisk/audmodlib$CFG
+    fi
+  done
+
   for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
     if [ -f $CFG.bak ]; then
-      cp -af /cache/magisk/audmodlib$CFG.bak $AUDMODLIBPATH$CFG.bak
+      cp -af /cache/magisk/audmodlib$CFG.bak $AMLPATH$CFG.bak
     fi
   done
 
   for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
     if [ -f $CFG ]; then
-      cp -af /cache/magisk/audmodlib$CFG $AUDMODLIBPATH$CFG
+      cp -af /cache/magisk/audmodlib$CFG $AMLPATH$CFG
     fi
   done
 
@@ -605,65 +706,62 @@ magisk_audmodlib() {
     cp -af /cache/magisk/audmodlib$CONFIG_FILE /cache/magisk/audmodlib$V_CONFIG_FILE
   fi
 
-  set_perm_recursive  $AUDMODLIBPATH  0  0  0755  0644
+  set_perm_recursive  $AMLPATH  0  0  0755  0644
 
   ui_print "   ! AudModLib framework by ahrion @ XDA !"
-  ########## ^ DO NOT REMOVE ^ ##########
 }
 
 unity_mod_patch() {
   ########################################################################################
   # Audio Modification Library file patcher for unity install
   ########################################################################################
-
-  ########## v DO NOT REMOVE v ##########
   #### PATCHING FILES ####
   ui_print "   Patching necessary cfg files"
-  ########## ^ DO NOT REMOVE ^ ##########
-
-  #### v INSERT YOUR FILE PATCHES v ####
-  # REMOVE DEEP_BUFFER LINES
-  ui_print "    Patching existing audio_policy files..."
-  if [ -f $SOURCEDIR$V_AUD_OUT_POL ] && [ -f $SOURCEDIR$AUD_POL_CONF ]; then
-    # REMOVE DEEP_BUFFER
-    sed -i '/Speaker/{n;s/deep_buffer,//;}' $UNITYPATCH$AUD_POL_CONF
-    sed -i '/Wired Headset/{n;s/deep_buffer,//;}' $UNITYPATCH$AUD_POL_CONF
-    sed -i '/Wired Headphones/{n;s/deep_buffer,//;}' $UNITYPATCH$AUD_POL_CONF
-  elif [ ! -f $SOURCEDIR$V_AUD_OUT_POL ] && [ -f $SOURCEDIR$AUD_POL_CONF ]; then
-    # REMOVE DEEP_BUFFER
-    sed -i 's/deep_buffer,//g' $UNITYPATCH$AUD_POL_CONF
-    sed -i 's/,deep_buffer//g' $UNITYPATCH$AUD_POL_CONF
-  else
-    for CFG in $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL; do
-      if [ -f $CFG ]; then
-        # REMOVE DEEP_BUFFER
-        sed -i '/deep_buffer {/,/}/d' $UNITYPATCH$CFG
-      fi
-    done
-  fi
+  
+  # REMOVE LIBRARIES & EFFECTS
+  ui_print "    Removing library & effect lines..."
+  for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
+    if [ -f $CFG ] && [ "$(cat $CFG | grep ' proxy {#')" ]; then
+      # REMOVE LIBRARIES
+      sed -i '/proxy {/,/}/d' $UNITYPATCH$CFG
+    fi
+  done
+  
+  source $INPUT_PATCHES
 
   if [ "$MAGISK" == false ]; then
+    for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
+      if [ -f $CFG ] && [ ! "$(cat $CFG | grep ' proxy {')" ]; then
+        sed -i 's/^libraries {/libraries {\n  proxy {#\n    path \/system\/lib\/soundfx\/libeffectproxy.so\n  }/g' $CFG
+      fi
+    done
+
     # COPY OVER MAIN AUDIO_EFFECTS CFG FILE TO VENDOR FILE
     if [ -f $V_CONFIG_FILE ]; then
       cp -af $CONFIG_FILE $V_CONFIG_FILE
     fi
   fi
-  #### ^ INSERT YOUR FILE PATCHES ^ ####
+  
+  NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
+	if [ "$(grep "TIMEOFEXEC=6" $INPUT_RULES$NUM.sh)" ]; then
+	  ui_print "   Running custom rules..."
+	  source $INPUT_RULES$NUM.sh
+	fi
+	NUM=$((NUM+1))
+  done
 }
 
 unity_uninstall() {
   ########################################################################################
   # Uninstall for Magisk install
   ########################################################################################
-
-  ########## v DO NOT REMOVE v ##########
   #### CLEANING UP ####
   ui_print " "
   ui_print "- Cleaning up previous installations -"
 
   # REMOVE PROPS
   ui_print "   Removing build props..."
-  unity_prop_removal $INSTALLER/common/$AUDMODLIBID-props.prop
+  unity_prop_remove $INPUT_PROPS
 
   # REMOVE FILES
   ui_print "   Removing files..."
@@ -672,9 +770,7 @@ unity_uninstall() {
     rm -rf $MODPATH
     rm -rf /magisk/$MODID
   fi
-  ########## ^ DO NOT REMOVE ^ ##########
 
-  #### v INSERT YOUR FILE REMOVALS v ####
   if [ "$MAGISK" == true ]; then
     rm -f /magisk/.core/service.d/$MODID.sh
   elif [ "$MAGISK" == false ]; then
@@ -683,56 +779,67 @@ unity_uninstall() {
 	  if [ "$SYSOVER" == false ]; then 
         sed -i '1,2d' $INFO
 	  fi
-    	cat $INFO | while read LINE; do
+      cat $INFO | while read LINE; do
         if [ "$(dirname $LINE)" == "/su/su.d" ]; then
          	sys_rm_ch $LINE
         else
-    		  sys_rm_ch $SYS/$LINE
+    		sys_rm_ch $SYS/$LINE
         fi
-    	done
-    	rm -f $INFO
+      done
+      rm -f $INFO
       for DIR in $SYS/app/$APP1 $SYS/priv-app/$APP1; do
     	  if [ -d "$DIR" ]; then
       		if [ "$(ls -A "$DIR")" == "" ]; then
       		  rm -rf $DIR
       		fi
     	  fi
-    	done
+    	done		
     else
       ui_print "   ! Mod not detected. Removing scripts..."
     fi
+	# RESTORE WIPED FILES/FOLDERS
+	cat $INPUT_FILE_WIPE | while read LINE; do
+	  if [ "$(echo "$LINE" | cut -c-3)" == "FOL" ]; then
+	    if [ -e "$(eval "echo $LINE" | cut -c4-).tar" ]; then
+		  tar -xf "$(eval "echo $LINE" | cut -c4-).tar" -C "$(dirname "$(eval "echo $LINE" | cut -c4-)")"
+	    fi
+	  else
+	    if [ -e "$(eval "echo $LINE").bak" ]; then
+		  mv -f "$(eval "echo $LINE").bak" "$(eval "echo $LINE")"
+	    fi
+	  fi
+    done
   fi
 
   rm -f $SYS/addon.d/$MODID.sh
   rm -f $SYS/etc/init.d/$MODID
   rm -f /su/su.d/$MODID.sh
   rm -f $SYS/su.d/$MODID.sh
-  #### ^ INSERT YOUR FILE REMOVALS ^ ####
 
-  #### v INSERT YOUR REMOVE PATCH OR RESTORE v ####
-  # RESTORE CONFIGS
+  # RESTORE CONFIGS, LIBRARIES, & EFFECTS
   ui_print "   Restoring necessary cfg files"
-
-  # RESTORE BACKED UP CONFIGS
-  ui_print "    Restoring backed up audio_policy files..."
   if [ "$MAGISK" == true ]; then
-    if [ -d $AUDMODLIBPATH ] || [ -d /magisk/audmodlib ]; then
-      for RESTORE in $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL; do
-        if [ -f $RESTORE ]; then
-          cp -f $UNITYPATCH$RESTORE.bak $UNITYPATCH$RESTORE
-        fi
-      done
-    fi
-  elif [ "$MAGISK" == false ]; then
-    if [ -f $A2DP_AUD_POL.bak ] || [ -f $AUD_POL.bak ] || [ -f $AUD_POL_CONF.bak ] || [ -f $AUD_POL_VOL.bak ] || [ -f $SUB_AUD_POL.bak ] || [ -f $USB_AUD_POL.bak ] || [ -f $V_AUD_OUT_POL.bak ] || [ -f $V_AUD_POL.bak ]; then
-      for RESTORE in $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL; do
-        if [ -f $RESTORE.bak ]; then
-          cp -f $UNITYPATCH$RESTORE.bak $UNITYPATCH$RESTORE
-        fi
-      done
-    fi
+	if [ -d $AMLPATH ] || [ -d /magisk/audmodlib ]; then
+	  source $INPUT_PATCHES_REM
+	fi
+  else
+	source $INPUT_PATCHES_REM
   fi
-  #### ^ INSERT YOUR REMOVE PATCH OR RESTORE ^ ####
+
+  for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
+    if [ -f $CFG ] && [ "$(cat $CFG | grep ' proxy {#')" ]; then
+      # REMOVE LIBRARIES
+      sed -i '/proxy {/,/}/d' $UNITYPATCH$CFG
+    fi
+  done
+  
+  NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
+	if [ "$(grep "TIMEOFEXEC=7" $INPUT_RULES$NUM.sh)" ]; then
+	  ui_print "   Running custom rules..."
+	  source $INPUT_RULES$NUM.sh
+	fi
+	NUM=$((NUM+1))
+  done
 }
 
 ##########################################################################################
@@ -742,15 +849,15 @@ unity_uninstall() {
 # Extract mod files
 unzip -o "$ZIP" 'system/*' -d $INSTALLER 2>/dev/null
 
-if is_mounted /data; then
+if is_mounted /data ; then
   if [ ! -f "/data/magisk.img" ]; then
     # Prepare (Un)Install
     system_install
     script_install_logic
-    app_install_logic
+	test "$APPINSTALL" == "true" && app_install_logic
 
-	# Determine if mod is already installed. If same version is installed, uninstall
-	mod_exist
+    # Determine if mod is already installed. If same version is installed, uninstall
+    mod_exist
 
 	if [ "$ACTION" == "Install" ]; then
       ui_print " "
@@ -758,9 +865,16 @@ if is_mounted /data; then
       ui_print "    ! Installing on system!"
 
       # Remove props
-      ui_print " "
+	  ui_print " "
       ui_print "- Removing obsolete props-"
-      unity_prop_removal $INSTALLER/common/$AUDMODLIBID-props-remove.prop
+      unity_prop_remove $INPUT_PROPS_REM
+	  NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
+		if [ "$(grep "TIMEOFEXEC=1" $INPUT_RULES$NUM.sh)" ]; then
+		  ui_print "   Running custom rules..."
+		  unity_prop_remove $INPUT_RULES$NUM.sh
+		fi
+		NUM=$((NUM+1))
+	  done
 
       # Wipe files
       unity_mod_wipe
@@ -842,15 +956,22 @@ if [ "$SYSOVER" == true ]; then
 else
   magisk_install
 fi
-app_install_logic
+test "$APPINSTALL" == "true" && app_install_logic
 
 # Determine if mod is already installed. If same version is installed, uninstall
 mod_exist
 
 if [ "$ACTION" == "Install" ]; then
-
+  
   # Remove props
-  unity_prop_removal $INSTALLER/common/$AUDMODLIBID-props-remove.prop
+  unity_prop_remove $INPUT_PROPS_REM
+  NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
+	if [ "$(grep "TIMEOFEXEC=1" $INPUT_RULES$NUM.sh)" ]; then
+	  ui_print "   Running custom rules..."
+	  unity_prop_remove $INPUT_RULES$NUM.sh
+	fi
+	NUM=$((NUM+1))
+  done
 
   # Wipe files
   unity_mod_wipe
@@ -868,19 +989,19 @@ if [ "$ACTION" == "Install" ]; then
 	
   else
   
-	# Patch files
-	magisk_audmodlib
+    # Patch files
+    magisk_audmodlib
 
-	# Handle replace folders
-	for TARGET in $REPLACE; do
-	  mktouch $MODPATH$TARGET/.replace
-	  mktouch $AUDMODLIBPATH$TARGET/.replace
-	done
+    # Handle replace folders
+    for TARGET in $REPLACE; do
+      mktouch $MODPATH$TARGET/.replace
+	  mktouch $AMLPATH$TARGET/.replace
+    done
 
-	# Auto Mount
-	$AUTOMOUNT && touch $MODPATH/auto_mount
-	$AUTOMOUNT && touch $AUDMODLIBPATH/auto_mount
-
+    # Auto Mount
+    $AUTOMOUNT && touch $MODPATH/auto_mount
+    $AUTOMOUNT && touch $AMLPATH/auto_mount
+	
   fi
 
   # prop files
@@ -888,13 +1009,13 @@ if [ "$ACTION" == "Install" ]; then
 
   # Module info
   cp -af $INSTALLER/module.prop $MODPATH/module.prop
-  cp -af $INSTALLER/common/audmodlibmodule.prop $AUDMODLIBPATH/module.prop
+  cp -af $INSTALLER/common/$AMLID/audmodlibmodule.prop $AMLPATH/module.prop
   if $BOOTMODE; then
     # Update info for Magisk Manager
     mktouch /magisk/$MODID/update
-    mktouch /magisk/$AUDMODLIBID/update
+    mktouch /magisk/$AMLID/update
     cp -af $INSTALLER/module.prop /magisk/$MODID/module.prop
-    cp -af $INSTALLER/common/audmodlibmodule.prop /magisk/$AUDMODLIBID/module.prop
+    cp -af $INSTALLER/common/$AMLID/audmodlibmodule.prop /magisk/$AMLID/module.prop
   fi
 
   # post-fs-data mode scripts
@@ -909,7 +1030,7 @@ if [ "$ACTION" == "Install" ]; then
   ui_print "   Setting permissions..."
   set_permissions
 else
-
+  
   # Uninstall
   unity_uninstall
 
