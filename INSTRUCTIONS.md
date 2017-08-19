@@ -83,4 +83,4 @@ TIMEOFEXEC VALUES - when the customrules file will execute in the (un)installer 
 6=unity_mod_patch
 7=unity_uninstall
 
-*HINT: unity_prop_copy is called from the unity_mod_copy function. So if you have props you want set under certain conditions, have that customrules' TIMEOFEXEC=5
+*HINT: unity_prop_copy is called from the unity_mod_copy function. So if you have props you want set under certain conditions, have that customrule's TIMEOFEXEC=5

@@ -6,7 +6,7 @@ This hack fixes when streaming apps (Spotify, Pandora, etc) do not process audio
 
 ## Compatibility
 * Android Jellybean+
-* Magisk install (MagiskSU/SuperSU)
+* Magisk install (MagiskSU)
 * Pixel support
 * System install
 * Works with nearly every device, kernel, and rom
