@@ -498,7 +498,7 @@ unity_mod_wipe() {
   fi
 
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
-    if [ "$(grep "TIMEOFEXEC=3" $INPUT_RULES$NUM.sh)" ]; then
+    if [ "$(grep "TIMEOFEXEC=1" $INPUT_RULES$NUM.sh)" ]; then
       ui_print "   Running custom rules..."
       source $INPUT_RULES$NUM.sh
     fi
@@ -543,7 +543,7 @@ unity_mod_directory() {
   fi
 
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
-    if [ "$(grep "TIMEOFEXEC=4" $INPUT_RULES$NUM.sh)" ]; then
+    if [ "$(grep "TIMEOFEXEC=2" $INPUT_RULES$NUM.sh)" ]; then
       ui_print "   Running custom rules..."
       source $INPUT_RULES$NUM.sh
     fi
@@ -614,16 +614,9 @@ unity_mod_copy() {
   # ADD BUILDPROPS
   ui_print "   Adding build props..."
   unity_prop_copy $INPUT_PROPS
-  NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
-    if [ "$(grep "TIMEOFEXEC=2" $INPUT_RULES$NUM.sh)" ]; then
-      ui_print "   Running custom rules..."
-      unity_prop_copy $INPUT_RULES$NUM.sh
-    fi
-    NUM=$((NUM+1))
-  done
 
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
-    if [ "$(grep "TIMEOFEXEC=5" $INPUT_RULES$NUM.sh)" ]; then
+    if [ "$(grep "TIMEOFEXEC=3" $INPUT_RULES$NUM.sh)" ]; then
       ui_print "   Running custom rules..."
       source $INPUT_RULES$NUM.sh
     fi
@@ -758,7 +751,7 @@ unity_mod_patch() {
   fi
   
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
-    if [ "$(grep "TIMEOFEXEC=6" $INPUT_RULES$NUM.sh)" ]; then
+    if [ "$(grep "TIMEOFEXEC=4" $INPUT_RULES$NUM.sh)" ]; then
       ui_print "   Running custom rules..."
       source $INPUT_RULES$NUM.sh
     fi
@@ -851,7 +844,7 @@ unity_uninstall() {
   fi
   
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
-    if [ "$(grep "TIMEOFEXEC=7" $INPUT_RULES$NUM.sh)" ]; then
+    if [ "$(grep "TIMEOFEXEC=5" $INPUT_RULES$NUM.sh)" ]; then
       ui_print "   Running custom rules..."
       source $INPUT_RULES$NUM.sh
     fi
@@ -885,13 +878,6 @@ if is_mounted /data ; then
       ui_print " "
       ui_print "- Removing obsolete props-"
       unity_prop_remove $INPUT_PROPS_REM
-      NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
-        if [ "$(grep "TIMEOFEXEC=1" $INPUT_RULES$NUM.sh)" ]; then
-          ui_print "   Running custom rules..."
-          unity_prop_remove $INPUT_RULES$NUM.sh
-        fi
-        NUM=$((NUM+1))
-      done
 
       # Wipe files
       unity_mod_wipe
@@ -982,13 +968,6 @@ if [ "$ACTION" == "Install" ]; then
   
   # Remove props
   unity_prop_remove $INPUT_PROPS_REM
-  NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
-    if [ "$(grep "TIMEOFEXEC=1" $INPUT_RULES$NUM.sh)" ]; then
-      ui_print "   Running custom rules..."
-      unity_prop_remove $INPUT_RULES$NUM.sh
-    fi
-    NUM=$((NUM+1))
-  done
 
   # Wipe files
   unity_mod_wipe

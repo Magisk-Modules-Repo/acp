@@ -53,6 +53,7 @@ $SYS=
 $VEN=
 **$SYS and $VEN are dynamic variables for system and vendor depending on device
 # OTHER DYNAMIC VARIABLES
+INFO=
 INSTALLER=
 MODID=
 MAGISK=
@@ -72,15 +73,30 @@ $MK_SFFX $UNITY$SYS/$APPPATH1/$APP1$MK_SFFX
 
 ________________________________________________________________________________________________________________________________________________________________________
 
+MAIN AUDMODLIB FUNCTIONS
+
+unity_prop_remove: removes all props in specified file from a common aml prop file. Example usage: unity_prop_remove $INSTALLER/common/props.prop
+unity_prop_copy: adds all props in specified file to a common aml prop file. Example usage: unity_prop_copy $INSTALLER/common/props.prop
+unity_mod_wipe: removes all specified folders/files/patches that may conflict with install.
+unity_mod_directory: creates directories (folders) for files to be installed
+unity_mod_copy: copies/installs the files
+magisk_audmodlib: a magical function that enables all config/policy/mixer files to be shared between all aml mods. You will have no need to call this function
+unity_mod_patch: patches specificed config/policy/mixer files
+unity_uninstall: uninstalls mod (removes applicable files/folders/patches). The uninstallation process is handled automatically so you probably won't need to call this function.
+
+*NOTE: The INFO variable (system installs only) corresponds to a file that will save the list of installed files and is how aml knows what needs removed during uninstall.
+Any files you copy over in a customrule needs to be echoed to the INFO file in that rule as well in the if statement in order for uninstallation to proceed correctly.
+Example: echo "$UNITY$SYS/lib/soundfx/libv4a_fx_ics.so" >> $INFO
+________________________________________________________________________________________________________________________________________________________________________
+
 TIMEOFEXEC VALUES - when the customrules file will execute in the (un)installer script
 
 0=File will not be run (default)
-1=unity_prop_removal
-2=unity_prop_copy
-3=unity_mod_wipe
-4=unity_mod_directory
-5=unity_mod_copy
-6=unity_mod_patch
-7=unity_uninstall
+1=unity_mod_wipe
+2=unity_mod_directory
+3=unity_mod_copy
+4=unity_mod_patch
+5=unity_uninstall
 
-*HINT: unity_prop_copy is called from the unity_mod_copy function. So if you have props you want set under certain conditions, have that customrule's TIMEOFEXEC=5
+*HINT: If you have props you want set under certain conditions, have that customrule's TIMEOFEXEC=3. Example: unity_prop_copy $INSTALLER/common/props.prop
+If you have props you want removed under certain conditions, have that customrule's TIMEOFEXEC=1. Example: unity_prop_remove $INSTALLER/common/props.prop
