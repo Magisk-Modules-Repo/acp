@@ -10,7 +10,7 @@ MODID=udbr
 rm -rf /cache/magisk/audmodlib
 
 if [ ! -d /magisk/$MODID ]; then
-  AUDMODLIBPATH=/magisk/audmodlib
+  AMLPATH=/magisk/audmodlib
 
   # DETERMINE IF PIXEL (A/B OTA) DEVICE
   ABDeviceCheck=$(cat /proc/cmdline | grep slot_suffix | wc -l)
@@ -66,7 +66,7 @@ if [ ! -d /magisk/$MODID ]; then
   if [ -f $A2DP_AUD_POL.bak ] || [ -f $AUD_POL.bak ] || [ -f $AUD_POL_CONF.bak ] || [ -f $AUD_POL_VOL.bak ] || [ -f $SUB_AUD_POL.bak ] || [ -f $USB_AUD_POL.bak ] || [ -f $V_AUD_OUT_POL.bak ] || [ -f $V_AUD_POL.bak ]; then
     for RESTORE in $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL; do
       if [ -f $RESTORE.bak ]; then
-        cp -f $AUDMODLIBPATH$RESTORE.bak $AUDMODLIBPATH$RESTORE
+        cp -f $AMLPATH$RESTORE.bak $AMLPATH$RESTORE
       fi
     done
   fi
