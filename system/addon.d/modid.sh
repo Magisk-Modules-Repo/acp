@@ -1,12 +1,10 @@
 #!/sbin/sh
-# 
-# /system/addon.d/udbr.sh
 #
 
 . /tmp/backuptool.functions
 
 #### v INSERT YOUR CONFIG.SH MODID v ####
-MODID=udbr
+MODID=<MODID>
 AUDMODLIBID=audmodlib
 #### ^ INSERT YOUR CONFIG.SH MODID ^ ####
 
@@ -82,35 +80,9 @@ case "$1" in
     # Stub
   ;;
   pre-restore)
-    # Stub
+	# Stub
   ;;
   post-restore)
-    #### v INSERT YOUR BACKUP FUNCTIONS v ####
-    # BACKUP CONFIGS
-    for BACKUP in $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL; do
-      if [ -f $BACKUP ]; then
-        cp -f $BACKUP $BACKUP.bak
-      fi
-    done
-	#### ^ INSERT YOUR BACKUP FUNCTIONS ^ ####
-
-    #### v INSERT YOUR FILE PATCHES v ####
-    # REMOVE DEEP_BUFFER LINES
-    if [ -f $V_AUD_OUT_POL ] && [ -f $AUD_POL_CONF ]; then
-      # REMOVE DEEP_BUFFER
-      sed -i '/Speaker/{n;s/deep_buffer,//;}' $AUD_POL_CONF
-    elif [ ! -f $V_AUD_OUT_POL ] && [ -f $AUD_POL_CONF ]; then
-      # REMOVE DEEP_BUFFER
-      sed -i 's/deep_buffer,//g' $AUD_POL_CONF
-      sed -i 's/,deep_buffer//g' $AUD_POL_CONF
-    else
-      for CFG in $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL; do
-        if [ -f $CFG ]; then
-          # REMOVE DEEP_BUFFER
-          sed -i '/deep_buffer {/,/}/d' $CFG
-        fi
-      done
-    fi
-    #### ^ INSERT YOUR FILE PATCHES ^ ####
+    <PATCHES>
   ;;
 esac

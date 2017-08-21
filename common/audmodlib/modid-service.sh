@@ -61,17 +61,7 @@ if [ ! -d /magisk/$MODID ]; then
   V_MIX_PATH=$VEN/etc/mixer_paths.xml
   ########## ^ DO NOT REMOVE ^ ##########
 
-  #### v INSERT YOUR REMOVE PATCH OR RESTORE v ####
-  # RESTORE BACKED UP CONFIGS
-  if [ -f $A2DP_AUD_POL.bak ] || [ -f $AUD_POL.bak ] || [ -f $AUD_POL_CONF.bak ] || [ -f $AUD_POL_VOL.bak ] || [ -f $SUB_AUD_POL.bak ] || [ -f $USB_AUD_POL.bak ] || [ -f $V_AUD_OUT_POL.bak ] || [ -f $V_AUD_POL.bak ]; then
-    for RESTORE in $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL; do
-      if [ -f $RESTORE.bak ]; then
-        cp -f $AMLPATH$RESTORE.bak $AMLPATH$RESTORE
-      fi
-    done
-  fi
-  #### ^ INSERT YOUR REMOVE PATCH OR RESTORE ^ ####
+  <PATCHES>
 
   rm -f /magisk/.core/service.d/$MODID.sh
-  reboot
 fi
