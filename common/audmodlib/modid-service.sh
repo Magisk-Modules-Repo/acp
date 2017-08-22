@@ -3,12 +3,10 @@
 # More info in the main Magisk thread
 
 #### v INSERT YOUR CONFIG.SH MODID v ####
-MODID=udbr
+MODID=<MODID>
 #### ^ INSERT YOUR CONFIG.SH MODID ^ ####
 
 ########## v DO NOT REMOVE v ##########
-rm -rf /cache/magisk/audmodlib
-
 if [ ! -d /magisk/$MODID ]; then
   AMLPATH=/magisk/audmodlib
 
