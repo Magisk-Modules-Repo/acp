@@ -264,16 +264,17 @@ else
 fi
 # USER INPUT FILES
 INPUT_FILE=$INSTALLER/common/unity-files.sh
-INPUT_FILE_REMOVE=$INSTALLER/common/unity-files-remove.sh
+INPUT_FILE_REM=$INSTALLER/common/unity-files-remove.sh
 INPUT_PATCHES=$INSTALLER/common/unity-patches.sh
 INPUT_PATCHES_REM=$INSTALLER/common/unity-patches-remove.sh
+INPUT_PATCHES_WIPE=$INSTALLER/common/unity-patches-wipe.sh
 INPUT_PROPS=$INSTALLER/common/unity-props.prop
 INPUT_PROPS_REM=$INSTALLER/common/unity-props-remove.prop
 INPUT_VAR=$INSTALLER/common/unity-uservariables.sh
 INPUT_RULES=$INSTALLER/common/unity-customrules
 
 # REMOVE COMMENTS FROM USER INPUT FILES AND ADD PROPER VARIABLES
-for FIL in $INPUT_FILE $INPUT_FILE_REMOVE $INPUT_PATCHES $INPUT_PATCHES_REM $INPUT_PROPS $INPUT_PROPS_REM $INPUT_VAR; do
+for FIL in $INPUT_FILE $INPUT_FILE_REM $INPUT_PATCHES $INPUT_PATCHES_REM $INPUT_PATCHES_WIPE $INPUT_PROPS $INPUT_PROPS_REM $INPUT_VAR; do
   if [ -f $FIL ]; then
     sed -i '1,8d' $FIL
     sed -i 's/$SYS\/$VEN/$VEN/g' $FIL
@@ -483,26 +484,22 @@ unity_mod_wipe() {
     rm -f /su/su.d/$AMLID.sh
     rm -f $SYS/su.d/$MODID.sh
     rm -f $SYS/su.d/$AMLID.sh
-    source $INPUT_PATCHES_REMOVE
   fi
-  cat $INPUT_FILE_REMOVE | while read LINE; do
+
+  cat $INPUT_FILE_REM | while read LINE; do
     if [ "$(echo "$LINE" | cut -c-3)" == "FOL" ] && [ -d "$(echo "$LINE" | cut -c-3)" ]; then
       $RMFOL_PRFX $(eval "echo $LINE" | cut -c4-)$RMFOL_SFFX
     else
       test -f "$(eval "echo $LINE")" && $RM_PRFX $(eval "echo $LINE")
     fi
   done
+  
+  # REMOVE LIBRARIES & EFFECTS
+  ui_print "   Removing library & effect lines..."
+  source $INPUT_PATCHES_WIPE
+  source $INPUT_PATCHES_REM
 
   if [ "$MAGISK" == false ] && [ "$MODID" != "audmodlib" ]; then
-    # REMOVE LIBRARIES & EFFECTS
-    ui_print "   Removing library & effect lines..."
-
-    for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
-      if [ -f $CFG ] && [ "$(cat $CFG | grep ' proxy {#')" ]; then
-        # REMOVE LIBRARIES
-        sed -i '/proxy {/,/}/d' $CFG
-      fi
-    done
 
     # REPLACE VENDOR FILE WITH PREVIOUS BACKUP
     if [ -f $V_CONFIG_FILE ] && [ -f $V_CONFIG_FILE.bak ]; then
@@ -624,9 +621,11 @@ unity_mod_copy() {
 	  # INSERT MODID INTO ADDON.D SCRIPT
       sed -i "s/<MODID>/$MODID/" $INSTALLER/system/addon.d/$MODID.sh
 
-      # INSERT UNITY REMOVE AND REGULAR PATCHES INTO ADDON.D SCRIPT
+      # INSERT UNITY REMOVE, WIPE, AND REGULAR PATCHES INTO ADDON.D SCRIPT
       sed -i 's/^/    /' $INPUT_PATCHES
 	  sed -i 's/^/  /' $INPUT_PATCHES_REM
+	  sed -i 's/^/    /' $INPUT_PATCHES_WIPE
+	  sed -i "/<PATCHES>/ r $INPUT_PATCHES_WIPE" $INSTALLER/system/addon.d/$MODID.sh
 	  sed -i "/<PATCHES>/ r $INPUT_PATCHES_REM" $INSTALLER/system/addon.d/$MODID.sh
       sed -i "/<PATCHES>/ r $INPUT_PATCHES" $INSTALLER/system/addon.d/$MODID.sh
       sed -i '/<PATCHES>/d' $INSTALLER/system/addon.d/$MODID.sh
@@ -790,7 +789,7 @@ unity_uninstall() {
     fi
 	
     # RESTORE WIPED FILES/FOLDERS
-    cat $INPUT_FILE_REMOVE | while read LINE; do
+    cat $INPUT_FILE_REM | while read LINE; do
       if [ "$(echo "$LINE" | cut -c-3)" == "FOL" ]; then
         if [ -e "$(eval "echo $LINE" | cut -c4-).tar" ]; then
           tar -xf "$(eval "echo $LINE" | cut -c4-).tar" -C "$(dirname "$(eval "echo $LINE" | cut -c4-)")"
@@ -816,8 +815,6 @@ unity_uninstall() {
         $BOOTMODE && AMLPATH=/magisk/audmodlib
 		source $INPUT_PATCHES_REM
       fi
-    else
-      source $INPUT_PATCHES_REM
     fi
   fi
 

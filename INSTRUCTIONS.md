@@ -10,10 +10,11 @@ Instructions are contained in each file
 6. Add any files you want installed into the unity-files.sh
 7. Add any files you want removed into the unity-file-remove.sh
 8. Add any config/policy/mixer patches you want added into the unity-patches.sh
-9. Add the removal of your patches in unity_patches and any config/policy/mixer patches you want removed before install into the unity-patches-remove.sh 
-10. If your files include any apps/apks, follow the instructions in the unity-uservariables.sh
-11. If adding any custom variables, add them to the unity-uservariables.sh
-12. Rename the .sh file in common folder to your MODID-service and modify it as instructed in the file
+9. Add the removal of your patches in unity_patches into the unity-patches-remove.sh 
+10. Add any other config/policy/mixer patches you want removed before install into the unity-patches-wipe.sh
+11. If your files include any apps/apks, follow the instructions in the unity-uservariables.sh
+12. If adding any custom variables, add them to the unity-uservariables.sh
+13. Rename the .sh file in common folder to your MODID-service and modify it as instructed in the file
 
 ________________________________________________________________________________________________________________________________________________________________________
 
