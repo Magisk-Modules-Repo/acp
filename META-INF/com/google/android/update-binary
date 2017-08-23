@@ -159,14 +159,15 @@ sys_wipefol_ch() {
 # INSERT VERSION NUMBER INTO CONFIG.SH
 for VAR in version name author; do
   NEW=$(grep "$VAR=" $INSTALLER/module.prop | sed 's/^.*=//')
+  test "$VAR" == "author" && NEW="by ${NEW}"
   CHARS=${#NEW}
   SPACES=""
-  test "$VAR" != "author" && { TOTAL=38; TOTSPACE=$((($TOTAL-$CHARS) / 2)); } || { TOTAL=26; TOTSPACE=$(($TOTAL-$CHARS)); }
+  TOTSPACE=$(((38-$CHARS) / 2))
   for i in $(seq $TOTSPACE); do
 	SPACES="${SPACES} "
   done
-  test $((($TOTAL-$CHARS) % 2)) == 1 && SPACES2="${SPACES} " || SPACES2=$SPACES
-  test "$VAR" != "author" && sed -i "s/<$VAR>/$SPACES$NEW$SPACES2/" $INSTALLER/config.sh || sed -i "s/<$VAR>/$NEW$SPACES/" $INSTALLER/config.sh
+  test $(((38-$CHARS) % 2)) == 1 && SPACES2="${SPACES} " || SPACES2=$SPACES
+  sed -i "s/<$VAR>/$SPACES$NEW$SPACES2/" $INSTALLER/config.sh
 done
 
 . $INSTALLER/config.sh
