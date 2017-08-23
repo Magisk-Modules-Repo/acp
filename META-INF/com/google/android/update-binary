@@ -1004,6 +1004,7 @@ else
   unity_uninstall
   # COPY OVER MAIN AUDIO_EFFECTS CFG FILE TO VENDOR FILE
   if [ "$MODID" != "$AMLID" ]; then
+    mktouch $AMLPATH/update
     if [ -f $V_CONFIG_FILE ]; then
       cp -af $AMLPATH$CONFIG_FILE $AMLPATH$V_CONFIG_FILE
     fi
