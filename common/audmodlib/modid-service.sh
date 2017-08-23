@@ -57,9 +57,9 @@ if [ ! -d /magisk/$MODID ]; then
   STRIGG_MIX_PATH=$SYS/sound_trigger_mixer_paths.xml
   STRIGG_MIX_PATH_9330=$SYS/sound_trigger_mixer_paths_wcd9330.xml
   V_MIX_PATH=$VEN/etc/mixer_paths.xml
-  ########## ^ DO NOT REMOVE ^ ##########
 
   <PATCHES>
 
   rm -f /magisk/.core/service.d/$MODID.sh
 fi
+########## ^ DO NOT REMOVE ^ ##########
