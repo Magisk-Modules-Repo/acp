@@ -156,17 +156,17 @@ sys_wipefol_ch() {
 
 [ ! -f $INSTALLER/config.sh ] && abort "! Unable to extract zip file!"
 
-# INSERT VERSION NUMBER INTO CONFIG.SH
+# INSERT MODULE INFO INTO CONFIG.SH
 for VAR in version name author; do
   NEW=$(grep "$VAR=" $INSTALLER/module.prop | sed 's/^.*=//')
   test "$VAR" == "author" && NEW="by ${NEW}"
   CHARS=${#NEW}
   SPACES=""
-  TOTSPACE=$(((38-$CHARS) / 2))
+  TOTSPACE=$(((41-$CHARS) / 2))
   for i in $(seq $TOTSPACE); do
 	SPACES="${SPACES} "
   done
-  test $(((38-$CHARS) % 2)) == 1 && SPACES2="${SPACES} " || SPACES2=$SPACES
+  test $(((41-$CHARS) % 2)) == 1 && SPACES2="${SPACES} " || SPACES2=$SPACES
   sed -i "s/<$VAR>/$SPACES$NEW$SPACES2/" $INSTALLER/config.sh
 done
 
