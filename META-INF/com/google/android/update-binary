@@ -107,25 +107,24 @@ sys_mk_ch() {
 
 # COPY SYS FILE
 sys_cp_ch() {
-  cp "$1" "$2"
+  cp -f "$1" "$2"
   chmod "$3" "$2"
   restorecon "$2"
 }
 
 # COPY SYS FILE (BUT BACKUP OLD ONES FIRST)
 sys_cpbak_ch() {
-  if [ -f "$2" ]; then
+  if [ -f "$2" ] && [ ! -f "$2.bak" ]; then
     mv -f "$2" "$2.bak"
     echo "$2.bak" >> $INFO
   fi
-  echo "$2" >> $INFO
-  cp "$1" "$2"
-  chmod "$3" "$2"
+  test ! "$(cat $INFO | grep $2)" && echo "$2" >> $INFO
+  sys_cp_ch $1 $2 $3
 }
 
 # REMOVE MOD FILE
 sys_rm_ch() {
-  if [ -e "$1.bak" ]; then
+  if [ -f "$1.bak" ]; then
     mv -f "$1.bak" "$1"
   else
     rm -f "$1"
@@ -134,8 +133,15 @@ sys_rm_ch() {
 
 # BACKUP/REMOVE FILE
 sys_wipe_ch() {
-  if [ -f "$1" ] && [ ! -e "$1.bak" ]; then
-    mv -f "$1" "$1.bak"
+  test -f $INFO && sed -i "/$2/d" $INFO || touch $INFO
+  TPARTMOD=false
+  cat $INPUT_FILE | while read LINE; do
+    LINE=$(echo $LINE | sed 's/.* //')
+    test "$1" == "$(eval echo $LINE)" && TPARTMOD=true
+  done
+  if [ -f "$1" ] && [ ! -f "$1.bak" ] && [ "$TPARTMOD" =! "true" ]; then
+	mv -f "$1" "$1.bak"
+	echo "$1.bak" >> $INFO
   else
     rm -f "$1"
   fi
@@ -143,8 +149,9 @@ sys_wipe_ch() {
 
 # BACKUP/REMOVE FOLDER
 sys_wipefol_ch() {
-  if [ -d "$1" ] && [ ! -e "$1.tar" ]; then
+  if [ -d "$1" ] && [ ! -f "$1.tar" ]; then
     tar -cf "$1.tar" "$1"
+	test ! -f $INFO && { touch $INFO; echo "$1.tar" >> $INFO; } || test ! "$(cat $INFO | grep $1.tar)" && echo "$1.tar" >> $INFO
   else
     rm -rf "$1"
   fi
@@ -206,7 +213,7 @@ elif [ "$SYSOVER" == true ]; then
   ui_print "   ! Warning: Forcing a system $ACTION!"
 elif [ -f /data/magisk.img ] || [ -f /cache/magisk.img ] || [ -d /magisk ]; then
   WRITE=ro
-elif [ ! -f /data/magisk.img ] || [ ! -f /cache/magisk.img ] || [ ! -d /magisk ]; then
+else
   WRITE=rw
 fi
 
@@ -585,17 +592,18 @@ unity_mod_copy() {
     fi
 
     # CREATE FILE CONTAINING LIST OF ALL INSTALLED MOD FILES
-    touch $INFO
+    test ! -f $INFO && touch $INFO
 
     # COPY MODULE.PROP FILE FOR VERSION CHECKING
-    $CP_PRFX $INSTALLER/module.prop $MOD_VER$CP_SFFX
+    sys_cp_ch $INSTALLER/module.prop $MOD_VER 0644
+	test ! "$(cat $INFO | grep $MOD_VER)" && echo "$MOD_VER" >> $INFO
 
     if [ "$SYSOVER" == false ]; then
       sys_cp_ch $INSTALLER/common/$AMLID/$AMLID-service.sh $SH/$AMLID$EXT 0700
 	  sys_cp_ch $INSTALLER/common/$AMLID/$MODID-service.sh $SH/$MODID$EXT 0700
-      echo "$SH/$AMLID$EXT" >> $INFO
-	  echo "$SH/$MODID$EXT" >> $INFO
-      echo "$SH/unity-props$EXT" >> $INFO
+      test ! "$(cat $INFO | grep "$SH/$AMLID$EXT")" && echo "$SH/$AMLID$EXT" >> $INFO
+	  test ! "$(cat $INFO | grep "$SH/$MODID$EXT")" && echo "$SH/$MODID$EXT" >> $INFO
+      test ! "$(cat $INFO | grep "$SH/unity-props$EXT")" && echo "$SH/unity-props$EXT" >> $INFO
     else
       mkdir -p $MOUNTPATH/.core/service.d
       sys_cp_ch $INSTALLER/common/$AMLID/$AMLID-service.sh $MOUNTPATH/.core/service.d/$AMLID.sh 0755
@@ -750,7 +758,9 @@ unity_uninstall() {
     if [ -f $INFO ]; then
       ui_print "   System install detected, removing files..."
       if [ "$SYSOVER" == false ]; then
-        sed -i '1,2d' $INFO
+		sed -i "/$SH\/$AMLID$EXT/d" $INFO
+	    sed -i "/$SH\/$MODID$EXT/d" $INFO
+        sed -i "/$SH\/unity-props$EXT/d" $INFO
       fi
       cat $INFO | while read LINE; do
         if [ "$(dirname $LINE)" == "/su/su.d" ]; then
