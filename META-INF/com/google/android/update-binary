@@ -430,15 +430,13 @@ unity_prop_copy() {
   if [ "$MAGISK" == true ] || [ "$SYSOVER" == true ]; then
     AMLPROP="$AMLPATH/system.prop"
     #AMLPROP="$MOUNTPATH/.core/props/audmodlib-props.prop"
-    NEWDIR="$AMLPATH"
-    #NEWDIR="$MOUNTPATH/.core/props"
     sed -i "s/setprop //g" $1
     sed -i "s/ /=/g" $1
   else
     AMLPROP="$SH/unity-props$EXT"
-    NEWDIR="$SH"
   fi
-  if [ "$(sed -n '4,$p' $1)" ]; then
+  NEWDIR="$(dirname $AMLPROP)"
+  if [ "$(cat $1)" ]; then
     if [ ! -f $AMLPROP ]; then
       mkdir -p $NEWDIR
       echo "#!/system/bin/sh" > $AMLPROP
@@ -494,11 +492,6 @@ unity_mod_wipe() {
       test -f "$(eval "echo $LINE")" && $RM_PRFX $(eval "echo $LINE")
     fi
   done
-  
-  # REMOVE LIBRARIES & EFFECTS
-  ui_print "   Removing library & effect lines..."
-  source $INPUT_PATCHES_WIPE
-  source $INPUT_PATCHES_REM
 
   if [ "$MAGISK" == false ] && [ "$MODID" != "$AMLID" ]; then
 
@@ -518,10 +511,7 @@ unity_mod_wipe() {
   fi
 
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
-    if [ "$(grep "TIMEOFEXEC=1" $INPUT_RULES$NUM.sh)" ]; then
-      ui_print "   Running custom rules..."
-      source $INPUT_RULES$NUM.sh
-    fi
+    test "$(grep "TIMEOFEXEC=1" $INPUT_RULES$NUM.sh)" && source $INPUT_RULES$NUM.sh
     NUM=$((NUM+1))
   done
 }
@@ -563,10 +553,7 @@ unity_mod_directory() {
   fi
 
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
-    if [ "$(grep "TIMEOFEXEC=2" $INPUT_RULES$NUM.sh)" ]; then
-      ui_print "   Running custom rules..."
-      source $INPUT_RULES$NUM.sh
-    fi
+    test "$(grep "TIMEOFEXEC=2" $INPUT_RULES$NUM.sh)" && source $INPUT_RULES$NUM.sh
     NUM=$((NUM+1))
   done
 }
@@ -655,10 +642,7 @@ unity_mod_copy() {
   unity_prop_copy $INPUT_PROPS
 
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
-    if [ "$(grep "TIMEOFEXEC=3" $INPUT_RULES$NUM.sh)" ]; then
-      ui_print "   Running custom rules..."
-      source $INPUT_RULES$NUM.sh
-    fi
+    test "$(grep "TIMEOFEXEC=3" $INPUT_RULES$NUM.sh)" && source $INPUT_RULES$NUM.sh
     NUM=$((NUM+1))
   done
 
@@ -678,9 +662,7 @@ magisk_audmodlib() {
   ui_print "   Installing scripts for MagiskSU..."
   mkdir -p $MOUNTPATH/.core/service.d
   sys_cp_ch $INSTALLER/common/$AMLID/$AMLID-service.sh $MOUNTPATH/.core/service.d/$AMLID.sh 0755
-  if [ "$MODID" != "$AMLID" ]; then
-    sys_cp_ch $INSTALLER/common/$AMLID/$MODID-service.sh $MOUNTPATH/.core/service.d/$MODID.sh 0755
-  fi
+  test "$MODID" != "$AMLID" && sys_cp_ch $INSTALLER/common/$AMLID/$MODID-service.sh $MOUNTPATH/.core/service.d/$MODID.sh 0755
 
   for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
     if [ -f $CFG ]; then
@@ -708,10 +690,14 @@ unity_mod_patch() {
   # Audio Modification Library file patcher for unity install
   ########################################################################################
   #### PATCHING FILES ####
-  ui_print "   Patching necessary cfg files"
+  ui_print "- Patching necessary files -"
 
   # REMOVE LIBRARIES & EFFECTS
-  ui_print "    Removing library & effect lines..."
+  ui_print "   Removing library & effect lines..."
+
+  source $INPUT_PATCHES_WIPE
+  source $INPUT_PATCHES_REM
+
   for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
     if [ -f $CFG ] && [ "$(cat $AMLPATH$CFG | grep ' proxy {#')" ]; then
       # REMOVE LIBRARIES
@@ -730,10 +716,7 @@ unity_mod_patch() {
   test "$MODID" != "$AMLID" && source $INPUT_PATCHES
 
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
-    if [ "$(grep "TIMEOFEXEC=4" $INPUT_RULES$NUM.sh)" ]; then
-      ui_print "   Running custom rules..."
-      source $INPUT_RULES$NUM.sh
-    fi
+    test "$(grep "TIMEOFEXEC=4" $INPUT_RULES$NUM.sh)" && source $INPUT_RULES$NUM.sh
     NUM=$((NUM+1))
   done
 
@@ -809,15 +792,12 @@ unity_uninstall() {
 	
   if [ "$MODID" != "$AMLID" ]; then
     # RESTORE CONFIGS, LIBRARIES, & EFFECTS
-    ui_print "   Restoring necessary cfg files"
+    ui_print "   Restoring necessary files"
 	source $INPUT_PATCHES_REM
   fi
 
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
-    if [ "$(grep "TIMEOFEXEC=5" $INPUT_RULES$NUM.sh)" ]; then
-      ui_print "   Running custom rules..."
-      source $INPUT_RULES$NUM.sh
-    fi
+    test "$(grep "TIMEOFEXEC=5" $INPUT_RULES$NUM.sh)" && source $INPUT_RULES$NUM.sh
     NUM=$((NUM+1))
   done
 }
