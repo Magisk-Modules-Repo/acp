@@ -7,8 +7,6 @@ MODID=<MODID>
 #### ^ INSERT YOUR CONFIG.SH MODID ^ ####
 
 ########## v DO NOT REMOVE v ##########
-test -f "/magisk/audmodlib/update" && rm -f /magisk/audmodlib/update
-
 if [ ! -d /magisk/$MODID ]; then
   AMLPATH=/magisk/audmodlib
 
