@@ -8,7 +8,7 @@ Instructions are contained in each file
 4. Add any build props you want added into the unity-props.prop
 5. Add any build props you want removed into the unity-props-remove.prop
 6. Add any files you want installed into the unity-files.sh
-7. Add any files you want removed into the unity-file-remove.sh
+7. Add any possibly conflicting files you want removed/wiped before install into the unity-file-wipe.sh
 8. Add any config/policy/mixer patches you want added into the unity-patches.sh
 9. Add the removal of your patches in unity_patches into the unity-patches-remove.sh 
 10. Add any other config/policy/mixer patches you want removed before install into the unity-patches-wipe.sh
