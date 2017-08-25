@@ -588,7 +588,7 @@ unity_mod_copy() {
         ui_print "   Installing scripts for LineageOS SU..."
       fi
     else
-      ui_print "   Installing scripts for phh's su or non root..."
+      ui_print "   Installing scripts for other root method or non root..."
     fi
 
     # CREATE FILE CONTAINING LIST OF ALL INSTALLED MOD FILES
