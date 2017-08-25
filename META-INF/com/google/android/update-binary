@@ -284,7 +284,7 @@ INPUT_RULES=$INSTALLER/common/unity-customrules
 # REMOVE COMMENTS FROM USER INPUT FILES AND ADD PROPER VARIABLES
 for FIL in $INPUT_FILE $INPUT_FILE_WIPE $INPUT_PATCHES $INPUT_PATCHES_REM $INPUT_PATCHES_WIPE $INPUT_PROPS $INPUT_PROPS_REM $INPUT_VAR; do
   if [ -f $FIL ]; then
-    sed -i '1,8d' $FIL
+	sed -i '/^#/ d' $FIL
     sed -i 's/$SYS\/$VEN/$VEN/g' $FIL
   else
     ui_print "   !$FIL missing!"
@@ -299,7 +299,7 @@ source $INPUT_VAR
 # REMOVE COMMENTS FOR USER CUSTOM RULES AND ADD PROPER VARIABLES
 NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
   if [ -f $INPUT_RULES$NUM.sh ]; then
-    sed -i '1,8d' $INPUT_RULES$NUM.sh
+    sed -i '/^#/ d' $INPUT_RULES$NUM.sh
     sed -i 's/$SYS\/$VEN/$VEN/g' $INPUT_RULES$NUM.sh
   else
     ui_print " "
