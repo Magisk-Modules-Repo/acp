@@ -25,7 +25,7 @@
 
 # This will be the folder name under /magisk
 # This should also be the same as the id in your module.prop to prevent confusion
-MODID=udbr
+MODID=v4afx
 AMLID=audmodlib
 
 # Set to true if you need to enable Magic Mount
@@ -52,13 +52,12 @@ print_modname() {
   ui_print "    *******************************************"
   ui_print "    *<name>*"
   ui_print "    *******************************************"
-  ui_print "    *           Universal - Mod               *"
+  ui_print "    *             Universal - Mod             *"
   ui_print "    *<version>*"
   ui_print "    *<author>*"
   ui_print "    *******************************************"
   ui_print " "
 }
-
 
 ##########################################################################################
 # Replace list

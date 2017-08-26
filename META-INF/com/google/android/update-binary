@@ -167,7 +167,8 @@ sys_wipefol_ch() {
 for VAR in version name author; do
   NEW=$(grep "$VAR=" $INSTALLER/module.prop | sed 's/^.*=//')
   test "$VAR" == "author" && NEW="by ${NEW}"
-  CHARS=${#NEW}
+  SPECCHARS=$(echo "$NEW" | tr -cd "©®" | wc -m)
+  CHARS=$((${#NEW}-$SPECCHARS))
   SPACES=""
   TOTSPACE=$(((41-$CHARS) / 2))
   for i in $(seq $TOTSPACE); do
