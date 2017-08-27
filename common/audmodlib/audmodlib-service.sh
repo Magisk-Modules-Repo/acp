@@ -1,12 +1,8 @@
 #!/system/bin/sh
 # This script will be executed in late_start service mode
 # More info in the main Magisk thread
-
-#### v INSERT YOUR CONFIG.SH MODID v ####
 MODID=audmodlib
-#### ^ INSERT YOUR CONFIG.SH MODID ^ ####
 
-########## v DO NOT REMOVE v ##########
 if [ ! -d /magisk/$MODID ]; then
   rm /cache/$MODID-service.log
   rm -f /magisk/.core/service.d/$MODID.sh
@@ -108,4 +104,3 @@ else
 
   echo "$SH/$MODID-service$EXT has run successfully $(date +"%m-%d-%Y %H:%M:%S")" | tee -a $LOG_FILE;
 fi
-########## ^ DO NOT REMOVE ^ ##########

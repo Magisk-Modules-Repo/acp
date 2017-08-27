@@ -139,7 +139,7 @@ sys_wipe_ch() {
     LINE=$(echo $LINE | sed 's/.* //')
     test "$1" == "$(eval echo $LINE)" && TPARTMOD=true
   done
-  if [ -f "$1" ] && [ ! -f "$1.bak" ] && [ "$TPARTMOD" =! "true" ]; then
+  if [ -f "$1" ] && [ ! -f "$1.bak" ] && [ "$TPARTMOD" != "true" ]; then
 	mv -f "$1" "$1.bak"
 	echo "$1.bak" >> $INFO
   else
@@ -179,9 +179,6 @@ for VAR in version name author; do
 done
 
 . $INSTALLER/config.sh
-
-MODPATH=$MOUNTPATH/$MODID
-$BOOTMODE && AMLPATH=/magisk/$AMLID || AMLPATH=$MOUNTPATH/$AMLID
 
 # Print mod name
 print_modname
@@ -242,35 +239,6 @@ api_level_arch_detect
 ##########################################################################################
 
 ### FILE LOCATIONS ###
-# AUDIO EFFECTS
-CONFIG_FILE=$SYS/etc/audio_effects.conf
-HTC_CONFIG_FILE=$SYS/etc/htc_audio_effects.conf
-OTHER_V_FILE=$SYS/etc/audio_effects_vendor.conf
-OFFLOAD_CONFIG=$SYS/etc/audio_effects_offload.conf
-V_CONFIG_FILE=$VEN/etc/audio_effects.conf
-# AUDIO POLICY
-A2DP_AUD_POL=$SYS/etc/a2dp_audio_policy_configuration.xml
-AUD_POL=$SYS/etc/audio_policy.conf
-AUD_POL_CONF=$SYS/etc/audio_policy_configuration.xml
-AUD_POL_VOL=$SYS/etc/audio_policy_volumes.xml
-SUB_AUD_POL=$SYS/etc/r_submix_audio_policy_configuration.xml
-USB_AUD_POL=$SYS/etc/usb_audio_policy_configuration.xml
-V_AUD_OUT_POL=$VEN/etc/audio_output_policy.conf
-V_AUD_POL=$VEN/etc/audio_policy.conf
-# MIXER PATHS
-MIX_PATH=$SYS/etc/mixer_paths.xml
-MIX_PATH_DTP=$SYS/etc/mixer_paths_dtp.xml
-MIX_PATH_i2s=$SYS/etc/mixer_paths_i2s.xml
-MIX_PATH_TASH=$SYS/etc/mixer_paths_tasha.xml
-STRIGG_MIX_PATH=$SYS/sound_trigger_mixer_paths.xml
-STRIGG_MIX_PATH_9330=$SYS/sound_trigger_mixer_paths_wcd9330.xml
-V_MIX_PATH=$VEN/etc/mixer_paths.xml
-# INFO FILE
-if [ -d $SYS/addon.d ]; then
-  INFO=$SYS/addon.d/$MODID-files
-else
-  INFO=$SYS/etc/$MODID-files
-fi
 # USER INPUT FILES
 INPUT_FILE=$INSTALLER/common/unity-files.sh
 INPUT_FILE_WIPE=$INSTALLER/common/unity-files-wipe.sh
@@ -311,16 +279,52 @@ NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
   NUM=$((NUM+1))
 done
 
-# RENAME MODID-SERVICE SCRIPT
-mv -f $INSTALLER/common/$AMLID/modid-service.sh $INSTALLER/common/$AMLID/$MODID-service.sh
+# SET MODPATH AND AMLPATH
+MODPATH=$MOUNTPATH/$MODID
+$BOOTMODE && AMLPATH=/magisk/$AMLID || AMLPATH=$MOUNTPATH/$AMLID
 
-# INSERT MODID INTO MOD SCRIPT
-sed -i "s/<MODID>/$MODID/" $INSTALLER/common/$AMLID/$MODID-service.sh
+# AUDIO EFFECTS
+CONFIG_FILE=$SYS/etc/audio_effects.conf
+HTC_CONFIG_FILE=$SYS/etc/htc_audio_effects.conf
+OTHER_V_FILE=$SYS/etc/audio_effects_vendor.conf
+OFFLOAD_CONFIG=$SYS/etc/audio_effects_offload.conf
+V_CONFIG_FILE=$VEN/etc/audio_effects.conf
+# AUDIO POLICY
+A2DP_AUD_POL=$SYS/etc/a2dp_audio_policy_configuration.xml
+AUD_POL=$SYS/etc/audio_policy.conf
+AUD_POL_CONF=$SYS/etc/audio_policy_configuration.xml
+AUD_POL_VOL=$SYS/etc/audio_policy_volumes.xml
+SUB_AUD_POL=$SYS/etc/r_submix_audio_policy_configuration.xml
+USB_AUD_POL=$SYS/etc/usb_audio_policy_configuration.xml
+V_AUD_OUT_POL=$VEN/etc/audio_output_policy.conf
+V_AUD_POL=$VEN/etc/audio_policy.conf
+# MIXER PATHS
+MIX_PATH=$SYS/etc/mixer_paths.xml
+MIX_PATH_DTP=$SYS/etc/mixer_paths_dtp.xml
+MIX_PATH_i2s=$SYS/etc/mixer_paths_i2s.xml
+MIX_PATH_TASH=$SYS/etc/mixer_paths_tasha.xml
+STRIGG_MIX_PATH=$SYS/sound_trigger_mixer_paths.xml
+STRIGG_MIX_PATH_9330=$SYS/sound_trigger_mixer_paths_wcd9330.xml
+V_MIX_PATH=$VEN/etc/mixer_paths.xml
+# INFO FILE
+if [ -d $SYS/addon.d ]; then
+  INFO=$SYS/addon.d/$MODID-files
+else
+  INFO=$SYS/etc/$MODID-files
+fi
 
-# INSERT UNITY REMOVE PATCHES INTO MOD SCRIPT
-sed -i 's/^/  /' $INPUT_PATCHES_REM
-sed -i "/<PATCHES>/ r $INPUT_PATCHES_REM" $INSTALLER/common/$AMLID/$MODID-service.sh
-sed -i '/<PATCHES>/d' $INSTALLER/common/$AMLID/$MODID-service.sh
+if [ "$MODID" != "$AMLID" ]; then
+  # RENAME MODID-SERVICE SCRIPT
+  mv -f $INSTALLER/common/$AMLID/modid-service.sh $INSTALLER/common/$AMLID/$MODID-service.sh
+
+  # INSERT MODID INTO MOD SCRIPT
+  sed -i "s/<MODID>/$MODID/" $INSTALLER/common/$AMLID/$MODID-service.sh
+
+  # INSERT UNITY REMOVE PATCHES INTO MOD SCRIPT
+  sed -i 's/^/  /' $INPUT_PATCHES_REM
+  sed -i "/<PATCHES>/ r $INPUT_PATCHES_REM" $INSTALLER/common/$AMLID/$MODID-service.sh
+  sed -i '/<PATCHES>/d' $INSTALLER/common/$AMLID/$MODID-service.sh
+fi
 
 magisk_install() {
   MAGISK=true
@@ -481,6 +485,10 @@ unity_mod_wipe() {
   ui_print " "
   ui_print "- Cleaning up previous installations -"
 
+  # REMOVE PROPS
+  ui_print "   Removing obsolete props..."
+  unity_prop_remove $INPUT_PROPS_REM
+  
   # REMOVE FILES
   ui_print "   Removing files..."
   if [ "$MAGISK" == "false" ]; then
@@ -601,14 +609,14 @@ unity_mod_copy() {
 
     if [ "$SYSOVER" == false ]; then
       sys_cp_ch $INSTALLER/common/$AMLID/$AMLID-service.sh $SH/$AMLID$EXT 0700
-	  sys_cp_ch $INSTALLER/common/$AMLID/$MODID-service.sh $SH/$MODID$EXT 0700
+	  test "$MODID" != "$AMLID" && sys_cp_ch $INSTALLER/common/$AMLID/$MODID-service.sh $SH/$MODID$EXT 0700
       test ! "$(cat $INFO | grep "$SH/$AMLID$EXT")" && echo "$SH/$AMLID$EXT" >> $INFO
 	  test ! "$(cat $INFO | grep "$SH/$MODID$EXT")" && echo "$SH/$MODID$EXT" >> $INFO
       test ! "$(cat $INFO | grep "$SH/unity-props$EXT")" && echo "$SH/unity-props$EXT" >> $INFO
     else
       mkdir -p $MOUNTPATH/.core/service.d
       sys_cp_ch $INSTALLER/common/$AMLID/$AMLID-service.sh $MOUNTPATH/.core/service.d/$AMLID.sh 0755
-      sys_cp_ch $INSTALLER/common/$AMLID/$MODID-service.sh $MOUNTPATH/.core/service.d/$MODID.sh 0755
+      test "$MODID" != "$AMLID" && sys_cp_ch $INSTALLER/common/$AMLID/$MODID-service.sh $MOUNTPATH/.core/service.d/$MODID.sh 0755
 	fi
 
     # INSTALL ROM BACKUP SCRIPT
@@ -835,11 +843,6 @@ if is_mounted /data ; then
       ui_print "   ! Magisk is not installed!"
       ui_print "    ! Installing on system!"
 
-      # Remove props
-      ui_print " "
-      ui_print "- Removing obsolete props-"
-      unity_prop_remove $INPUT_PROPS_REM
-
       # Wipe files
       unity_mod_wipe
 
@@ -931,9 +934,6 @@ test "$APPINSTALL" == "true" && app_install_logic
 mod_exist
 
 if [ "$ACTION" == "Install" ]; then
-
-  # Remove props
-  unity_prop_remove $INPUT_PROPS_REM
 
   # Wipe files
   unity_mod_wipe

@@ -1,12 +1,8 @@
 #!/sbin/sh
 #
-
 . /tmp/backuptool.functions
-
-#### v INSERT YOUR CONFIG.SH MODID v ####
 MODID=<MODID>
 AUDMODLIBID=audmodlib
-#### ^ INSERT YOUR CONFIG.SH MODID ^ ####
 
 # DETERMINE IF PIXEL (A/B OTA) DEVICE
 ABDeviceCheck=$(cat /proc/cmdline | grep slot_suffix | wc -l)

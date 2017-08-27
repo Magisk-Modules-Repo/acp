@@ -1,10 +1,7 @@
 #!/system/bin/sh
 # This script will be executed in late_start service mode
 # More info in the main Magisk thread
-
-#### v INSERT YOUR CONFIG.SH MODID v ####
 MODID=<MODID>
-#### ^ INSERT YOUR CONFIG.SH MODID ^ ####
 
 ########## v DO NOT REMOVE v ##########
 if [ ! -d /magisk/$MODID ]; then
@@ -58,6 +55,7 @@ if [ ! -d /magisk/$MODID ]; then
   STRIGG_MIX_PATH_9330=$SYS/sound_trigger_mixer_paths_wcd9330.xml
   V_MIX_PATH=$VEN/etc/mixer_paths.xml
 
+  # MOD REMOVE PATCHES
   <PATCHES>
 
   rm -f /magisk/.core/service.d/$MODID.sh
