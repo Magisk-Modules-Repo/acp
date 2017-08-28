@@ -2,7 +2,7 @@
 ##########################################################################################
 #
 # Unity Installer v2.0
-# by ahrion & Zackptg5
+# by ahrion & zackptg5
 #
 ##########################################################################################
 
@@ -699,7 +699,7 @@ magisk_audmodlib() {
 
   set_perm_recursive  $AMLPATH  0  0  0755  0644
 
-  ui_print "   ! AudModLib framework by ahrion @ XDA !"
+  ui_print "   ! AML framework by ahrion & zackptg5 @ XDA !"
 }
 
 unity_mod_patch() {
@@ -859,7 +859,7 @@ if is_mounted /data ; then
       ui_print " "
       ui_print "    --------- INSTALLATION SUCCESSFUL ---------"
       ui_print " "
-      ui_print "Installer brought to you by ahrion and zackptg5 @ XDA"
+      ui_print "    Unity (Un)Installer by ahrion &zackptg5 @ XDA"
       ui_print " "
       exit 0;
     else
@@ -879,7 +879,7 @@ if is_mounted /data ; then
       ui_print " "
       ui_print "    --------- RESTORATION SUCCESSFUL ---------"
       ui_print " "
-      ui_print "Uninstaller brought to you by ahrion and zackptg5 @ XDA"
+      ui_print "    Unity (Un)Installer by ahrion &zackptg5 @ XDA"
       ui_print " "
       exit 0;
     fi
@@ -1046,19 +1046,22 @@ if [ "$ACTION" == "Install" ]; then
   ui_print " "
   ui_print "    --------- INSTALLATION SUCCESSFUL ---------"
   ui_print " "
+  ui_print "    Unity (Un)Installer by ahrion &zackptg5 @ XDA"
+  ui_print " "
 else
   ui_print " "
   ui_print "    --------- RESTORATION SUCCESSFUL ---------"
   ui_print " "
+  ui_print "    Unity (Un)Installer by ahrion &zackptg5 @ XDA"
+  ui_print " "
 fi
 
-ui_print "    Unity (Un)Installer by ahrion &zackptg5 @ XDA"
-
 # Please leave this message in your flashable zip for credits :)
-ui_print " "
-ui_print "    *******************************************"
-ui_print "    *      Powered by Magisk (@topjohnwu)     *"
-ui_print "    *******************************************"
-ui_print " "
+if [ "$MAGISK" == true ] || [ "$SYSOVER" == false ]; then
+  ui_print "    *******************************************"
+  ui_print "    *      Powered by Magisk (@topjohnwu)     *"
+  ui_print "    *******************************************"
+  ui_print " "
+fi
 
 exit 0
