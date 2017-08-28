@@ -157,6 +157,14 @@ sys_wipefol_ch() {
   fi
 }
 
+# PRINT OUT COMPLETETION OF (UN)INSTALL
+action_complete() {
+  ui_print " "
+  test "$ACTION" == "Install" && ui_print "    --------- INSTALLATION SUCCESSFUL ---------" || ui_print "    --------- RESTORATION SUCCESSFUL ---------"
+  ui_print " "
+  ui_print "Unity (Un)Installer by ahrion & zackptg5 @ XDA"
+}
+
 ##########################################################################################
 # Prepare
 ##########################################################################################
@@ -856,11 +864,7 @@ if is_mounted /data ; then
       test "$MODID" != "$AMLID" && unity_mod_patch
 
       #### COMPLETING INSTALL ####
-      ui_print " "
-      ui_print "    --------- INSTALLATION SUCCESSFUL ---------"
-      ui_print " "
-      ui_print "    Unity (Un)Installer by ahrion &zackptg5 @ XDA"
-      ui_print " "
+      action_complete
       exit 0;
     else
       ui_print " "
@@ -876,11 +880,7 @@ if is_mounted /data ; then
       fi
 
       #### COMPLETING UNINSTALL ####
-      ui_print " "
-      ui_print "    --------- RESTORATION SUCCESSFUL ---------"
-      ui_print " "
-      ui_print "    Unity (Un)Installer by ahrion &zackptg5 @ XDA"
-      ui_print " "
+      action_complete
       exit 0;
     fi
   fi
@@ -1042,26 +1042,13 @@ if [ $isABDevice == true ]; then
   mount -o ro,remount /vendor 2>/dev/null
 fi
 
-if [ "$ACTION" == "Install" ]; then
-  ui_print " "
-  ui_print "    --------- INSTALLATION SUCCESSFUL ---------"
-  ui_print " "
-  ui_print "    Unity (Un)Installer by ahrion &zackptg5 @ XDA"
-  ui_print " "
-else
-  ui_print " "
-  ui_print "    --------- RESTORATION SUCCESSFUL ---------"
-  ui_print " "
-  ui_print "    Unity (Un)Installer by ahrion &zackptg5 @ XDA"
-  ui_print " "
-fi
+action_complete
 
 # Please leave this message in your flashable zip for credits :)
-if [ "$MAGISK" == true ] || [ "$SYSOVER" == false ]; then
-  ui_print "    *******************************************"
-  ui_print "    *      Powered by Magisk (@topjohnwu)     *"
-  ui_print "    *******************************************"
-  ui_print " "
-fi
+ui_print " "
+ui_print "    *******************************************"
+ui_print "    *      Powered by Magisk (@topjohnwu)     *"
+ui_print "    *******************************************"
+ui_print " "
 
 exit 0
