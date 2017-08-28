@@ -1046,13 +1046,13 @@ if [ "$ACTION" == "Install" ]; then
   ui_print " "
   ui_print "    --------- INSTALLATION SUCCESSFUL ---------"
   ui_print " "
-  ui_print "Installer brought to you by ahrion and zackptg5 @ XDA"
 else
   ui_print " "
   ui_print "    --------- RESTORATION SUCCESSFUL ---------"
   ui_print " "
-  ui_print "Uninstaller brought to you by ahrion and zackptg5 @ XDA"
 fi
+
+ui_print "    Unity (Un)Installer by ahrion &zackptg5 @ XDA"
 
 # Please leave this message in your flashable zip for credits :)
 ui_print " "
