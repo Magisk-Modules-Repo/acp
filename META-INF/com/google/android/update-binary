@@ -133,11 +133,10 @@ sys_rm_ch() {
 
 # BACKUP/REMOVE FILE
 sys_wipe_ch() {
-  test -f $INFO && sed -i "/$2/d" $INFO || touch $INFO
+  test ! -f $INFO && touch $INFO
   TPARTMOD=false
-  cat $INPUT_FILE | while read LINE; do
-    LINE=$(echo $LINE | sed 's/.* //')
-    test "$1" == "$(eval echo $LINE)" && TPARTMOD=true
+  cat $INFO | while read LINE; do
+    test "$1" == "$(eval echo $LINE)" && { TPARTMOD=true; sed -i "/$1/d" $INFO; }
   done
   if [ -f "$1" ] && [ ! -f "$1.bak" ] && [ "$TPARTMOD" != "true" ]; then
 	mv -f "$1" "$1.bak"
@@ -248,7 +247,6 @@ api_level_arch_detect
 
 ### FILE LOCATIONS ###
 # USER INPUT FILES
-INPUT_FILE=$INSTALLER/common/unity-files.sh
 INPUT_FILE_WIPE=$INSTALLER/common/unity-files-wipe.sh
 INPUT_PATCHES=$INSTALLER/common/unity-patches.sh
 INPUT_PATCHES_REM=$INSTALLER/common/unity-patches-remove.sh
@@ -257,9 +255,10 @@ INPUT_PROPS=$INSTALLER/common/unity-props.prop
 INPUT_PROPS_REM=$INSTALLER/common/unity-props-remove.prop
 INPUT_VAR=$INSTALLER/common/unity-uservariables.sh
 INPUT_RULES=$INSTALLER/common/unity-customrules
+INPUT_SCRIPT=$INSTALLER/common/unity-script.sh
 
 # REMOVE COMMENTS FROM USER INPUT FILES AND ADD PROPER VARIABLES
-for FIL in $INPUT_FILE $INPUT_FILE_WIPE $INPUT_PATCHES $INPUT_PATCHES_REM $INPUT_PATCHES_WIPE $INPUT_PROPS $INPUT_PROPS_REM $INPUT_VAR; do
+for FIL in $INPUT_FILE_WIPE $INPUT_PATCHES $INPUT_PATCHES_REM $INPUT_PATCHES_WIPE $INPUT_PROPS $INPUT_PROPS_REM $INPUT_VAR $INPUT_SCRIPT; do
   if [ -f $FIL ]; then
 	sed -i '/^#/ d' $FIL
     sed -i 's/$SYS\/$VEN/$VEN/g' $FIL
@@ -320,6 +319,9 @@ if [ -d $SYS/addon.d ]; then
 else
   INFO=$SYS/etc/$MODID-files
 fi
+# TEMPORARY VARIABLES
+TFILES=$INSTALLER/tfiles
+TVFILES=$INSTALLER/tvfiles
 
 if [ "$MODID" != "$AMLID" ]; then
   # RENAME MODID-SERVICE SCRIPT
@@ -332,6 +334,10 @@ if [ "$MODID" != "$AMLID" ]; then
   sed -i 's/^/  /' $INPUT_PATCHES_REM
   sed -i "/<PATCHES>/ r $INPUT_PATCHES_REM" $INSTALLER/common/$AMLID/$MODID-service.sh
   sed -i '/<PATCHES>/d' $INSTALLER/common/$AMLID/$MODID-service.sh
+  
+  # INSERT CUSTOM USER SCRIPT INTO MOD SCRIPT
+  sed -i "/<CUSTPATCHES>/ r $INPUT_SCRIPT" 	$INSTALLER/common/$AMLID/$MODID-service.sh
+  sed -i '/<CUSTPATCHES>/d' $INSTALLER/common/$AMLID/$MODID-service.sh
 fi
 
 magisk_install() {
@@ -556,10 +562,17 @@ unity_mod_directory() {
     mkdir -p $MODPATH
   fi
   test "$SYSOVER" == "true" && mkdir -p $AMLPATH
-
-  cat $INPUT_FILE | while read LINE; do
-    LINE=$(echo $LINE | sed 's/.* //')
-    $MK_PRFX $(dirname "$(eval "echo $LINE")")$MK_SFFX
+  
+  cat $TFILES | while read LINE; do
+    $MK_PRFX $(dirname "$UNITY$SYS$(eval "echo $LINE")")$MK_SFFX
+  done
+  cat $TVFILES | while read LINE; do
+    $MK_PRFX $(dirname "$UNITY$VEN$(eval "echo $LINE")")$MK_SFFX
+  done
+  NUM=1; while [ $NUM -le $NUMOFAPPS ]; do
+    TAPPNAME=$(eval "echo \$APP$(eval "echo $NUM")")
+    $MK_PRFX $UNITY$SYS/$(eval "echo \$APPPATH$(eval "echo $NUM")")
+	NUM=$((NUM+1))
   done
 
   if [ "$MAGISK" == false ]; then
@@ -658,8 +671,17 @@ unity_mod_copy() {
   else
     ui_print "   Installing libraries..."
   fi
-  cat $INPUT_FILE | while read LINE; do
-    $CP_PRFX $INSTALLER$(eval "echo $LINE")$CP_SFFX
+  
+  cat $TFILES | while read LINE; do
+    $CP_PRFX $INSTALLER/system/$(eval "echo $LINE") $UNITY$SYS$(eval "echo $LINE")$CP_SFFX
+  done
+  cat $TVFILES | while read LINE; do
+    $CP_PRFX $INSTALLER/system/vendor/$(eval "echo $LINE") $UNITY$VEN$(eval "echo $LINE")$CP_SFFX
+  done
+  NUM=1; while [ $NUM -le $NUMOFAPPS ]; do
+    TAPPNAME=$(eval "echo \$APP$(eval "echo $NUM")")
+    $CP_PRFX $INSTALLER/system/app/$TAPPNAME/$TAPPNAME.apk $UNITY$SYS/$(eval "echo \$APPPATH$(eval "echo $NUM")")/$TAPPNAME.apk
+	NUM=$((NUM+1))
   done
 
   # ADD BUILDPROPS
@@ -834,7 +856,13 @@ unity_uninstall() {
 ##########################################################################################
 
 # Extract mod files
-unzip -o "$ZIP" 'system/*' -d $INSTALLER 2>/dev/null
+unzip -o "$ZIP" 'system/*' 'custom/*' -d $INSTALLER 2>/dev/null
+
+# PROCESS FOLDERS/FILES
+find $INSTALLER/system -type f -print > $TFILES
+sed -i -e '/addon.d/ d' -e '/app/ d' -e "s|$INSTALLER/system/||g" $TFILES
+cp $TFILES $TVFILES
+sed -i "s/vendor\///g" $TVFILES
 
 if is_mounted /data ; then
   if [ ! -f "/data/magisk.img" ]; then
@@ -862,6 +890,12 @@ if is_mounted /data ; then
 
       # Patch files
       test "$MODID" != "$AMLID" && unity_mod_patch
+	  
+	  # post-fs-data mode scripts
+      $POSTFSDATA && sys_cp_ch $INSTALLER/common/post-fs-data.sh $SH/$MODID-post-fs-data$EXT 0700
+
+      # service mode scripts
+      $LATESTARTSERVICE && sys_cp_ch $INSTALLER/common/service.sh $SH/$MODID-service$EXT 0700
 
       #### COMPLETING INSTALL ####
       ui_print " "
@@ -971,9 +1005,6 @@ if [ "$ACTION" == "Install" ]; then
     fi
 
   fi
-
-  # prop files
-  $PROPFILE && cp -af $INSTALLER/common/system.prop $MODPATH/system.prop
 
   # Module info
   cp -af $INSTALLER/module.prop $MODPATH/module.prop

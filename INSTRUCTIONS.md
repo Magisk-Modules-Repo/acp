@@ -2,19 +2,23 @@ To create your own audmodlib mod, all of the files you need to modify are locate
 NOTE: MAKE SURE YOU LEAVE A BLANK LINE AT THE END OF EACH FILE
 Instructions are contained in each file
 
-1. Place your files in their respective directories in the system folder
-2. Add you modid and other variables to unity-uservariables.sh (more instructions are in the file)
-3. Modify the post-fs-data.sh and service.sh files in common as you would with any other magisk module (DO NOT USE system.prop, see steps 3-4 for instructions on props)
-3a. If post-fs-data and/or service are going to be used, set their values to true in config.sh
-4. Add any build props you want added into the unity-props.prop
-5. Add any build props you want removed into the unity-props-remove.prop
-6. Add any files you want installed into the unity-files.sh
-7. Add any possibly conflicting files you want removed/wiped before install into the unity-file-wipe.sh
-8. Add any config/policy/mixer patches you want added into the unity-patches.sh
-9. Add the removal of your patches in unity_patches into the unity-patches-remove.sh 
-10. Add any other config/policy/mixer patches you want removed before install into the unity-patches-wipe.sh
-11. If your files include any apps/apks, follow the instructions in the unity-uservariables.sh
-12. Add any custom permissions needed into config.sh (this will apply to both magisk and system installs) (default permissions is 755 for folders and 644 for files)
+1. Place your files in their respective directories in the system folder (where they will be installed to)
+1a. For apps, place in system/app/APPNAME/APPNAME.apk
+2. Place any files that need conditionals (only installed in some circumstances) in the custom folder (can be placed however you want)
+3. Add you modid and other variables to unity-uservariables.sh (more instructions are in the file)
+4. Add any scripts you want run at boot to unity-scripts.sh
+5. Modify the post-fs-data.sh and service.sh files in common as you would with any other magisk module (you probably won't need to do this - unity-scripts runs as a service script)
+5a. If post-fs-data and/or service are going to be used, set their values to true in config.sh (THESE WILL BE INSTALLED AS REGULAR BOOT SCRIPTS IF NOT A MAGISK INSTALL)
+6. Add any build props you want added into the unity-props.prop
+7. Add any build props you want removed into the unity-props-remove.prop
+8. Add any possibly conflicting files you want removed/wiped before install into the unity-file-wipe.sh
+9. Add any config/policy/mixer patches you want added into the unity-patches.sh
+10. Add the removal of your patches in unity_patches into the unity-patches-remove.sh
+11. Add any other config/policy/mixer patches you want removed before install into the unity-patches-wipe.sh
+12. If your files include any apps/apks, follow the instructions in the unity-uservariables.sh
+13. Add any custom permissions needed into config.sh (this will apply to both magisk and system installs) (default permissions is 755 for folders and 644 for files)
+14. Add any custom install/uninstall logic to unity-customrules1.sh (follow the instructions inside)
+14a. This is where you would put your stuff for any custom files and whatever else isn't taken care of already
 ________________________________________________________________________________________________________________________________________________________________________
 
 AUDMODLIB VARIABLES (for reference)
