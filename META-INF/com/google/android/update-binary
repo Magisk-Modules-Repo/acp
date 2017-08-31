@@ -864,6 +864,10 @@ if is_mounted /data ; then
       test "$MODID" != "$AMLID" && unity_mod_patch
 
       #### COMPLETING INSTALL ####
+      ui_print " "
+      ui_print "- Completing install -"
+      ui_print "   Setting permissions..."
+      set_permissions
       action_complete
       exit 0;
     else

@@ -14,6 +14,7 @@ Instructions are contained in each file
 9. Add the removal of your patches in unity_patches into the unity-patches-remove.sh 
 10. Add any other config/policy/mixer patches you want removed before install into the unity-patches-wipe.sh
 11. If your files include any apps/apks, follow the instructions in the unity-uservariables.sh
+12. Add any custom permissions needed into config.sh (this will apply to both magisk and system installs) (default permissions is 755 for folders and 644 for files)
 ________________________________________________________________________________________________________________________________________________________________________
 
 AUDMODLIB VARIABLES (for reference)

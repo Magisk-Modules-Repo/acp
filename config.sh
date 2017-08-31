@@ -87,19 +87,20 @@ REPLACE="
 # NOTE: This part has to be adjusted to fit your own needs
 
 set_permissions() {
-  # Default permissions, don't remove them
-  set_perm_recursive  $MODPATH  0  0  0755  0644
+  # DEFAULT PERMISSIONS, DON'T REMOVE THEM
+  test "$MAGISK" == "true" && set_perm_recursive $MODPATH 0 0 0755 0644
 
-  # Only some special files require specific permissions
-  # The default permissions should be good enough for most cases
-
+  # CUSTOM PERMISSIONS
+  
   # Some templates if you have no idea what to do:
+  # Note that all files/folders have the $UNITY prefix - keep this prefix on all of your files/folders
+  # Also note the lack of '/' between variables - preceding slashes are already included in the variables
+  # Use $SYS for system and $VEN for vendor (Do not use $SYS$VEN, the $VEN is set to proper vendor path already - could be /vendor, /system/vendor, etc.)
 
   # set_perm_recursive  <dirname>                <owner> <group> <dirpermission> <filepermission> <contexts> (default: u:object_r:system_file:s0)
-  # set_perm_recursive  $MODPATH/system/lib       0       0       0755            0644
+  # set_perm_recursive $UNITY$SYS/lib 0 0 0755 0644
+  # set_perm_recursive $UNITY$VEN/lib/soundfx 0 0 0755 0644
 
   # set_perm  <filename>                         <owner> <group> <permission> <contexts> (default: u:object_r:system_file:s0)
-  # set_perm  $MODPATH/system/bin/app_process32   0       2000    0755         u:object_r:zygote_exec:s0
-  # set_perm  $MODPATH/system/bin/dex2oat         0       2000    0755         u:object_r:dex2oat_exec:s0
-  # set_perm  $MODPATH/system/lib/libart.so       0       0       0644
+  # set_perm $UNITY$SYS/lib/libart.so 0 0 0644
 }
