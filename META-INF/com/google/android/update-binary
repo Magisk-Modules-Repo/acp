@@ -258,33 +258,32 @@ INPUT_RULES=$INSTALLER/common/unity-customrules
 INPUT_SCRIPT=$INSTALLER/common/unity-script.sh
 
 # REMOVE COMMENTS FROM USER INPUT FILES AND ADD PROPER VARIABLES
-for FIL in $INPUT_FILE_WIPE $INPUT_PATCHES $INPUT_PATCHES_REM $INPUT_PATCHES_WIPE $INPUT_PROPS $INPUT_PROPS_REM $INPUT_VAR $INPUT_SCRIPT; do
-  if [ -f $FIL ]; then
-	sed -i '/^#/ d' $FIL
-    sed -i 's/$SYS\/$VEN/$VEN/g' $FIL
+for FIL in $INPUT_FILE_WIPE $INPUT_PATCHES $INPUT_PATCHES_REM $INPUT_PATCHES_WIPE $INPUT_PROPS $INPUT_PROPS_REM $INPUT_VAR $INPUT_RULES $INPUT_SCRIPT; do
+  if [ "$FIL" == "$INPUT_RULES" ]; then
+    NUM=1; while true; do
+      if [ -f $INPUT_RULES$NUM.sh ]; then
+        sed -i '/^#/ d' $INPUT_RULES$NUM.sh
+        sed -i 's/$SYS\/$VEN/$VEN/g' $INPUT_RULES$NUM.sh
+      else
+        NUMOFCUSTRULES=$(($NUM-1))
+        break
+      fi
+      NUM=$((NUM+1))
+    done
   else
-    ui_print "   !$FIL missing!"
-    ui_print "   !Copy it back to above and try again!"
-    exit 1
+    if [ -f $FIL ]; then
+	  sed -i '/^#/ d' $FIL
+      sed -i 's/$SYS\/$VEN/$VEN/g' $FIL
+    else
+      ui_print "   !$FIL missing!"
+      ui_print "   !Copy it back to above and try again!"
+      exit 1
+    fi
   fi
 done
 
 # IMPORT USER VARIABLES
 source $INPUT_VAR
-
-# REMOVE COMMENTS FOR USER CUSTOM RULES AND ADD PROPER VARIABLES
-NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
-  if [ -f $INPUT_RULES$NUM.sh ]; then
-    sed -i '/^#/ d' $INPUT_RULES$NUM.sh
-    sed -i 's/$SYS\/$VEN/$VEN/g' $INPUT_RULES$NUM.sh
-  else
-    ui_print " "
-    ui_print "   !Less customrules files than specified in uservariables file!"
-    ui_print "    !Change it to the correct number and try again!"
-    exit 1
-  fi
-  NUM=$((NUM+1))
-done
 
 # SET MODPATH AND AMLPATH
 MODPATH=$MOUNTPATH/$MODID
@@ -666,7 +665,7 @@ unity_mod_copy() {
   fi
 
   # INSTALL APPS & LIBRARIES
-  if [ "$APPINSTALL" == "true" ]; then
+  if [ $NUMOFAPPS -ne 0 ]; then
     ui_print "   Installing libraries$APPTXT..."
   else
     ui_print "   Installing libraries..."
@@ -870,7 +869,7 @@ if is_mounted /data ; then
     # Prepare (Un)Install
     system_install
     script_install_logic
-    test "$APPINSTALL" == "true" && app_install_logic
+    test $NUMOFAPPS -ne 0 && app_install_logic
 
     # Determine if mod is already installed. If same version is installed, uninstall
     mod_exist
@@ -967,7 +966,7 @@ if [ "$SYSOVER" == true ]; then
 else
   magisk_install
 fi
-test "$APPINSTALL" == "true" && app_install_logic
+test $NUMOFAPPS -ne 0 && app_install_logic
 
 # Determine if mod is already installed. If same version is installed, uninstall
 mod_exist
