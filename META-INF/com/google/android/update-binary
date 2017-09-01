@@ -862,6 +862,7 @@ find $INSTALLER/system -type f -print > $TFILES
 sed -i -e '/addon.d/ d' -e '/app/ d' -e "s|$INSTALLER/system||g" $TFILES
 $IS64BIT || sed -i '/lib64/ d' $TFILES
 cp $TFILES $TVFILES
+sed -i -e '/vendor/ d' $TFILES 
 sed -i -e '/\/vendor/!d' -e "s/\/vendor//g" $TVFILES
 
 if is_mounted /data ; then
