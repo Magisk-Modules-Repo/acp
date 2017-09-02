@@ -12,16 +12,13 @@ if [ ! -d /magisk/$MODID ]; then
   if [ "$ABDeviceCheck" -gt 0 ]; then
     isABDevice=true
     if [ -d "/system_root" ]; then
-        ROOT=/system_root
-        SYS=$ROOT/system
+        SYS=/system_root/system
     else
-        ROOT=""
-        SYS=$ROOT/system/system
+        SYS=/system/system
     fi
   else
     isABDevice=false
-    ROOT=""
-    SYS=$ROOT/system
+    SYS=/system
   fi
 
   if [ $isABDevice == true ] || [ ! -d $SYS/vendor ]; then

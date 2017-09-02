@@ -25,15 +25,12 @@ ABDeviceCheck=$(cat /proc/cmdline | grep slot_suffix | wc -l)
 if [ "$ABDeviceCheck" -gt 0 ]; then
   isABDevice=true
   if [ -d "/system_root" ]; then
-    ROOT=/system_root
-    SYS=$ROOT/system
+    SYS=/system_root/system
   else
-    ROOT=""
-    SYS=$ROOT/system/system
+    SYS=/system/system
   fi
 else
   isABDevice=false
-  ROOT=""
   SYS=/system
 fi
 
@@ -261,9 +258,9 @@ INPUT_SCRIPT=$INSTALLER/common/unity-script.sh
 for FIL in $INPUT_FILE_WIPE $INPUT_PATCHES $INPUT_PATCHES_REM $INPUT_PATCHES_WIPE $INPUT_PROPS $INPUT_PROPS_REM $INPUT_VAR $INPUT_RULES $INPUT_SCRIPT; do
   if [ "$FIL" == "$INPUT_RULES" ]; then
     NUM=1; while true; do
-      if [ -f $INPUT_RULES$NUM.sh ]; then
-        sed -i '/^#/ d' $INPUT_RULES$NUM.sh
-        sed -i 's/$SYS\/$VEN/$VEN/g' $INPUT_RULES$NUM.sh
+      if [ -f $FIL$NUM.sh ]; then
+        sed -i '/^#/ d' $FIL$NUM.sh
+        sed -i 's/$SYS\/$VEN/$VEN/g' $FIL$NUM.sh
       else
         NUMOFCUSTRULES=$(($NUM-1))
         break
@@ -420,13 +417,10 @@ unity_prop_remove() {
   # Logic for unity prop removals
   ########################################################################################
   if [ "$MAGISK" == true ] || [ "$SYSOVER" == true ]; then
-    rm -f $SYS/etc/init.d/unity-props
-    rm -f /su/su.d/unity-props.sh
-    rm -f $SYS/su.d/unity-props.sh
+    rm -f $SYS/etc/init.d/unity-props /su/su.d/unity-props.sh $SYS/su.d/unity-props.sh
     AMLPROP="$AMLPATH/system.prop"
     #AMLPROP="$MOUNTPATH/.core/props/audmodlib-props.prop"
-    sed -i "s/setprop //g" $1
-    sed -i "s/ /=/g" $1
+    sed -i -e "s/setprop //g" -e "s/ /=/g" $1
   else
     AMLPROP="$SH/unity-props$EXT"
     for AMLSCRIPT in $SYS/etc/init.d/unity-props /su/su.d/unity-props.sh $SYS/su.d/unity-props.sh; do
@@ -455,8 +449,7 @@ unity_prop_copy() {
   if [ "$MAGISK" == true ] || [ "$SYSOVER" == true ]; then
     AMLPROP="$AMLPATH/system.prop"
     #AMLPROP="$MOUNTPATH/.core/props/audmodlib-props.prop"
-    sed -i "s/setprop //g" $1
-    sed -i "s/ /=/g" $1
+    sed -i -e "s/setprop //g" -e "s/ /=/g" $1
   else
     AMLPROP="$SH/unity-props$EXT"
   fi
@@ -505,13 +498,7 @@ unity_mod_wipe() {
   # REMOVE FILES
   ui_print "   Removing files..."
   if [ "$MAGISK" == "false" ]; then
-    rm -f $SYS/etc/init.d/$MODID
-    rm -f $SYS/etc/init.d/$AMLID
-    rm -f $SYS/addon.d/$MODID.sh
-    rm -f /su/su.d/$MODID.sh
-    rm -f /su/su.d/$AMLID.sh
-    rm -f $SYS/su.d/$MODID.sh
-    rm -f $SYS/su.d/$AMLID.sh
+    rm -f $SYS/etc/init.d/$MODID $SYS/etc/init.d/$AMLID $SYS/addon.d/$MODID.sh /su/su.d/$MODID.sh /su/su.d/$AMLID.sh $SYS/su.d/$MODID.sh $SYS/su.d/$AMLID.sh
   fi
 
   cat $INPUT_FILE_WIPE | while read LINE; do
@@ -653,11 +640,7 @@ unity_mod_copy() {
       sed -i 's/^/    /' $INPUT_PATCHES
 	  sed -i 's/^/  /' $INPUT_PATCHES_REM
 	  sed -i 's/^/    /' $INPUT_PATCHES_WIPE
-	  sed -i "/<PATCHES>/ r $INPUT_PATCHES_WIPE" $INSTALLER/system/addon.d/$MODID.sh
-	  sed -i "/<PATCHES>/ r $INPUT_PATCHES_REM" $INSTALLER/system/addon.d/$MODID.sh
-      sed -i "/<PATCHES>/ r $INPUT_PATCHES" $INSTALLER/system/addon.d/$MODID.sh
-      sed -i '/<PATCHES>/d' $INSTALLER/system/addon.d/$MODID.sh
-	  
+	  sed -i -e "/<PATCHES>/ r $INPUT_PATCHES_WIPE" -e "/<PATCHES>/ r $INPUT_PATCHES_REM" -e "/<PATCHES>/ r $INPUT_PATCHES" -e '/<PATCHES>/d' $INSTALLER/system/addon.d/$MODID.sh	  
       sys_cp_ch $INSTALLER/system/addon.d/$MODID.sh $SYS/addon.d/$MODID.sh 0644
     else
       ui_print "   ! Addon.d not detected. Backup script not installed..."
@@ -745,18 +728,16 @@ unity_mod_patch() {
   source $INPUT_PATCHES_REM
 
   for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
-    if [ -f $CFG ] && [ "$(cat $AMLPATH$CFG | grep ' proxy {#')" ]; then
-      # REMOVE LIBRARIES
-      sed -i '/proxy {/,/}/d' $AMLPATH$CFG
-    fi
-  done
-
-  # ADD LIBRARIES & EFFECTS
-  for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
-    if [ -f $CFG ] && [ ! "$(cat $AMLPATH$CFG | grep ' proxy {')" ]; then
-	  # ADD LIBRARIES
-      sed -i 's/^libraries {/libraries {\n  proxy {#\n    path \/system\/lib\/soundfx\/libeffectproxy.so\n  }/g' $AMLPATH$CFG
-    fi
+    if [ -f $CFG ]; then
+      if [ "$(cat $AMLPATH$CFG | grep ' proxy {#')" ]; then
+        # REMOVE LIBRARIES
+        sed -i '/proxy {/,/}/d' $AMLPATH$CFG
+      fi
+	  if [ ! "$(cat $AMLPATH$CFG | grep ' proxy {')" ]; then
+	    # ADD LIBRARIES
+        sed -i 's/^libraries {/libraries {\n  proxy {#\n    path \/system\/lib\/soundfx\/libeffectproxy.so\n  }/g' $AMLPATH$CFG
+	  fi
+	fi
   done
 
   test "$MODID" != "$AMLID" && source $INPUT_PATCHES
@@ -796,9 +777,7 @@ unity_uninstall() {
     if [ -f $INFO ]; then
       ui_print "   System install detected, removing files..."
       if [ "$SYSOVER" == false ]; then
-		sed -i "/$SH\/$AMLID$EXT/d" $INFO
-	    sed -i "/$SH\/$MODID$EXT/d" $INFO
-        sed -i "/$SH\/unity-props$EXT/d" $INFO
+		sed -i -e "/$SH\/$AMLID$EXT/d" -e "/$SH\/$MODID$EXT/d" -e "/$SH\/unity-props$EXT/d" $INFOS
       fi
       cat $INFO | while read LINE; do
         if [ "$(dirname $LINE)" == "/su/su.d" ]; then
@@ -833,10 +812,7 @@ unity_uninstall() {
     done
   fi
 
-  rm -f $SYS/addon.d/$MODID.sh
-  rm -f $SYS/etc/init.d/$MODID
-  rm -f /su/su.d/$MODID.sh
-  rm -f $SYS/su.d/$MODID.sh
+  rm -f $SYS/addon.d/$MODID.sh $SYS/etc/init.d/$MODID /su/su.d/$MODID.sh $SYS/su.d/$MODID.sh
 	
   if [ "$MODID" != "$AMLID" ]; then
     # RESTORE CONFIGS, LIBRARIES, & EFFECTS
