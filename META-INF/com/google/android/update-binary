@@ -243,46 +243,8 @@ api_level_arch_detect
 ##########################################################################################
 
 ### FILE LOCATIONS ###
-# USER INPUT FILES
-INPUT_FILE_WIPE=$INSTALLER/common/unity-files-wipe.sh
-INPUT_PATCHES=$INSTALLER/common/unity-patches.sh
-INPUT_PATCHES_REM=$INSTALLER/common/unity-patches-remove.sh
-INPUT_PATCHES_WIPE=$INSTALLER/common/unity-patches-wipe.sh
-INPUT_PROPS=$INSTALLER/common/unity-props.prop
-INPUT_PROPS_REM=$INSTALLER/common/unity-props-remove.prop
-INPUT_VAR=$INSTALLER/common/unity-uservariables.sh
-INPUT_RULES=$INSTALLER/common/unity-customrules
-INPUT_SCRIPT=$INSTALLER/common/unity-script.sh
-
-# REMOVE COMMENTS FROM USER INPUT FILES AND ADD PROPER VARIABLES
-for FIL in $INPUT_FILE_WIPE $INPUT_PATCHES $INPUT_PATCHES_REM $INPUT_PATCHES_WIPE $INPUT_PROPS $INPUT_PROPS_REM $INPUT_VAR $INPUT_RULES $INPUT_SCRIPT; do
-  if [ "$FIL" == "$INPUT_RULES" ]; then
-    NUM=1; while true; do
-      if [ -f $FIL$NUM.sh ]; then
-        sed -i '/^#/ d' $FIL$NUM.sh
-        sed -i 's/$SYS\/$VEN/$VEN/g' $FIL$NUM.sh
-      else
-        NUMOFCUSTRULES=$(($NUM-1))
-        break
-      fi
-      NUM=$((NUM+1))
-    done
-  else
-    if [ -f $FIL ]; then
-	  sed -i '/^#/ d' $FIL
-      sed -i 's/$SYS\/$VEN/$VEN/g' $FIL
-    else
-      ui_print "   !$FIL missing!"
-      ui_print "   !Copy it back to above and try again!"
-      exit 1
-    fi
-  fi
-done
-
-# IMPORT USER VARIABLES
-source $INPUT_VAR
-
-# SET MODPATH AND AMLPATH
+# SET MODID, MODPATH, AND AMLPATH
+MODID=`grep_prop id $INSTALLER/module.prop`
 MODPATH=$MOUNTPATH/$MODID
 $BOOTMODE && AMLPATH=/magisk/$AMLID || AMLPATH=$MOUNTPATH/$AMLID
 
@@ -315,9 +277,47 @@ if [ -d $SYS/addon.d ]; then
 else
   INFO=$SYS/etc/$MODID-files
 fi
+# USER INPUT FILES
+INPUT_FILE_WIPE=$INSTALLER/common/unity-files-wipe.sh
+INPUT_PATCHES=$INSTALLER/common/unity-patches.sh
+INPUT_PATCHES_REM=$INSTALLER/common/unity-patches-remove.sh
+INPUT_PATCHES_WIPE=$INSTALLER/common/unity-patches-wipe.sh
+INPUT_PROPS=$INSTALLER/common/unity-props.prop
+INPUT_PROPS_REM=$INSTALLER/common/unity-props-remove.prop
+INPUT_VAR=$INSTALLER/common/unity-uservariables.sh
+INPUT_RULES=$INSTALLER/common/unity-customrules
+INPUT_SCRIPT=$INSTALLER/common/unity-script.sh
 # TEMPORARY VARIABLES
 TFILES=$INSTALLER/tfiles
 TVFILES=$INSTALLER/tvfiles
+
+# REMOVE COMMENTS FROM USER INPUT FILES AND ADD PROPER VARIABLES
+for FIL in $INPUT_FILE_WIPE $INPUT_PATCHES $INPUT_PATCHES_REM $INPUT_PATCHES_WIPE $INPUT_PROPS $INPUT_PROPS_REM $INPUT_VAR $INPUT_RULES $INPUT_SCRIPT; do
+  if [ "$FIL" == "$INPUT_RULES" ]; then
+    NUM=1; while true; do
+      if [ -f $FIL$NUM.sh ]; then
+        sed -i '/^#/ d' $FIL$NUM.sh
+        sed -i 's/$SYS\/$VEN/$VEN/g' $FIL$NUM.sh
+      else
+        NUMOFCUSTRULES=$(($NUM-1))
+        break
+      fi
+      NUM=$((NUM+1))
+    done
+  else
+    if [ -f $FIL ]; then
+	  sed -i '/^#/ d' $FIL
+      sed -i 's/$SYS\/$VEN/$VEN/g' $FIL
+    else
+      ui_print "   !$FIL missing!"
+      ui_print "   !Copy it back to above and try again!"
+      exit 1
+    fi
+  fi
+done
+
+# IMPORT USER VARIABLES
+source $INPUT_VAR
 
 if [ "$MODID" != "$AMLID" ]; then
   # RENAME MODID-SERVICE SCRIPT
@@ -830,6 +830,9 @@ unity_uninstall() {
 # Install
 ##########################################################################################
 
+# Check for min api version
+test -z $MINAPI || test $API -ge $MINAPI || require_new_api
+
 # Extract mod files
 unzip -o "$ZIP" 'system/*' 'custom/*' -d $INSTALLER 2>/dev/null
 
@@ -912,15 +915,22 @@ else
   ui_print " "
 fi
 
-# MAGISKBIN must exist, binaries and utility functions are placed there
-[ -f $MAGISKBIN/magisk -a -f $MAGISKBIN/busybox -a -f $MAGISKBIN/util_functions.sh ] || require_new_magisk
+# Utility functions must exist
+[ -f $MAGISKBIN/util_functions.sh ] || require_new_magisk
+$BOOTMODE && ! is_mounted /magisk && abort "! Magisk is not activated!"
 
 # We need busybox/binaries to be setup
 $BOOTMODE && boot_actions || recovery_actions
 
+# Check the min magisk version
+MIN_VER=`grep_prop template $INSTALLER/module.prop`
+MAGISK_VER_CODE=`grep_prop MAGISK_VER_CODE $MAGISKBIN/util_functions.sh`
+[ ! -z $MAGISK_VER_CODE -a $MAGISK_VER_CODE -ge $MIN_VER ] || require_new_magisk
+
 request_zip_size_check "$ZIP"
+
 if [ -f "$IMG" ]; then
-  ui_print "   $IMG detected!"
+  ui_print "   Found $IMG"
   image_size_check $IMG
   if [ "$reqSizeM" -gt "$curFreeM" ]; then
     newSizeM=$(((reqSizeM + curUsedM) / 32 * 32 + 64))

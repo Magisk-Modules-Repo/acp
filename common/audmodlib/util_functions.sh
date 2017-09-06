@@ -4,7 +4,7 @@
 # by topjohnwu
 #
 # Modified for Unity Installer by Ahrion and Zackptg5
-# Base Version 1360
+# Base Script Version: 1400
 #
 ##########################################################################################
 
@@ -71,6 +71,33 @@ find_boot_image() {
   [ -L "$BOOTIMAGE" ] && BOOTIMAGE=`readlink $BOOTIMAGE`
 }
 
+migrate_boot_backup() {
+  # Update the broken boot backup
+  if [ -f /data/stock_boot_.img.gz ]; then
+    ./magiskboot --decompress /data/stock_boot_.img.gz
+    mv /data/stock_boot_.img /data/stock_boot.img
+  fi
+  # Update our previous backup to new format if exists
+  if [ -f /data/stock_boot.img ]; then
+    ui_print "- Migrating boot image backup"
+    SHA1=`./magiskboot --sha1 /data/stock_boot.img 2>/dev/null`
+    STOCKDUMP=/data/stock_boot_${SHA1}.img
+    mv /data/stock_boot.img $STOCKDUMP
+    ./magiskboot --compress $STOCKDUMP
+  fi
+}
+
+sign_chromeos() {
+  echo > empty
+
+  ./chromeos/futility vbutil_kernel --pack new-boot.img.signed \
+  --keyblock ./chromeos/kernel.keyblock --signprivate ./chromeos/kernel_data_key.vbprivk \
+  --version 1 --vmlinuz new-boot.img --config empty --arch arm --bootloader empty --flags 0x1
+
+  rm -f empty new-boot.img
+  mv new-boot.img.signed new-boot.img
+}
+					   
 is_mounted() {
   if [ ! -z "$2" ]; then
     cat /proc/mounts | grep $1 | grep $2, >/dev/null
@@ -127,7 +154,6 @@ boot_actions() {
     mount -o bind $MAGISKBIN /dev/magisk/mirror/bin
   fi
   MAGISKBIN=/dev/magisk/mirror/bin
-  $MAGISKBIN/magisk magiskpolicy --live "allow fsck * * *"
 }
 
 recovery_actions() {
@@ -205,7 +231,17 @@ image_size_check() {
 require_new_magisk() {
   ui_print "***********************************"
   ui_print "! $MAGISKBIN isn't setup properly!"
-  ui_print "! Please install Magisk v13.5+!"
+  ui_print "! Please install Magisk v13.7+!"
+  ui_print "***********************************"
+  exit 1
+}
+
+require_new_api() {
+  ui_print "***********************************"
+  ui_print "!   Your system API of $API doesn't"
+  ui_print "!    meet the minimum API of $MINAPI"
+  ui_print "! Please upgrade to a newer version"
+  ui_print "!  of android with at least API $MINAPI"
   ui_print "***********************************"
   exit 1
 }

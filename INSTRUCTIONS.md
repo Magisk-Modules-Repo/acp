@@ -6,7 +6,7 @@ Instructions are contained in each file
 2. Place your files in their respective directories in the system folder (where they will be installed to)
 2a. For apps, place in system/app/APPNAME/APPNAME.apk
 3. Place any files that need conditionals (only installed in some circumstances) in the custom folder (can be placed however you want)
-4. Add your modid and other variables to common/unity-uservariables.sh (more instructions are in the file)
+4. Add your min android version, app names and other variables to common/unity-uservariables.sh (more instructions are in the file)
 5. Add any scripts you want run at boot to common/unity-scripts.sh
 6. Modify the post-fs-data.sh and service.sh files in common as you would with any other magisk module (you probably won't need to do this - unity-scripts runs as a service script)
 6a. If post-fs-data and/or service are going to be used, set their values to true in config.sh (THESE WILL BE INSTALLED AS REGULAR BOOT SCRIPTS IF NOT A MAGISK INSTALL)
