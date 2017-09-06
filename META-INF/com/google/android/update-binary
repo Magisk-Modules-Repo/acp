@@ -135,7 +135,7 @@ sys_wipe_ch() {
   cat $INFO | while read LINE; do
     test "$1" == "$(eval echo $LINE)" && { TPARTMOD=true; sed -i "/$1/d" $INFO; }
   done
-  if [ -f "$1" ] && [ ! -f "$1.bak" ] && [ "$TPARTMOD" != "true" ]; then
+  if [ -f "$1" ] && [ ! -f "$1.bak" ] && [ "$TPARTMOD" != true ]; then
 	mv -f "$1" "$1.bak"
 	echo "$1.bak" >> $INFO
   else
@@ -463,15 +463,15 @@ unity_prop_copy() {
     NEWPROPS="$(cat $1)"
     printf '%s\n' "$NEWPROPS" | while IFS= read -r linenew
     do
-      PRESENT="false"
+      PRESENT=false
       printf '%s\n' "$OLDPROPS" | {
         while IFS= read -r lineold
         do
           if [ "$linenew" == "$lineold" ]; then
-            PRESENT="true"
+            PRESENT=true
           fi
         done
-        if [ $PRESENT == "false" ]; then
+        if [ $PRESENT == false ]; then
           sed -i -e "\$a$linenew" $AMLPROP
         fi
        }
@@ -497,7 +497,7 @@ unity_mod_wipe() {
   
   # REMOVE FILES
   ui_print "   Removing files..."
-  if [ "$MAGISK" == "false" ]; then
+  if [ "$MAGISK" == false ]; then
     rm -f $SYS/etc/init.d/$MODID $SYS/etc/init.d/$AMLID $SYS/addon.d/$MODID.sh /su/su.d/$MODID.sh /su/su.d/$AMLID.sh $SYS/su.d/$MODID.sh $SYS/su.d/$AMLID.sh
   fi
 
@@ -547,7 +547,7 @@ unity_mod_directory() {
     rm -rf $MODPATH 2>/dev/null
     mkdir -p $MODPATH
   fi
-  test "$SYSOVER" == "true" && mkdir -p $AMLPATH
+  test "$SYSOVER" == true && mkdir -p $AMLPATH
   
   cat $TFILES | while read LINE; do
     $MK_PRFX $(dirname "$UNITY$SYS$(eval "echo $LINE")")$MK_SFFX
@@ -697,13 +697,9 @@ magisk_audmodlib() {
     if [ -f $CFG ]; then
       mkdir -p $AMLPATH${CFG%/*}
       if [ ! -f $AMLPATH$CFG.bak ]; then
-        cp -af $CFG $AMLPATH$CFG.bak
-      else
-        cp -af $CFG.bak $AMLPATH$CFG.bak
+        test -f $CFG.bak && cp -af $CFG.bak $AMLPATH$CFG.bak || cp -af $CFG $AMLPATH$CFG.bak
       fi
-      if [ ! -f $AMLPATH$CFG ]; then
-        cp -af $CFG $AMLPATH$CFG
-      fi
+      test ! -f $AMLPATH$CFG && cp -af $CFG $AMLPATH$CFG
     fi
   done
 
@@ -987,9 +983,7 @@ if [ "$ACTION" == "Install" ]; then
 
     # Auto Mount
     $AUTOMOUNT && touch $MODPATH/auto_mount
-    if [ "$MODID" != "$AMLID" ]; then
-      $AUTOMOUNT && touch $AMLPATH/auto_mount
-    fi
+    test "$MODID" != "$AMLID" && $AUTOMOUNT && touch $AMLPATH/auto_mount
 
   fi
 
