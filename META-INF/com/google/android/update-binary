@@ -367,6 +367,10 @@ system_install() {
   MOD_VER="$SYS/etc/$MODID-module.prop"
 }
 
+custom_app_install() {
+  $OLDAPP && $CP_PRFX $INSTALLER/custom/$1/$1.apk $UNITY$SYS/app/$1.apk || $CP_PRFX $INSTALLER/custom/$1/$1.apk $UNITY$SYS/priv-app/$1/$1.apk
+}
+
 app_install_logic() {
   ########################################################################################
   # Logic for correct application installation

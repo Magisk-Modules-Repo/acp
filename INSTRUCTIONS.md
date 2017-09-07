@@ -82,6 +82,12 @@ $MK_SFFX $UNITY$SYS/lib/example.so$MK_SFFX
 Any files you copy over in a customrule needs to be echoed to the INFO file in that rule as well in the if statement in order for uninstallation to proceed correctly.
 See instructions in the customrules files for reference
 Example: echo "$UNITY$SYS/lib/soundfx/libv4a_fx_ics.so" >> $INFO
+
+USABLE FUNCTIONS (in customrules)
+custom_app_install: Will install the specified custom app into the proper directory (Ex: custom_app_install ViPER4AndroidFX).
+*NOTE ABOUT CUSTOM APPS:
+You probably won't need to use custom apps. This is only for apps that are only installed with specific conditions
+Have the app placed in the installer in this pattern: /custom/appname/appname.apk (Ex: /custom/ViPER4AndroidFX/ViPER4AndroidFX.apk)
 ________________________________________________________________________________________________________________________________________________________________________
 
 MAIN AUDMODLIB FUNCTIONS
