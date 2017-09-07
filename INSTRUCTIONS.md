@@ -53,15 +53,6 @@ STRIGG_MIX_PATH_9330=$SYS/sound_trigger_mixer_paths_wcd9330.xml
 V_MIX_PATH=$VEN/etc/mixer_paths.xml
 ________________________________________________________________________________________________________________________________________________________________________
 
-APP VARIABLE (each apk file in your file list will be a new app number, path will be dynamic based on device software)
-
-APP1 -> name of first apk
-APPPATH1 -> path of first apk
-APP2 -> name of second apk
-APPPATH2 -> path of second apk
-
-**You can have any number of apps
-
 SYSTEM AND VENDOR VARIABLES
 
 SYS -> location of system folder
@@ -84,8 +75,8 @@ UNITY -> Conatins proper location for mod regardless of install method (MODPATH 
 AMLPATH -> The destination path to aml files (see the AUDMODLIB variables above)
 
 **These are set dynamically based on device some examples of use:
-$CP_PRFX $INSTALLER/system/app/example.apk $UNITY$SYS/$APPPATH1/$APP1$CP_SFFX
-$MK_SFFX $UNITY$SYS/$APPPATH1/$APP1$MK_SFFX
+$CP_PRFX $INSTALLER/system/lib/example.so $UNITY$SYS/lib/example.so$CP_SFFX
+$MK_SFFX $UNITY$SYS/lib/example.so$MK_SFFX
 
 *NOTE ABOUT THE INFO VARIABLE:
 Any files you copy over in a customrule needs to be echoed to the INFO file in that rule as well in the if statement in order for uninstallation to proceed correctly.
