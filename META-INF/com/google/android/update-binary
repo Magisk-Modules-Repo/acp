@@ -372,21 +372,12 @@ app_install_logic() {
   # Logic for correct application installation
   ########################################################################################
   if [ -d $SYS/priv-app ]; then
-    APPDIR=priv-app
+    APPTXT="   Installing libraries and apps for Lollipop and above..."
+	OLDAPP=false
   else
-    APPDIR=app
+    APPTXT="   Installing libraries and apps for Lollipop and below..."
+	OLDAPP=true
   fi
-
-  NUM=1; while [ $NUM -le $NUMOFAPPS ]; do
-    if [ "$API" -ge "21" ]; then
-      APPTXT=" and apps for Lollipop and above"
-      eval APPPATH$(eval "echo $NUM")=$APPDIR/$(eval "echo \$APP$(eval "echo $NUM")")
-    else
-      APPTXT=" and apps for Lollipop and below"
-      eval APPPATH$(eval "echo $NUM")=$APPDIR/$(eval "echo \$APP$(eval "echo $NUM")")
-    fi
-    NUM=$((NUM+1))
-  done
 }
 
 script_install_logic() {
@@ -550,15 +541,11 @@ unity_mod_directory() {
   test "$SYSOVER" == true && mkdir -p $AMLPATH
   
   cat $TFILES | while read LINE; do
-    $MK_PRFX $(dirname "$UNITY$SYS$(eval "echo $LINE")")$MK_SFFX
+    $OLDAPP && LINE=$(echo $LINE | sed 's|/app/.*/|/app/|') || LINE=$(echo $LINE | sed 's|/app/|/priv-app/|')
+	$MK_PRFX $(dirname "$UNITY$SYS$LINE")$MK_SFFX
   done
   cat $TVFILES | while read LINE; do
-    $MK_PRFX $(dirname "$UNITY$VEN$(eval "echo $LINE")")$MK_SFFX
-  done
-  NUM=1; while [ $NUM -le $NUMOFAPPS ]; do
-    TAPPNAME=$(eval "echo \$APP$(eval "echo $NUM")")
-    $MK_PRFX $UNITY$SYS/$(eval "echo \$APPPATH$(eval "echo $NUM")")
-	NUM=$((NUM+1))
+    $MK_PRFX $(dirname "$UNITY$VEN$LINE")$MK_SFFX
   done
 
   if [ "$MAGISK" == false ]; then
@@ -648,22 +635,14 @@ unity_mod_copy() {
   fi
 
   # INSTALL APPS & LIBRARIES
-  if [ $NUMOFAPPS -ne 0 ]; then
-    ui_print "   Installing libraries$APPTXT..."
-  else
-    ui_print "   Installing libraries..."
-  fi
+  ui_print "$APPTXT"
   
   cat $TFILES | while read LINE; do
-    $CP_PRFX $INSTALLER/system$(eval "echo $LINE") $UNITY$SYS$(eval "echo $LINE")$CP_SFFX
+    $OLDAPP && LINE2=$(echo $LINE | sed 's|/app/.*/|/app/|') || LINE2=$(echo $LINE | sed 's|/app/|/priv-app/|')
+	$CP_PRFX $INSTALLER/system$LINE $UNITY$SYS$LINE2$CP_SFFX
   done
   cat $TVFILES | while read LINE; do
-    $CP_PRFX $INSTALLER/system/vendor$(eval "echo $LINE") $UNITY$VEN$(eval "echo $LINE")$CP_SFFX
-  done
-  NUM=1; while [ $NUM -le $NUMOFAPPS ]; do
-    TAPPNAME=$(eval "echo \$APP$(eval "echo $NUM")")
-    $CP_PRFX $INSTALLER/system/app/$TAPPNAME/$TAPPNAME.apk $UNITY$SYS/$(eval "echo \$APPPATH$(eval "echo $NUM")")/$TAPPNAME.apk
-	NUM=$((NUM+1))
+    $CP_PRFX $INSTALLER/system/vendor$LINE $UNITY$VEN$LINE$CP_SFFX
   done
 
   # ADD BUILDPROPS
@@ -833,8 +812,9 @@ test -z $MINAPI || test $API -ge $MINAPI || require_new_api
 unzip -o "$ZIP" 'system/*' 'custom/*' -d $INSTALLER 2>/dev/null
 
 # PROCESS FOLDERS/FILES
+
 find $INSTALLER/system -type f -print > $TFILES
-sed -i -e '/addon.d/ d' -e '/app/ d' -e "s|$INSTALLER/system||g" $TFILES
+sed -i -e '/addon.d/ d' -e 's/&/\\&/g' -e "s|$INSTALLER/system||g" $TFILES
 $IS64BIT || sed -i '/lib64/ d' $TFILES
 cp $TFILES $TVFILES
 sed -i -e '/vendor/ d' $TFILES 
@@ -845,7 +825,7 @@ if is_mounted /data ; then
     # Prepare (Un)Install
     system_install
     script_install_logic
-    test $NUMOFAPPS -ne 0 && app_install_logic
+	app_install_logic
 
     # Determine if mod is already installed. If same version is installed, uninstall
     mod_exist
@@ -949,7 +929,7 @@ if [ "$SYSOVER" == true ]; then
 else
   magisk_install
 fi
-test $NUMOFAPPS -ne 0 && app_install_logic
+app_install_logic
 
 # Determine if mod is already installed. If same version is installed, uninstall
 mod_exist

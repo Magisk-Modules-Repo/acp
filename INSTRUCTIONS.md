@@ -6,7 +6,7 @@ Instructions are contained in each file
 2. Place your files in their respective directories in the system folder (where they will be installed to)
 2a. For apps, place in system/app/APPNAME/APPNAME.apk
 3. Place any files that need conditionals (only installed in some circumstances) in the custom folder (can be placed however you want)
-4. Add your min android version, app names and other variables to common/unity-uservariables.sh (more instructions are in the file)
+4. Add your min android version and other variables to common/unity-uservariables.sh (more instructions are in the file)
 5. Add any scripts you want run at boot to common/unity-scripts.sh
 6. Modify the post-fs-data.sh and service.sh files in common as you would with any other magisk module (you probably won't need to do this - unity-scripts runs as a service script)
 6a. If post-fs-data and/or service are going to be used, set their values to true in config.sh (THESE WILL BE INSTALLED AS REGULAR BOOT SCRIPTS IF NOT A MAGISK INSTALL)
@@ -16,10 +16,9 @@ Instructions are contained in each file
 10. Add any config/policy/mixer patches you want added into the unity-patches.sh
 11. Add the removal of your patches in unity_patches into the unity-patches-remove.sh
 12. Add any other config/policy/mixer patches you want removed before install into the unity-patches-wipe.sh
-13. If your files include any apps/apks, follow the instructions in the unity-uservariables.sh
-14. Add any custom permissions needed into config.sh (this will apply to both magisk and system installs) (default permissions is 755 for folders and 644 for files)
-15. Add any custom install/uninstall logic to unity-customrules1.sh (follow the instructions inside)
-15a. This is where you would put your stuff for any custom files and whatever else isn't taken care of already
+13. Add any custom permissions needed into config.sh (this will apply to both magisk and system installs) (default permissions is 755 for folders and 644 for files)
+14. Add any custom install/uninstall logic to unity-customrules1.sh (follow the instructions inside)
+14a. This is where you would put your stuff for any custom files and whatever else isn't taken care of already
 ________________________________________________________________________________________________________________________________________________________________________
 
 AUDMODLIB VARIABLES (for reference)
