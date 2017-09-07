@@ -231,7 +231,7 @@ image_size_check() {
 require_new_magisk() {
   ui_print "***********************************"
   ui_print "! $MAGISKBIN isn't setup properly!"
-  ui_print "! Please install Magisk v13.7+!"
+  ui_print "!  Please install Magisk v14.0+!"
   ui_print "***********************************"
   exit 1
 }
