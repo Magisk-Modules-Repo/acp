@@ -422,7 +422,6 @@ unity_prop_remove() {
   if [ "$MAGISK" == true ] || [ "$SYSOVER" == true ]; then
     rm -f $SYS/etc/init.d/unity-props /su/su.d/unity-props.sh $SYS/su.d/unity-props.sh
     AMLPROP="$AMLPATH/system.prop"
-    #AMLPROP="$MOUNTPATH/.core/props/audmodlib-props.prop"
     sed -i -e "s/setprop //g" -e "s/ /=/g" $1
   else
     AMLPROP="$SH/unity-props$EXT"
@@ -451,7 +450,6 @@ unity_prop_copy() {
   ########################################################################################
   if [ "$MAGISK" == true ] || [ "$SYSOVER" == true ]; then
     AMLPROP="$AMLPATH/system.prop"
-    #AMLPROP="$MOUNTPATH/.core/props/audmodlib-props.prop"
     sed -i -e "s/setprop //g" -e "s/ /=/g" $1
   else
     AMLPROP="$SH/unity-props$EXT"
