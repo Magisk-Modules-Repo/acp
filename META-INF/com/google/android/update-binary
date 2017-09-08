@@ -243,8 +243,47 @@ api_level_arch_detect
 ##########################################################################################
 
 ### FILE LOCATIONS ###
+# USER INPUT FILES
+INPUT_FILE_WIPE=$INSTALLER/common/unity-files-wipe.sh
+INPUT_PATCHES=$INSTALLER/common/unity-patches.sh
+INPUT_PATCHES_REM=$INSTALLER/common/unity-patches-remove.sh
+INPUT_PATCHES_WIPE=$INSTALLER/common/unity-patches-wipe.sh
+INPUT_PROPS=$INSTALLER/common/unity-props.prop
+INPUT_PROPS_REM=$INSTALLER/common/unity-props-remove.prop
+INPUT_VAR=$INSTALLER/common/unity-uservariables.sh
+INPUT_RULES=$INSTALLER/common/unity-customrules
+INPUT_SCRIPT=$INSTALLER/common/unity-script.sh
+
+# REMOVE COMMENTS FROM USER INPUT FILES AND ADD PROPER VARIABLES
+for FIL in $INPUT_FILE_WIPE $INPUT_PATCHES $INPUT_PATCHES_REM $INPUT_PATCHES_WIPE $INPUT_PROPS $INPUT_PROPS_REM $INPUT_VAR $INPUT_RULES $INPUT_SCRIPT; do
+  if [ "$FIL" == "$INPUT_RULES" ]; then
+    NUM=1; while true; do
+      if [ -f $FIL$NUM.sh ]; then
+        sed -i '/^#/ d' $FIL$NUM.sh
+        sed -i 's/$SYS\/$VEN/$VEN/g' $FIL$NUM.sh
+      else
+        NUMOFCUSTRULES=$(($NUM-1))
+        break
+      fi
+      NUM=$((NUM+1))
+    done
+  else
+    if [ -f $FIL ]; then
+	  sed -i '/^#/ d' $FIL
+      sed -i 's/$SYS\/$VEN/$VEN/g' $FIL
+    else
+      ui_print "   !$FIL missing!"
+      ui_print "   !Copy it back to above and try again!"
+      exit 1
+    fi
+  fi
+done
+
+# IMPORT USER VARIABLES
+source $INPUT_VAR
+
 # SET MODID, MODPATH, AND AMLPATH
-MODID=`grep_prop id $INSTALLER/module.prop`
+test -z $MODID && MODID=`grep_prop id $INSTALLER/module.prop`
 MODPATH=$MOUNTPATH/$MODID
 $BOOTMODE && AMLPATH=/magisk/$AMLID || AMLPATH=$MOUNTPATH/$AMLID
 
@@ -277,47 +316,9 @@ if [ -d $SYS/addon.d ]; then
 else
   INFO=$SYS/etc/$MODID-files
 fi
-# USER INPUT FILES
-INPUT_FILE_WIPE=$INSTALLER/common/unity-files-wipe.sh
-INPUT_PATCHES=$INSTALLER/common/unity-patches.sh
-INPUT_PATCHES_REM=$INSTALLER/common/unity-patches-remove.sh
-INPUT_PATCHES_WIPE=$INSTALLER/common/unity-patches-wipe.sh
-INPUT_PROPS=$INSTALLER/common/unity-props.prop
-INPUT_PROPS_REM=$INSTALLER/common/unity-props-remove.prop
-INPUT_VAR=$INSTALLER/common/unity-uservariables.sh
-INPUT_RULES=$INSTALLER/common/unity-customrules
-INPUT_SCRIPT=$INSTALLER/common/unity-script.sh
 # TEMPORARY VARIABLES
 TFILES=$INSTALLER/tfiles
 TVFILES=$INSTALLER/tvfiles
-
-# REMOVE COMMENTS FROM USER INPUT FILES AND ADD PROPER VARIABLES
-for FIL in $INPUT_FILE_WIPE $INPUT_PATCHES $INPUT_PATCHES_REM $INPUT_PATCHES_WIPE $INPUT_PROPS $INPUT_PROPS_REM $INPUT_VAR $INPUT_RULES $INPUT_SCRIPT; do
-  if [ "$FIL" == "$INPUT_RULES" ]; then
-    NUM=1; while true; do
-      if [ -f $FIL$NUM.sh ]; then
-        sed -i '/^#/ d' $FIL$NUM.sh
-        sed -i 's/$SYS\/$VEN/$VEN/g' $FIL$NUM.sh
-      else
-        NUMOFCUSTRULES=$(($NUM-1))
-        break
-      fi
-      NUM=$((NUM+1))
-    done
-  else
-    if [ -f $FIL ]; then
-	  sed -i '/^#/ d' $FIL
-      sed -i 's/$SYS\/$VEN/$VEN/g' $FIL
-    else
-      ui_print "   !$FIL missing!"
-      ui_print "   !Copy it back to above and try again!"
-      exit 1
-    fi
-  fi
-done
-
-# IMPORT USER VARIABLES
-source $INPUT_VAR
 
 if [ "$MODID" != "$AMLID" ]; then
   # RENAME MODID-SERVICE SCRIPT
@@ -325,15 +326,9 @@ if [ "$MODID" != "$AMLID" ]; then
 
   # INSERT MODID INTO MOD SCRIPT
   sed -i "s/<MODID>/$MODID/" $INSTALLER/common/$AMLID/$MODID-service.sh
-
-  # INSERT UNITY REMOVE PATCHES INTO MOD SCRIPT
-  sed -i 's/^/  /' $INPUT_PATCHES_REM
-  sed -i "/<PATCHES>/ r $INPUT_PATCHES_REM" $INSTALLER/common/$AMLID/$MODID-service.sh
-  sed -i '/<PATCHES>/d' $INSTALLER/common/$AMLID/$MODID-service.sh
   
   # INSERT CUSTOM USER SCRIPT INTO MOD SCRIPT
-  sed -i "/<CUSTPATCHES>/ r $INPUT_SCRIPT" 	$INSTALLER/common/$AMLID/$MODID-service.sh
-  sed -i '/<CUSTPATCHES>/d' $INSTALLER/common/$AMLID/$MODID-service.sh
+  sed -i "/# CUSTOM USER PATCHES/ r $INPUT_SCRIPT" $INSTALLER/common/$AMLID/$MODID-service.sh
 fi
 
 magisk_install() {
@@ -365,6 +360,19 @@ system_install() {
   CP_SFFX=" 0644"
   AMLPATH=""
   MOD_VER="$SYS/etc/$MODID-module.prop"
+}
+
+aml_script_patch() {
+  if [ "$MAGISK" == true ] || [ "$SYSOVER" == true ]; then
+    test -f $AMLPATH/service.sh && AMLSCRIPT=$AMLPATH/service.sh || AMLSCRIPT=$INSTALLER/common/$AMLID/$AMLID-service.sh
+  else
+    test -f $SH/$AMLID-service.sh && AMLSCRIPT=$SH/$AMLID-service.sh || AMLSCRIPT=$INSTALLER/common/$AMLID/$AMLID-service.sh
+  fi
+  
+  # INSERT UNITY REMOVE PATCHES INTO MOD SCRIPT
+  sed -i "/magisk\/$MODID/,/fi #$MODID/d" $AMLSCRIPT
+  sed -i 's/^/  /' $INPUT_PATCHES_REM
+  sed -i -e "/# MOD PATCHES/ a\if [ "\$MAGISK" == true ] && [ ! -d "/magisk/$MODID" ]; then" -e "/# MOD PATCHES/ a\  MODIDS=\"\${MODIDS} $MODID\"" -e "/# MOD PATCHES/ r $INPUT_PATCHES_REM" -e "/# MOD PATCHES/ a\fi #$MODID" $AMLSCRIPT
 }
 
 custom_app_install() {
@@ -506,12 +514,6 @@ unity_mod_wipe() {
 
   if [ "$MAGISK" == false ] && [ "$MODID" != "$AMLID" ]; then
 
-    # REPLACE VENDOR FILE WITH PREVIOUS BACKUP
-    if [ -f $V_CONFIG_FILE ] && [ -f $V_CONFIG_FILE.bak ]; then
-      # RESTORE BACKED UP CONFIGS
-      cp -af $V_CONFIG_FILE.bak $V_CONFIG_FILE
-    fi
-
     # BACKUP CONFIGS
     ui_print "   Backing up existing audio_effects cfg files..."
     for BACKUP in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
@@ -606,15 +608,14 @@ unity_mod_copy() {
 	test ! "$(cat $INFO | grep $MOD_VER)" && echo "$MOD_VER" >> $INFO
 
     if [ "$SYSOVER" == false ]; then
-      sys_cp_ch $INSTALLER/common/$AMLID/$AMLID-service.sh $SH/$AMLID$EXT 0700
-	  test "$MODID" != "$AMLID" && sys_cp_ch $INSTALLER/common/$AMLID/$MODID-service.sh $SH/$MODID$EXT 0700
-      test ! "$(cat $INFO | grep "$SH/$AMLID$EXT")" && echo "$SH/$AMLID$EXT" >> $INFO
-	  test ! "$(cat $INFO | grep "$SH/$MODID$EXT")" && echo "$SH/$MODID$EXT" >> $INFO
+      test ! -f $SH/$AMLID-service$EXT && sys_cp_ch $INSTALLER/common/$AMLID/$AMLID-service.sh $SH/$AMLID-service$EXT 0700
+	  test "$MODID" != "$AMLID" && sys_cp_ch $INSTALLER/common/$AMLID/$MODID-service.sh $SH/$MODID-service$EXT 0700
+      test ! "$(cat $INFO | grep "$SH/$AMLID-service$EXT")" && echo "$SH/$AMLID-service$EXT" >> $INFO
+	  test ! "$(cat $INFO | grep "$SH/$MODID-service$EXT")" && echo "$SH/$MODID-service$EXT" >> $INFO
       test ! "$(cat $INFO | grep "$SH/unity-props$EXT")" && echo "$SH/unity-props$EXT" >> $INFO
     else
-      mkdir -p $MOUNTPATH/.core/service.d
-      sys_cp_ch $INSTALLER/common/$AMLID/$AMLID-service.sh $MOUNTPATH/.core/service.d/$AMLID.sh 0755
-      test "$MODID" != "$AMLID" && sys_cp_ch $INSTALLER/common/$AMLID/$MODID-service.sh $MOUNTPATH/.core/service.d/$MODID.sh 0755
+      test ! -f $AMLPATH/service.sh && sys_cp_ch $INSTALLER/common/$AMLID/$AMLID-service.sh $AMLPATH/service.sh 0755
+      test "$MODID" != "$AMLID" && sys_cp_ch $INSTALLER/common/$AMLID/$MODID-service.sh $MODPATH/service.sh 0755
 	fi
 
     # INSTALL ROM BACKUP SCRIPT
@@ -671,11 +672,6 @@ magisk_audmodlib() {
   ui_print " "
   ui_print "- Installing Audio Modification Library -"
 
-  ui_print "   Installing scripts for MagiskSU..."
-  mkdir -p $MOUNTPATH/.core/service.d
-  sys_cp_ch $INSTALLER/common/$AMLID/$AMLID-service.sh $MOUNTPATH/.core/service.d/$AMLID.sh 0755
-  test "$MODID" != "$AMLID" && sys_cp_ch $INSTALLER/common/$AMLID/$MODID-service.sh $MOUNTPATH/.core/service.d/$MODID.sh 0755
-
   for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
     if [ -f $CFG ]; then
       mkdir -p $AMLPATH${CFG%/*}
@@ -685,6 +681,10 @@ magisk_audmodlib() {
       test ! -f $AMLPATH$CFG && cp -af $CFG $AMLPATH$CFG
     fi
   done
+  
+  ui_print "   Installing scripts for MagiskSU..."
+  test ! -f $AMLPATH/service.sh && sys_cp_ch $INSTALLER/common/$AMLID/$AMLID-service.sh $AMLPATH/service.sh 0755
+  test "$MODID" != "$AMLID" && sys_cp_ch $INSTALLER/common/$AMLID/$MODID-service.sh $MODPATH/service.sh 0755
 
   unity_mod_patch
 
@@ -725,11 +725,6 @@ unity_mod_patch() {
     test "$(grep "TIMEOFEXEC=4" $INPUT_RULES$NUM.sh)" && source $INPUT_RULES$NUM.sh
     NUM=$((NUM+1))
   done
-
-  # COPY OVER MAIN AUDIO_EFFECTS CFG FILE TO VENDOR FILE
-  if [ -f $V_CONFIG_FILE ]; then
-    cp -af $AMLPATH$CONFIG_FILE $AMLPATH$V_CONFIG_FILE
-  fi
 }
 
 unity_uninstall() {
@@ -795,6 +790,7 @@ unity_uninstall() {
 	
   if [ "$MODID" != "$AMLID" ]; then
     # RESTORE CONFIGS, LIBRARIES, & EFFECTS
+    sed -i "/magisk\/$MODID/,/fi #$MODID/d" $AMLSCRIPT
     ui_print "   Restoring necessary files"
 	source $INPUT_PATCHES_REM
   fi
@@ -833,6 +829,9 @@ if is_mounted /data ; then
 
     # Determine if mod is already installed. If same version is installed, uninstall
     mod_exist
+	
+	# Patch audmodlib-services script
+	test "$MODID" != "$AMLID" && aml_script_patch
 
     if [ "$ACTION" == "Install" ]; then
       ui_print " "
@@ -938,6 +937,9 @@ app_install_logic
 # Determine if mod is already installed. If same version is installed, uninstall
 mod_exist
 
+# Patch audmodlib-services script
+test "$MODID" != "$AMLID" && aml_script_patch
+
 if [ "$ACTION" == "Install" ]; then
 
   # Wipe files
@@ -984,9 +986,6 @@ if [ "$ACTION" == "Install" ]; then
 
   # post-fs-data mode scripts
   $POSTFSDATA && cp -af $INSTALLER/common/post-fs-data.sh $MODPATH/post-fs-data.sh
-
-  # service mode scripts
-  $LATESTARTSERVICE && cp -af $INSTALLER/common/service.sh $MODPATH/service.sh
 
   #### COMPLETING INSTALL ####
   ui_print " "

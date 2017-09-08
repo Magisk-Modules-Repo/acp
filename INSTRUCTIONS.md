@@ -7,9 +7,9 @@ Instructions are contained in each file
 2a. For apps, place in system/app/APPNAME/APPNAME.apk
 3. Place any files that need conditionals (only installed in some circumstances) in the custom folder (can be placed however you want)
 4. Add your min android version and other variables to common/unity-uservariables.sh (more instructions are in the file)
-5. Add any scripts you want run at boot to common/unity-scripts.sh
-6. Modify the post-fs-data.sh and service.sh files in common as you would with any other magisk module (you probably won't need to do this - unity-scripts runs as a service script)
-6a. If post-fs-data and/or service are going to be used, set their values to true in config.sh (THESE WILL BE INSTALLED AS REGULAR BOOT SCRIPTS IF NOT A MAGISK INSTALL)
+5. Add any scripts you want run at boot (late service start in magisk) to common/unity-scripts.sh
+6. Modify the post-fs-data.sh in common as you would with any other magisk module
+6a. If post-fs-data is going to be used, set their values to true in config.sh (THESE WILL BE INSTALLED AS REGULAR BOOT SCRIPTS IF NOT A MAGISK INSTALL)
 7. Add any build props you want added into the unity-props.prop
 8. Add any build props you want removed into the unity-props-remove.prop
 9. Add any possibly conflicting files you want removed/wiped before install into the unity-file-wipe.sh
@@ -19,6 +19,8 @@ Instructions are contained in each file
 13. Add any custom permissions needed into config.sh (this will apply to both magisk and system installs) (default permissions is 755 for folders and 644 for files)
 14. Add any custom install/uninstall logic to unity-customrules1.sh (follow the instructions inside)
 14a. This is where you would put your stuff for any custom files and whatever else isn't taken care of already
+
+*NOTE FOR PATCHING: patches need to be put into both system/etc/audio_effects (CONFIG_FILE) and /vendor/etc/audio_effects (V_CONFIG_FILE)
 ________________________________________________________________________________________________________________________________________________________________________
 
 AUDMODLIB VARIABLES (for reference)
@@ -73,6 +75,9 @@ RMFOL_PRFX -> Contains the proper rm command for folders regardless of install m
 RMFOL_SFFX -> Contains proper suffix (.replace for magisk installs) for rm -r command regardless of install method. Always put this at end of any rm -r command
 UNITY -> Conatins proper location for mod regardless of install method (MODPATH for magisk installs)
 AMLPATH -> The destination path to aml files (see the AUDMODLIB variables above)
+MAGISK -> true if magisk install, false otherwise. Useful for unity-scripts if you want parts to only run with/without magisk installs
+SH -> the directory in which the script is running. Only applicable to unity-scripts
+EXT -> the extension for script files in $SH. Only applicable to unity-scripts
 
 **These are set dynamically based on device some examples of use:
 $CP_PRFX $INSTALLER/system/lib/example.so $UNITY$SYS/lib/example.so$CP_SFFX
