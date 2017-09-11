@@ -106,8 +106,6 @@ $SEINJECT --live "allow audioserver audioserver_tmpfs file { read write execute 
 
 $SEINJECT --live "permissive $SOURCE audio_prop"
 
-test -f "/magisk/audmodlib/update" && rm -f /magisk/audmodlib/update
-
 # MOD PATCHES
 
 for MOD in ${MODIDS}; do
