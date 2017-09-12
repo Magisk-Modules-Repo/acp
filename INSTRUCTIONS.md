@@ -1,4 +1,4 @@
-To create your own audmodlib mod, all of the files you need to modify are located in the common folder of this zip
+To create your own unity/audmodlib mod, all of the files you need to modify are located in the common folder of this zip
 NOTE: MAKE SURE YOU LEAVE A BLANK LINE AT THE END OF EACH FILE
 Instructions are contained in each file
 
@@ -7,15 +7,16 @@ Instructions are contained in each file
 2a. For apps, place in system/app/APPNAME/APPNAME.apk
 3. Place any files that need conditionals (only installed in some circumstances) in the custom folder (can be placed however you want)
 4. Add your min android version and other variables to common/unity-uservariables.sh (more instructions are in the file)
+4a. Note the Audmodlib variable in this file. Uncomment it if you're making an audio module
 5. Add any scripts you want run at boot (late service start in magisk) to common/unity-scripts.sh
 6. Modify the post-fs-data.sh in common as you would with any other magisk module
 6a. If post-fs-data is going to be used, set their values to true in config.sh (THESE WILL BE INSTALLED AS REGULAR BOOT SCRIPTS IF NOT A MAGISK INSTALL)
 7. Add any build props you want added into the unity-props.prop
 8. Add any build props you want removed into the unity-props-remove.prop
 9. Add any possibly conflicting files you want removed/wiped before install into the unity-file-wipe.sh
-10. Add any config/policy/mixer patches you want added into the unity-patches.sh
-11. Add the removal of your patches in unity_patches into the unity-patches-remove.sh
-12. Add any other config/policy/mixer patches you want removed before install into the unity-patches-wipe.sh
+10. Add any config/policy/mixer patches you want added into the aml-patches.sh (audio module only)
+11. Add the removal of your patches in unity_patches into the aml-patches-remove.sh (audio module only)
+12. Add any other config/policy/mixer patches you want removed before install into the aml-patches-wipe.sh (audio module only)
 13. Add any custom permissions needed into config.sh (this will apply to both magisk and system installs) (default permissions is 755 for folders and 644 for files)
 14. Add any custom install/uninstall logic to unity-customrules1.sh (follow the instructions inside)
 14a. This is where you would put your stuff for any custom files and whatever else isn't taken care of already
@@ -102,8 +103,8 @@ unity_prop_copy: adds all props in specified file to a common aml prop file. Exa
 unity_mod_wipe: removes all specified folders/files/patches that may conflict with install.
 unity_mod_directory: creates directories (folders) for files to be installed
 unity_mod_copy: copies/installs the files
-magisk_audmodlib: a magical function that enables all config/policy/mixer files to be shared between all aml mods. You will have no need to call this function
-unity_mod_patch: patches specificed config/policy/mixer files
+magisk_aml: a magical function that enables all config/policy/mixer files to be shared between all aml mods. You will have no need to call this function
+aml_mod_patch: patches specificed config/policy/mixer files
 unity_uninstall: uninstalls mod (removes applicable files/folders/patches). The uninstallation process is handled automatically so you probably won't need to call this function.
 ________________________________________________________________________________________________________________________________________________________________________
 
@@ -113,7 +114,7 @@ TIMEOFEXEC VALUES - when the customrules file will execute in the (un)installer 
 1=unity_mod_wipe
 2=unity_mod_directory
 3=unity_mod_copy
-4=unity_mod_patch
+4=aml_mod_patch
 5=unity_uninstall
 
 *HINT: If you have props you want set under certain conditions, have that customrule's TIMEOFEXEC=3. Example: unity_prop_copy $INSTALLER/common/props.prop
