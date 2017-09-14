@@ -817,22 +817,22 @@ unity_uninstall() {
 	
 	# REMOVE PATCHES
 	if [ "$MODID" == "$AMLID" ]; then
-    for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
-      if [ -f $CFG ]; then
-        if [ "$(grep ' proxy {#' $AMLPATH$CFG)" ]; then
-          # REMOVE LIBRARIES
-          sed -i '/proxy {/,/}/d' $AMLPATH$CFG
-        fi
-	  fi
-    done
+      for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
+        if [ -f $CFG ]; then
+          if [ "$(grep ' proxy {#' $AMLPATH$CFG)" ]; then
+            # REMOVE LIBRARIES
+            sed -i '/proxy {/,/}/d' $AMLPATH$CFG
+          fi
+	    fi
+      done
   
-    for CFG in $CONFIG_FILE $V_CONFIG_FILE do
-      if [ -f $CFG ] && [ "$(grep '#output_session_processing' $CFG)" ]; then
-	    sed -i '/#output_session_processing {/,/#}\
-		#/ s/#//' $AMLPATH$CFG
-	  fi
-    done
-  fi
+      for CFG in $CONFIG_FILE $V_CONFIG_FILE; do
+        if [ -f $CFG ] && [ "$(grep '#output_session_processing' $CFG)" ]; then
+	      sed -i '/#output_session_processing {/,/#}\
+		  #/ s/#//' $AMLPATH$CFG
+	    fi
+      done
+    fi
   fi
 
   rm -f $SYS/addon.d/$MODID.sh $SYS/etc/init.d/$MODID /su/su.d/$MODID.sh $SYS/su.d/$MODID.sh
