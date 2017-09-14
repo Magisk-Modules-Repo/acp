@@ -720,7 +720,7 @@ aml_mod_patch() {
 	fi
   done
   
-  for CFG in $CONFIG_FILE $V_CONFIG_FILE do
+  for CFG in $CONFIG_FILE $V_CONFIG_FILE; do
     if [ -f $CFG ] && [ ! "$(grep '#output_session_processing' $CFG)" ] && [ "$(grep '^output_session_processing' $CFG)" ]; then
 	  sed -i ':a;N;$!ba;s/}\n/}@/g' $AMLPATH$CFG
       sed -i '/^output_session_processing {/,/}.*}.*}/ s/^/#/' $AMLPATH$CFG
@@ -827,7 +827,7 @@ unity_uninstall() {
     done
   
     for CFG in $CONFIG_FILE $V_CONFIG_FILE do
-      if [ -f $CFG ] && [ "$(grep '#output_session_processing' $CFG)" ]
+      if [ -f $CFG ] && [ "$(grep '#output_session_processing' $CFG)" ]; then
 	    sed -i '/#output_session_processing {/,/#}\
 		#/ s/#//' $AMLPATH$CFG
 	  fi
