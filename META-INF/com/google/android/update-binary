@@ -753,7 +753,7 @@ magisk_aml_bootmode_uninstall() {
   test -f /magisk/$AMLID/service.sh && sys_cp_ch /magisk/$AMLID/service.sh $AMLPATH/service.sh 0755
   test -f /magisk/$AMLID/system.prop && sys_cp_ch /magisk/$AMLID/system.prop $AMLPATH/system.prop 0755
   cp -af $INSTALLER/common/$AMLID/audmodlibmodule.prop $AMLPATH/module.prop
-  $BOOTMODE && mktouch /magisk/$AMLID/update
+  $BOOTMODE && { mktouch /magisk/$AMLID/update; mktouch /magisk/$AMLID/auto_mount; }
 }
 
 unity_uninstall() {
