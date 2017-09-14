@@ -15,7 +15,7 @@ Instructions are contained in each file
 8. Add any build props you want removed into the unity-props-remove.prop
 9. Add any possibly conflicting files you want removed/wiped before install into the unity-file-wipe.sh
 10. Add any config/policy/mixer patches you want added into the aml-patches.sh (audio module only)
-11. Add the removal of your patches in unity_patches into the aml-patches-remove.sh (audio module only)
+11. Add the removal of your patches into the aml-patches-remove.sh (audio module only)
 12. Add any other config/policy/mixer patches you want removed before install into the aml-patches-wipe.sh (audio module only)
 13. Add any custom permissions needed into config.sh (this will apply to both magisk and system installs) (default permissions is 755 for folders and 644 for files)
 14. Add any custom install/uninstall logic to unity-customrules1.sh (follow the instructions inside)

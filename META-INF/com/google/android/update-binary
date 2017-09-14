@@ -56,7 +56,7 @@ MOUNTPATH=/magisk
 
 rm -rf $TMPDIR 2>/dev/null
 mkdir -p $INSTALLER
-unzip -o "$ZIP" module.prop config.sh 'common/*' -d $INSTALLER 2>/dev/null
+unzip -o "$ZIP" -d $INSTALLER 2>/dev/null
 
 # Load utility fuctions
 . $INSTALLER/common/audmodlib/util_functions.sh
@@ -827,9 +827,6 @@ unity_uninstall() {
 
 # Check for min api version
 test -z $MINAPI || test $API -ge $MINAPI || require_new_api
-
-# Extract mod files
-unzip -o "$ZIP" 'system/*' 'custom/*' -d $INSTALLER 2>/dev/null
 
 # PROCESS FOLDERS/FILES
 
