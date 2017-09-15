@@ -11,7 +11,7 @@ if [ -f $V_AUD_OUT_POL ] && [ -f $AUD_POL_CONF ]; then
 	sed -i "${NUM}d" $AMLPATH$AUD_POL_CONF
     sed -ri "/$BUFFER/ {n;/deep_buffer,/ s/<!--(.*)-->/\1/g}" $AMLPATH$AUD_POL_CONF
   done
-elif [ ! -f $V_AUD_OUT_POL ] && [ -f $AUD_POL_CONF ] && [ "$(grep "<!--.*deep_buffer" $AUD_POL_CONF)" ]; then
+elif [ ! -f $V_AUD_OUT_POL ] && [ -f $AUD_POL_CONF ] && [ "$(grep "<!--.*deep_buffer" $AMLPATH$AUD_POL_CONF)" ]; then
   sed -ri -n '/( *)<!--(.*)deep_buffer/{x;d;};1h;1!{x;p;};${x;p;}' $AMLPATH$AUD_POL_CONF
   sed -ri '/deep_buffer/ s/<!--(.*)-->/\1/g' $AMLPATH$AUD_POL_CONF
 else
