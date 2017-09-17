@@ -724,8 +724,8 @@ aml_mod_patch() {
     if [ -f $CFG ] && [ ! "$(grep '# *output_session_processing' $CFG)" ] && [ "$(grep '^.*output_session_processing' $CFG)" ]; then
 	  sed -i ':a;N;$!ba;s/}\n/}@/g' $AMLPATH$CFG
       sed -i '/^\( *\)output_session_processing {/,/}.*}.*}/ s/^/#/' $AMLPATH$CFG
-	  sed -ri 's/#(.*)}@(.*)}@(.*)/#\1}@#\2}@#\3/' $AMLPATH$CFG
-      sed -ri 's/#(.*)}@#(.*)}@#( *)}/#\1}@#\2}@#\3}#/' $AMLPATH$CFG
+	  sed -i '/^#\( *\)output_session_processing {/,/}.*}.*}/ s/\( *\)}@/#\1}@/2' $AMLPATH$CFG
+      sed -i '/^#\( *\)output_session_processing {/,/}.*}.*}/ s/#\( *\)}@\(.*\)/#\1}@#\2/g' $AMLPATH$CFG
       sed -i ':a;N;$!ba;s/}@/}\n/g' $AMLPATH$CFG
 	fi
   done
