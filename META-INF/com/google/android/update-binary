@@ -370,6 +370,7 @@ system_install() {
 
 aml_script_patch() {
   # INSERT UNITY REMOVE PATCHES INTO MOD SCRIPT
+  test "$MAGISK" == true && AMLSCRIPT=$AMLPATH/service.sh || AMLSCRIPT=$SH/$AMLID-service$EXT
   sed -i "/magisk\/$MODID/,/fi #$MODID/d" $AMLSCRIPT
   test ! -d $SYS/addon.d && sed -i 's/^/  /' $INPUT_PATCHES_REM
   sed -i -e "/# MOD PATCHES/ a\if [ "\$MAGISK" == true ] && [ ! -d "/magisk/$MODID" ]; then" -e "/# MOD PATCHES/ a\  MODIDS=\"\${MODIDS} $MODID\"" -e "/# MOD PATCHES/ r $INPUT_PATCHES_REM" -e "/# MOD PATCHES/ a\fi #$MODID" $AMLSCRIPT
@@ -603,13 +604,15 @@ unity_mod_copy() {
       ui_print "   Installing addon.d backup script..."
 	  
 	  # RENAME ADDON.D SCRIPT
-      mv -f $INSTALLER/system/addon.d/modid.sh $INSTALLER/system/addon.d/$MODID.sh
-	  mv -f $INSTALLER/system/addon.d/amlid.sh $INSTALLER/system/addon.d/$AMLID.sh
-	  
+      mv -f $INSTALLER/system/addon.d/amlid.sh $INSTALLER/system/addon.d/$AMLID.sh
+	   
 	  if [ "$MODID" != "$AMLID" ]; then  
+	  
+	    # RENAME ADDON.D SCRIPT
+		mv -f $INSTALLER/system/addon.d/modid.sh $INSTALLER/system/addon.d/$MODID.sh
+		
 		# INSERT MODID INTO ADDON.D SCRIPT
         sed -i "s/<MODID>/$MODID/" $INSTALLER/system/addon.d/$MODID.sh
-
         if [ "$AUDMODLIB" != "$MODID" ]; then
 	      # INSERT AML REMOVE, WIPE, AND REGULAR PATCHES INTO ADDON.D SCRIPT
           sed -i 's/^/  /' $INPUT_PATCHES
@@ -617,11 +620,11 @@ unity_mod_copy() {
 	      sed -i 's/^/  /' $INPUT_PATCHES_WIPE
 	      sed -i -e "/<PATCHES>/ r $INPUT_PATCHES_WIPE" -e "/<PATCHES>/ r $INPUT_PATCHES_REM" -e "/<PATCHES>/ r $INPUT_PATCHES" $INSTALLER/system/addon.d/$MODID.sh	  
         fi
-	  
-	    sed -i '/<PATCHES>/d' $INSTALLER/system/addon.d/$MODID.sh
+	    sed -i '/<PATCHES>/d' $INSTALLER/system/addon.d/$MODID.sh		
+	    
+		sys_cp_ch $INSTALLER/system/addon.d/$MODID.sh $SYS/addon.d/$MODID.sh 0644
 	  fi
 	  
-	  sys_cp_ch $INSTALLER/system/addon.d/$MODID.sh $SYS/addon.d/$MODID.sh 0644
 	  sys_cp_ch $INSTALLER/system/addon.d/$AMLID.sh $SYS/addon.d/$AMLID.sh 0644
     else
       ui_print "   ! Addon.d not detected. Backup script not installed..."
@@ -790,35 +793,31 @@ unity_uninstall() {
           fi
         fi
       done
-	
-	  # REMOVE PATCHES
-	  if [ "$MODID" == "$AMLID" ]; then
-        for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
-          if [ -f $CFG ]; then
-            if [ "$(grep ' proxy {#' $AMLPATH$CFG)" ]; then
-              # REMOVE LIBRARIES
-              sed -i '/proxy {/,/}/d' $AMLPATH$CFG
-            fi
-	      fi
-        done
+	  if [ "$AUDMODLIB" != "$MODID" ]; then
+	    # RESTORE CONFIGS, LIBRARIES, & EFFECTS
+        sed -i "/magisk\/$MODID/,/fi #$MODID/d" $AMLSCRIPT
+        ui_print "   Restoring necessary files"
+	    source $INPUT_PATCHES_REM
+	  fi
+	  set_perm_recursive $AMLPATH 0 0 0755 0644
+	else
+      # REMOVE PATCHES
+      for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
+        if [ -f $CFG ]; then
+          if [ "$(grep ' proxy {#' $AMLPATH$CFG)" ]; then
+            # REMOVE LIBRARIES
+            sed -i '/proxy {/,/}/d' $AMLPATH$CFG
+          fi
+	    fi
+      done
   
-        for CFG in $CONFIG_FILE $V_CONFIG_FILE; do
-          if [ -f $CFG ] && [ "$(grep '# *output_session_processing' $AMLPATH$CFG)" ]; then
-	        sed -i '/#\( *\)output_session_processing {/,/#}/ s/^#\(.*\)/\1/g' $AMLPATH$CFG
-	      fi
-        done
-      fi
+      for CFG in $CONFIG_FILE $V_CONFIG_FILE; do
+        if [ -f $CFG ] && [ "$(grep '# *output_session_processing' $AMLPATH$CFG)" ]; then
+	      sed -i '/#\( *\)output_session_processing {/,/#}/ s/^#\(.*\)/\1/g' $AMLPATH$CFG
+	    fi
+      done
     fi
   fi
-	
-  if [ "$AUDMODLIB" != "$MODID" ] && [ "$MODID" != "$AMLID" ]; then
-    # RESTORE CONFIGS, LIBRARIES, & EFFECTS
-    sed -i "/magisk\/$MODID/,/fi #$MODID/d" $AMLSCRIPT
-    ui_print "   Restoring necessary files"
-	source $INPUT_PATCHES_REM
-  fi
-  
-  test "$MODID" != "$AMLID" && set_perm_recursive $AMLPATH 0 0 0755 0644
 
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
     test "$(grep "TIMEOFEXEC=5" $INPUT_RULES$NUM.sh)" && source $INPUT_RULES$NUM.sh
@@ -848,7 +847,6 @@ if is_mounted /data ; then
     system_install
     script_install_logic
 	app_install_logic
-	test "$AUDMODLIB" != "$MODID" && AMLSCRIPT=$SH/$AMLID-service$EXT
 
     # Determine if mod is already installed. If same version is installed, uninstall
     mod_exist
@@ -936,13 +934,8 @@ MAGISKLOOP=`$MAGISKBIN/magisk --mountimg $IMG $MOUNTPATH`
 is_mounted $MOUNTPATH || abort "     $IMG mount failed..."
 
 # Prepare (Un)install
-if [ "$SYSOVER" == true ]; then
-  system_install
-else
-  magisk_install
-fi
+test "$SYSOVER" == true && system_install || magisk_install
 app_install_logic
-test "$AUDMODLIB" != "$MODID" && AMLSCRIPT=$AMLPATH/service.sh
 
 # Determine if mod is already installed. If same version is installed, uninstall
 mod_exist
@@ -969,7 +962,7 @@ if [ "$ACTION" == "Install" ]; then
 
   # Auto Mount
   $AUTOMOUNT && touch $MODPATH/auto_mount
-  test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && $AUTOMOUNT && touch $AMLPATH/auto_mount
+  test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && { $AUTOMOUNT && touch $AMLPATH/auto_mount; }
   
   # Remove old AML files if in BOOTMODE
   test "$BOOTMODE" == "true" -a "$AUDMODLIB" != "$MODID" && { rm -rf /magisk/$AMLID; mkdir -p /magisk/$AMLID; }
