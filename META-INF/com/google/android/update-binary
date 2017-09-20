@@ -126,6 +126,9 @@ sys_rm_ch() {
   else
     rm -f "$1"
   fi
+  if [ $(echo "$(dirname $1)" | grep '.*/app/.*\|.*/priv-app/.*') ] && [ "$(ls -A "$(dirname $1)")" == "" ]; then
+    rm -rf $(dirname $1)
+  fi
 }
 
 # BACKUP/REMOVE FILE
@@ -158,7 +161,7 @@ action_complete() {
   ui_print " "
   test "$ACTION" == "Install" && ui_print "    --------- INSTALLATION SUCCESSFUL ---------" || ui_print "    --------- RESTORATION SUCCESSFUL ---------"
   ui_print " "
-  ui_print "Unity (Un)Installer by ahrion & zackptg5 @ XDA"
+  test "$ACTION" == "Install" && ui_print "Unity Installer by ahrion & zackptg5 @ XDA" || ui_print "Unity Uninstaller by ahrion & zackptg5 @ XDA"
 }
 
 ##########################################################################################
@@ -539,19 +542,8 @@ unity_mod_directory() {
     $MK_PRFX $(dirname "$UNITY$VEN$LINE")$MK_SFFX
   done
 
-  if [ "$MAGISK" == false ]; then
-    sys_mk_ch $SH 0755
-    if [ -d $SYS/addon.d ]; then
-      sys_mk_ch $SYS/addon.d 0755
-    fi
-    if [ "$MODID" != "$AMLID" ] && [ "$AUDMODLIB" != "$MODID" ]; then
-      for CFG in $CONFIG_FILE $V_CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_DTP $MIX_PATH_i2s $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
-        if [ -f $CFG ]; then
-          sys_mk_ch ${CFG%/*} 0755
-        fi
-      done
-    fi
-  fi
+  test "$MAGISK" == false -a "$SYSOVER" == false && sys_mk_ch $SH 0755
+  test "$MAGISK" == false -a -d $SYS/addon.d && sys_mk_ch $SYS/addon.d 0755
 
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
     test "$(grep "TIMEOFEXEC=2" $INPUT_RULES$NUM.sh)" && source $INPUT_RULES$NUM.sh
@@ -600,7 +592,7 @@ unity_mod_copy() {
 	  test "$MODID" != "$AMLID" && sys_cp_ch $INSTALLER/common/$AMLID/$MODID-service.sh $SH/$MODID-service$EXT 0700
       test "$AUDMODLIB" != "$MODID" -a ! "$(grep "$SH/$AMLID-service$EXT" $AMLINFO)" && echo "$SH/$AMLID-service$EXT" >> $AMLINFO
 	  test ! "$(grep "$SH/$MODID-service$EXT" $INFO)" && echo "$SH/$MODID-service$EXT" >> $INFO
-      test -f "$SH/$AUDMODLIB-props$EXT" -a ! "$(grep "$SH/$AUDMODLIB-props$EXT" $INFO)" && echo "$SH/$AUDMODLIB-props$EXT" >> $INFO
+      test -f "$SH/$AUDMODLIB-props$EXT" -a ! "$(grep "$SH/$AUDMODLIB-props$EXT" $AMLINFO)" && echo "$SH/$AUDMODLIB-props$EXT" >> $AMLINFO
 	fi
 	
 	# INSTALL POST-FS-DATA MODE SCRIPTS
@@ -665,17 +657,17 @@ unity_mod_copy() {
   fi
 }
 
-aml_mod_patch() {
+aml_mod() {
   ########################################################################################
-  # Audio Modification Library and file patcher for unity install
+  # Audio Modification Library
   ########################################################################################
   ### CREATE AUDIO MODIFICATION LIBRARY ###
   ui_print " "
-  ui_print "- Installing Audio Modification Library -"
+  test "$ACTION" == "Install" && ui_print "- Installing Audio Modification Library -" || ui_print "- Removing $MODID From Audio Modification Library -"
+  
   for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
     if [ -f $CFG ]; then
-	  test ! "$(grep "$CFG" $AMLINFO)" && echo "$CFG" >> $AMLINFO
-	  test ! "$(grep "$CFG.bak" $AMLINFO)" && echo "$CFG.bak" >> $AMLINFO
+	  test "$MAGISK" == false && { test ! "$(grep "$CFG" $AMLINFO)" && echo "$CFG" >> $AMLINFO; test ! "$(grep "$CFG.bak" $AMLINFO)" && echo "$CFG.bak" >> $AMLINFO; }
       mkdir -p $AMLPATH${CFG%/*}
       if [ ! -f $AMLPATH$CFG.bak ]; then
         test -f $CFG.bak && $CP_PRFXAML $CFG.bak $AMLPATH$CFG.bak$CP_SFFX || $CP_PRFXAML $CFG $AMLPATH$CFG.bak$CP_SFFX
@@ -683,76 +675,67 @@ aml_mod_patch() {
       test ! -f $AMLPATH$CFG && $CP_PRFXAML $CFG $AMLPATH$CFG$CP_SFFX
     fi
   done
+  
   if [ "$MAGISK" == true ] || [ "$SYSOVER" == true ]; then
-    test "$BOOTMODE" == "true" -a -d /magisk/$AMLID/service.sh && sys_cp_ch /magisk/$AMLID/service.sh $AMLPATH/service.sh 0755
-    test "$BOOTMODE" == "true" -a -d /magisk/$AMLID/system.prop && sys_cp_ch /magisk/$AMLID/system.prop $AMLPATH/system.prop 0644
-    test ! -f $AMLPATH/service.sh && sys_cp_ch $INSTALLER/common/$AMLID/$AMLID-service.sh $AMLPATH/service.sh 0755
+    test "$BOOTMODE" == "true" -a -f /magisk/$AMLID/service.sh && sys_cp_ch /magisk/$AMLID/service.sh $AMLPATH/service.sh 0755
+    test "$BOOTMODE" == "true" -a -f /magisk/$AMLID/system.prop && sys_cp_ch /magisk/$AMLID/system.prop $AMLPATH/system.prop 0644
+	test "$ACTION" == "Install" -a ! -f $AMLPATH/service.sh && sys_cp_ch $INSTALLER/common/$AMLID/$AMLID-service.sh $AMLPATH/service.sh 0755
+    test "$BOOTMODE" == "true" -a "$ACTION" == "Uninstall" && { sys_cp_ch $INSTALLER/common/$AMLID/audmodlibmodule.prop $AMLPATH/module.prop; mktouch /magisk/$AMLID/update; mktouch /magisk/$AMLID/auto_mount; }
   fi
-  test "$MODID" != "$AMLID" && sed -i 's/\/system\///g' $AMLINFO
+  
+  test "$ACTION" == "Install" -a "$MAGISK" == false && sed -i 's/\/system\///g' $AMLINFO
+  
   ui_print "   ! AML framework by ahrion & zackptg5 @ XDA !"
   ui_print " "
   
-  if [ "$MODID" != "$AMLID" ]; then
-    #### PATCHING FILES ####
-    ui_print "- Patching necessary files -"
-
-    # Patch audmodlib-services script
-    aml_script_patch
-  
-    # REMOVE LIBRARIES & EFFECTS
-    ui_print "   Removing library & effect lines..."
-
-    source $INPUT_PATCHES_WIPE
-    source $INPUT_PATCHES_REM
-
-    for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
-      if [ -f $CFG ]; then
-        if [ "$(grep ' proxy {#' $AMLPATH$CFG)" ]; then
-          # REMOVE LIBRARIES
-          sed -i '/proxy {/,/}/d' $AMLPATH$CFG
-        fi
-	    if [ ! "$(grep ' proxy {' $AMLPATH$CFG)" ]; then
-	      # ADD LIBRARIES
-          sed -i 's/^libraries {/libraries {\n  proxy {#\n    path \/system\/lib\/soundfx\/libeffectproxy.so\n  }/g' $AMLPATH$CFG
-	    fi
-	  fi
-    done
-  
-    for CFG in $CONFIG_FILE $V_CONFIG_FILE; do
-      if [ -f $CFG ] && [ ! "$(grep '# *output_session_processing' $AMLPATH$CFG)" ] && [ "$(grep '^.*output_session_processing' $AMLPATH$CFG)" ]; then
-	    sed -i ':a;N;$!ba;s/}\n/}@/g' $AMLPATH$CFG
-        sed -i '/^\( *\)output_session_processing {/,/}.*}.*}/ s/^/#/' $AMLPATH$CFG
-	    sed -i '/^#\( *\)output_session_processing {/,/}.*}.*}/ s/\( *\)}@/#\1}@/2' $AMLPATH$CFG
-        sed -i '/^#\( *\)output_session_processing {/,/}.*}.*}/ s/#\( *\)}@#\( *\)}@\(.*\)/#\1}@#\2}@#\3/g' $AMLPATH$CFG
-        sed -i ':a;N;$!ba;s/}@/}\n/g' $AMLPATH$CFG
-	  fi
-    done
-
-    source $INPUT_PATCHES
-
-    NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
-      test "$(grep "TIMEOFEXEC=4" $INPUT_RULES$NUM.sh)" && source $INPUT_RULES$NUM.sh
-      NUM=$((NUM+1))
-    done
-  fi
+  test "$ACTION" == "Install" -a "$MODID" != "$AMLID" && aml_mod_patch
 }
 
-magisk_aml_bootmode_uninstall() {
-  # Use magisk_merge for aml during bootmode uninstall
-  for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
+aml_mod_patch() {
+  ########################################################################################
+  # Audio Modification Library file patcher for unity install
+  ########################################################################################
+  #### PATCHING FILES ####
+  ui_print "- Patching necessary files -"
+
+  # Patch audmodlib-services script
+  aml_script_patch
+  
+  # REMOVE LIBRARIES & EFFECTS
+  ui_print "   Removing library & effect lines..."
+
+  source $INPUT_PATCHES_WIPE
+  source $INPUT_PATCHES_REM
+
+  for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
     if [ -f $CFG ]; then
-      mkdir -p $AMLPATH${CFG%/*}
-      if [ ! -f $AMLPATH$CFG.bak ]; then
-        test -f $CFG.bak && cp -af $CFG.bak $AMLPATH$CFG.bak || cp -af $CFG $AMLPATH$CFG.bak
+      if [ "$(grep ' proxy {#' $AMLPATH$CFG)" ]; then
+        # REMOVE LIBRARIES
+        sed -i '/proxy {/,/}/d' $AMLPATH$CFG
       fi
-      test ! -f $AMLPATH$CFG && cp -af $CFG $AMLPATH$CFG
-    fi
+	  if [ ! "$(grep ' proxy {' $AMLPATH$CFG)" ]; then
+	    # ADD LIBRARIES
+        sed -i 's/^libraries {/libraries {\n  proxy {#\n    path \/system\/lib\/soundfx\/libeffectproxy.so\n  }/g' $AMLPATH$CFG
+	  fi
+	fi
   done
   
-  test -f /magisk/$AMLID/service.sh && sys_cp_ch /magisk/$AMLID/service.sh $AMLPATH/service.sh 0755
-  test -f /magisk/$AMLID/system.prop && sys_cp_ch /magisk/$AMLID/system.prop $AMLPATH/system.prop 0755
-  cp -af $INSTALLER/common/$AMLID/audmodlibmodule.prop $AMLPATH/module.prop
-  $BOOTMODE && { mktouch /magisk/$AMLID/update; mktouch /magisk/$AMLID/auto_mount; }
+  for CFG in $CONFIG_FILE $V_CONFIG_FILE; do
+    if [ -f $CFG ] && [ ! "$(grep '# *output_session_processing' $AMLPATH$CFG)" ] && [ "$(grep '^.*output_session_processing' $AMLPATH$CFG)" ]; then
+	  sed -i ':a;N;$!ba;s/}\n/}@/g' $AMLPATH$CFG
+      sed -i '/^\( *\)output_session_processing {/,/}.*}.*}/ s/^/#/' $AMLPATH$CFG
+	  sed -i '/^#\( *\)output_session_processing {/,/}.*}.*}/ s/\( *\)}@/#\1}@/2' $AMLPATH$CFG
+      sed -i '/^#\( *\)output_session_processing {/,/}.*}.*}/ s/#\( *\)}@#\( *\)}@\(.*\)/#\1}@#\2}@#\3/g' $AMLPATH$CFG
+      sed -i ':a;N;$!ba;s/}@/}\n/g' $AMLPATH$CFG
+	fi
+  done
+
+  source $INPUT_PATCHES
+
+  NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
+    test "$(grep "TIMEOFEXEC=4" $INPUT_RULES$NUM.sh)" && source $INPUT_RULES$NUM.sh
+    NUM=$((NUM+1))
+  done
 }
 
 unity_uninstall() {
@@ -773,12 +756,14 @@ unity_uninstall() {
     ui_print "   Magisk install detected, removing files..."
     rm -rf $MODPATH
     rm -rf /magisk/$MODID
-	test "$BOOTMODE" == "true" -a "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && magisk_aml_bootmode_uninstall
+	# Use magisk_merge for aml during bootmode uninstall
+	test "$BOOTMODE" == "true" -a "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && aml_mod
   fi
 
-  if [ "$MAGISK" == false ] && [ "$MODID" != "$AMLID" ]; then
+  if [ "$MAGISK" == false ]; then
     if [ -f $INFO ]; then
       ui_print "   System install detected, removing files..."
+	  test "$MODID" == "$AMLID" && sed -i "/.bak/d" $INFO
       cat $INFO | while read LINE; do
         if [ "$(dirname $LINE)" == "/su/su.d" ]; then
           sys_rm_ch $LINE
@@ -787,65 +772,44 @@ unity_uninstall() {
         fi
       done
       rm -f $INFO
-      for DIR in $SYS/app/$APP1 $SYS/priv-app/$APP1; do
-        if [ -d "$DIR" ]; then
-          if [ "$(ls -A "$DIR")" == "" ]; then
-            rm -rf $DIR
-          fi
-        fi
-      done
     else
       ui_print "   ! Mod not detected. Removing scripts..."
     fi
+    rm -f $SYS/addon.d/$MODID.sh $SYS/etc/init.d/$MODID /su/su.d/$MODID.sh $SYS/su.d/$MODID.sh
 	
-    # RESTORE WIPED FILES/FOLDERS
-    cat $INPUT_FILE_WIPE | while read LINE; do
-      if [ "$(echo "$LINE" | cut -c-3)" == "FOL" ]; then
-        if [ -e "$(eval "echo $LINE" | cut -c4-).tar" ]; then
-          tar -xf "$(eval "echo $LINE" | cut -c4-).tar" -C "$(dirname "$(eval "echo $LINE" | cut -c4-)")"
-        fi
-      else
-        if [ -e "$(eval "echo $LINE").bak" ]; then
-          mv -f "$(eval "echo $LINE").bak" "$(eval "echo $LINE")"
-        fi
-      fi
-    done
-	
-	# REMOVE PATCHES
-	if [ "$MODID" == "$AMLID" ]; then
-      for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
-        if [ -f $CFG ]; then
-          if [ "$(grep ' proxy {#' $AMLPATH$CFG)" ]; then
-            # REMOVE LIBRARIES
-            sed -i '/proxy {/,/}/d' $AMLPATH$CFG
+	if [ "$MODID" != "$AMLID" ]; then
+      # RESTORE WIPED FILES/FOLDERS
+      cat $INPUT_FILE_WIPE | while read LINE; do
+        if [ "$(echo "$LINE" | cut -c-3)" == "FOL" ]; then
+          if [ -e "$(eval "echo $LINE" | cut -c4-).tar" ]; then
+            tar -xf "$(eval "echo $LINE" | cut -c4-).tar" -C "$(dirname "$(eval "echo $LINE" | cut -c4-)")"
           fi
-	    fi
+        else
+          if [ -e "$(eval "echo $LINE").bak" ]; then
+            mv -f "$(eval "echo $LINE").bak" "$(eval "echo $LINE")"
+          fi
+        fi
       done
+	
+	  # REMOVE PATCHES
+	  if [ "$MODID" == "$AMLID" ]; then
+        for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
+          if [ -f $CFG ]; then
+            if [ "$(grep ' proxy {#' $AMLPATH$CFG)" ]; then
+              # REMOVE LIBRARIES
+              sed -i '/proxy {/,/}/d' $AMLPATH$CFG
+            fi
+	      fi
+        done
   
-      for CFG in $CONFIG_FILE $V_CONFIG_FILE; do
-        if [ -f $CFG ] && [ "$(grep '# *output_session_processing' $AMLPATH$CFG)" ]; then
-	      sed -i '/#\( *\)output_session_processing {/,/#}/ s/^#\(.*\)/\1/g' $AMLPATH$CFG
-	    fi
-      done
-    fi
-  elif [ "$MAGISK" == false ] && [ "$MODID" == "$AMLID" ]; then
-    if [ -f $INFO ]; then
-      ui_print "   System install detected, removing files..."
-	  sed -i "/.bak/d" $INFO
-      cat $INFO | while read LINE; do
-        if [ "$(dirname $LINE)" == "/su/su.d" ]; then
-          sys_rm_ch $LINE
-        else
-          test ! "$(dirname $LINE)" == "/vendor" && sys_rm_ch $SYS/$LINE || sys_rm_ch $(echo $LINE | sed "s/\/vendor/$VEN/")
-        fi
-      done
-      rm -f $INFO
-    else
-      ui_print "   ! Mod not detected. Removing scripts..."
+        for CFG in $CONFIG_FILE $V_CONFIG_FILE; do
+          if [ -f $CFG ] && [ "$(grep '# *output_session_processing' $AMLPATH$CFG)" ]; then
+	        sed -i '/#\( *\)output_session_processing {/,/#}/ s/^#\(.*\)/\1/g' $AMLPATH$CFG
+	      fi
+        done
+      fi
     fi
   fi
-
-  rm -f $SYS/addon.d/$MODID.sh $SYS/etc/init.d/$MODID /su/su.d/$MODID.sh $SYS/su.d/$MODID.sh
 	
   if [ "$AUDMODLIB" != "$MODID" ] && [ "$MODID" != "$AMLID" ]; then
     # RESTORE CONFIGS, LIBRARIES, & EFFECTS
@@ -853,6 +817,8 @@ unity_uninstall() {
     ui_print "   Restoring necessary files"
 	source $INPUT_PATCHES_REM
   fi
+  
+  test "$MODID" != "$AMLID" && set_perm_recursive $AMLPATH 0 0 0755 0644
 
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
     test "$(grep "TIMEOFEXEC=5" $INPUT_RULES$NUM.sh)" && source $INPUT_RULES$NUM.sh
@@ -902,7 +868,7 @@ if is_mounted /data ; then
       unity_mod_copy
 
       # Patch files
-      test "$AUDMODLIB" != "$MODID" && aml_mod_patch
+      test "$AUDMODLIB" != "$MODID" && aml_mod
 	  
       #### COMPLETING INSTALL ####
       ui_print " "
@@ -993,7 +959,7 @@ if [ "$ACTION" == "Install" ]; then
   unity_mod_copy
 
   # Patch files
-  test "$AUDMODLIB" != "$MODID" && aml_mod_patch
+  test "$AUDMODLIB" != "$MODID" && aml_mod
 
   # Handle replace folders
   for TARGET in $REPLACE; do
@@ -1032,7 +998,6 @@ else
 
   # Uninstall
   unity_uninstall
-  test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && { set_perm_recursive $AMLPATH 0 0 0755 0644; $BOOTMODE && mktouch /magisk/$AMLID/update; }
   
   #### COMPLETING UNINSTALL ####
   ui_print " "
