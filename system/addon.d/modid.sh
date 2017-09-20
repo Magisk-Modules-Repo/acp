@@ -2,7 +2,7 @@
 #
 . /tmp/backuptool.functions
 MODID=<MODID>
-AUDMODLIBID=audmodlib
+AMLID=audmodlib
 
 # DETERMINE IF PIXEL (A/B OTA) DEVICE
 ABDeviceCheck=$(cat /proc/cmdline | grep slot_suffix | wc -l)

@@ -115,7 +115,7 @@ sys_cpbak_ch() {
     mv -f "$2" "$2.bak"
     echo "$2.bak" >> $INFO
   fi
-  test ! "$(cat $INFO | grep $2)" && echo "$2" >> $INFO
+  test ! "$(grep "$2" $INFO)" && echo "$2" >> $INFO
   sys_cp_ch $1 $2 $3
 }
 
@@ -147,7 +147,7 @@ sys_wipe_ch() {
 sys_wipefol_ch() {
   if [ -d "$1" ] && [ ! -f "$1.tar" ]; then
     tar -cf "$1.tar" "$1"
-	test ! -f $INFO && { touch $INFO; echo "$1.tar" >> $INFO; } || test ! "$(cat $INFO | grep $1.tar)" && echo "$1.tar" >> $INFO
+	test ! -f $INFO && { touch $INFO; echo "$1.tar" >> $INFO; } || { test ! "$(grep "$1.tar" $INFO)" && echo "$1.tar" >> $INFO; }
   else
     rm -rf "$1"
   fi
@@ -287,7 +287,7 @@ test -z $MODID && MODID=`grep_prop id $INSTALLER/module.prop`
 AMLID=audmodlib
 MODPATH=$MOUNTPATH/$MODID
 AMLPATH=$MOUNTPATH/$AMLID
-test -z $AUDMODLIB && AUDMODLIB=$MODID || AUDMODLIB=aml
+test -z $AUDMODLIB && AUDMODLIB=$MODID || AUDMODLIB=unity
 
 # AUDIO EFFECTS
 CONFIG_FILE=$SYS/etc/audio_effects.conf
@@ -315,8 +315,10 @@ V_MIX_PATH=$VEN/etc/mixer_paths.xml
 # INFO FILE
 if [ -d $SYS/addon.d ]; then
   INFO=$SYS/addon.d/$MODID-files
+  AMLINFO=$SYS/addon.d/$AMLID-files
 else
   INFO=$SYS/etc/$MODID-files
+  AMLINFO=$SYS/etc/$AMLID-files
 fi
 # TEMPORARY VARIABLES
 TFILES=$INSTALLER/tfiles
@@ -334,6 +336,7 @@ magisk_install() {
   MAGISK=true
   MK_PRFX="mkdir -p"
   CP_PRFX="cp -af"
+  CP_PRFXAML="cp -af"
   RM_PRFX=mktouch
   RMFOL_PRFX=mktouch
   RMFOL_SFFX=/.replace
@@ -351,6 +354,7 @@ system_install() {
   MAGISK=false
   MK_PRFX="sys_mk_ch"
   CP_PRFX="sys_cpbak_ch"
+  CP_PRFXAML="sys_cp_ch"
   RM_PRFX="sys_wipe_ch"
   RMFOL_PRFX="sys_wipefol_ch"
   RMFOL_SFFX=""
@@ -364,7 +368,7 @@ system_install() {
 aml_script_patch() {
   # INSERT UNITY REMOVE PATCHES INTO MOD SCRIPT
   sed -i "/magisk\/$MODID/,/fi #$MODID/d" $AMLSCRIPT
-  sed -i 's/^/  /' $INPUT_PATCHES_REM
+  test ! -d $SYS/addon.d && sed -i 's/^/  /' $INPUT_PATCHES_REM
   sed -i -e "/# MOD PATCHES/ a\if [ "\$MAGISK" == true ] && [ ! -d "/magisk/$MODID" ]; then" -e "/# MOD PATCHES/ a\  MODIDS=\"\${MODIDS} $MODID\"" -e "/# MOD PATCHES/ r $INPUT_PATCHES_REM" -e "/# MOD PATCHES/ a\fi #$MODID" $AMLSCRIPT
 }
 
@@ -396,7 +400,7 @@ script_install_logic() {
   elif [ -d $SYS/su ] || [ -f $SYS/xbin/daemonsu ] || [ -f $SYS/xbin/sugote ]; then
     SH=$SYS/su.d
   elif [ -f $SYS/xbin/su ]; then
-    if [ "$(cat $SYS/xbin/su | grep SuperSU)" ]; then
+    if [ "$(grep "SuperSU" $SYS/xbin/su)" ]; then
       SH=$SYS/su.d
     else
       SH=$SYS/etc/init.d
@@ -429,7 +433,7 @@ unity_prop_remove() {
       NEWPROPS="$(cat $1)"
       printf '%s\n' "$NEWPROPS" | while IFS= read -r linenew
       do
-        if [ "$(cat $AMLPROP | grep "$linenew")" ]; then
+        if [ "$(grep "$linenew" $AMLPROP)" ]; then
           sed -i "/$linenew/d" $AMLPROP
         fi
       done
@@ -504,16 +508,6 @@ unity_mod_wipe() {
     fi
   done
 
-  if [ "$MAGISK" == false ] && [ "$MODID" != "$AMLID" ] && [ "$AUDMODLIB" != "$MODID" ]; then
-    # BACKUP CONFIGS
-    ui_print "   Backing up existing audio_effects cfg files..."
-    for BACKUP in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
-      if [ -f $BACKUP ]; then
-        cp -f $BACKUP $BACKUP.bak
-      fi
-    done
-  fi
-
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
     test "$(grep "TIMEOFEXEC=1" $INPUT_RULES$NUM.sh)" && source $INPUT_RULES$NUM.sh
     NUM=$((NUM+1))
@@ -582,7 +576,7 @@ unity_mod_copy() {
     elif [ -d $SYS/su ] || [ -f $SYS/xbin/daemonsu ] || [ -f $SYS/xbin/sugote ]; then
       ui_print "   Installing scripts for system SuperSU..."
     elif [ -f $SYS/xbin/su ]; then
-      if [ "$(cat $SYS/xbin/su | grep SuperSU)" ]; then
+      if [ "$(grep "SuperSU" $SYS/xbin/su)" ]; then
         ui_print "   Installing scripts for system SuperSU..."
       else
         ui_print "   Installing scripts for LineageOS SU..."
@@ -593,23 +587,24 @@ unity_mod_copy() {
 
     # CREATE FILE CONTAINING LIST OF ALL INSTALLED MOD FILES
     test ! -f $INFO && touch $INFO
+	test "$MODID" != "$AMLID" -a ! -f $AMLINFO && touch $AMLINFO
 
     # COPY MODULE.PROP FILE FOR VERSION CHECKING
     sys_cp_ch $INSTALLER/module.prop $MOD_VER 0644
-	test ! "$(cat $INFO | grep $MOD_VER)" && echo "$MOD_VER" >> $INFO
+	test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && sys_cp_ch $INSTALLER/common/$AMLID/audmodlibmodule.prop $SYS/etc/$AMLID-module.prop
+	test ! "$(grep "$MOD_VER" $INFO)" && echo "$MOD_VER" >> $INFO
+	test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" -a ! "$(grep "$MOD_VER" $AMLINFO)" && echo "$SYS/etc/$AMLID-module.prop" >> $AMLINFO
 
     if [ "$SYSOVER" == false ]; then
       test "$AUDMODLIB" != "$MODID" -a ! -f $SH/$AMLID-service$EXT && sys_cp_ch $INSTALLER/common/$AMLID/$AMLID-service.sh $SH/$AMLID-service$EXT 0700
 	  test "$MODID" != "$AMLID" && sys_cp_ch $INSTALLER/common/$AMLID/$MODID-service.sh $SH/$MODID-service$EXT 0700
-      test "$AUDMODLIB" != "$MODID" -a ! "$(cat $INFO | grep "$SH/$AMLID-service$EXT")" && echo "$SH/$AMLID-service$EXT" >> $INFO
-	  test ! "$(cat $INFO | grep "$SH/$MODID-service$EXT")" && echo "$SH/$MODID-service$EXT" >> $INFO
-      test -f "$SH/$AUDMODLIB-props$EXT" -a ! "$(cat $INFO | grep "$SH/$AUDMODLIB-props$EXT")" && echo "$SH/$AUDMODLIB-props$EXT" >> $INFO
-    else
-	  test "$BOOTMODE" == "true" -a "$AUDMODLIB" != "$MODID" -a -d /magisk/$AMLID/service.sh && sys_cp_ch /magisk/$AMLID/service.sh $AMLPATH/service.sh 0755
-	  test "$BOOTMODE" == "true" -a "$AUDMODLIB" != "$MODID" -a -d /magisk/$AMLID/system.prop && sys_cp_ch /magisk/$AMLID/system.prop $AMLPATH/system.prop 0644
-      test "$AUDMODLIB" != "$MODID" -a ! -f $AMLPATH/service.sh && sys_cp_ch $INSTALLER/common/$AMLID/$AMLID-service.sh $AMLPATH/service.sh 0755
-      test "$MODID" != "$AMLID" && sys_cp_ch $INSTALLER/common/$AMLID/$MODID-service.sh $MODPATH/service.sh 0755
+      test "$AUDMODLIB" != "$MODID" -a ! "$(grep "$SH/$AMLID-service$EXT" $AMLINFO)" && echo "$SH/$AMLID-service$EXT" >> $AMLINFO
+	  test ! "$(grep "$SH/$MODID-service$EXT" $INFO)" && echo "$SH/$MODID-service$EXT" >> $INFO
+      test -f "$SH/$AUDMODLIB-props$EXT" -a ! "$(grep "$SH/$AUDMODLIB-props$EXT" $INFO)" && echo "$SH/$AUDMODLIB-props$EXT" >> $INFO
 	fi
+	
+	# INSTALL POST-FS-DATA MODE SCRIPTS
+    $POSTFSDATA && { test "$SYSOVER" == false && sys_cp_ch $INSTALLER/common/post-fs-data.sh $SH/$MODID-post-fs-data$EXT 0700 || cp -af $INSTALLER/common/post-fs-data.sh $MODPATH/post-fs-data.sh; }
 
     # INSTALL ROM BACKUP SCRIPT
     if [ -d $SYS/addon.d ]; then
@@ -617,26 +612,33 @@ unity_mod_copy() {
 	  
 	  # RENAME ADDON.D SCRIPT
       mv -f $INSTALLER/system/addon.d/modid.sh $INSTALLER/system/addon.d/$MODID.sh
+	  mv -f $INSTALLER/system/addon.d/amlid.sh $INSTALLER/system/addon.d/$AMLID.sh
 	  
-	  # INSERT MODID INTO ADDON.D SCRIPT
-      sed -i "s/<MODID>/$MODID/" $INSTALLER/system/addon.d/$MODID.sh
+	  if [ "$MODID" != "$AMLID" ]; then  
+		# INSERT MODID INTO ADDON.D SCRIPT
+        sed -i "s/<MODID>/$MODID/" $INSTALLER/system/addon.d/$MODID.sh
 
-      if [ "$AUDMODLIB" != "$MODID" ]; then
-	    # INSERT AML REMOVE, WIPE, AND REGULAR PATCHES INTO ADDON.D SCRIPT
-        sed -i 's/^/    /' $INPUT_PATCHES
-	    sed -i 's/^/  /' $INPUT_PATCHES_REM
-	    sed -i 's/^/    /' $INPUT_PATCHES_WIPE
-	    sed -i -e "/<PATCHES>/ r $INPUT_PATCHES_WIPE" -e "/<PATCHES>/ r $INPUT_PATCHES_REM" -e "/<PATCHES>/ r $INPUT_PATCHES" $INSTALLER/system/addon.d/$MODID.sh	  
-      fi
+        if [ "$AUDMODLIB" != "$MODID" ]; then
+	      # INSERT AML REMOVE, WIPE, AND REGULAR PATCHES INTO ADDON.D SCRIPT
+          sed -i 's/^/  /' $INPUT_PATCHES
+	      sed -i 's/^/  /' $INPUT_PATCHES_REM
+	      sed -i 's/^/  /' $INPUT_PATCHES_WIPE
+	      sed -i -e "/<PATCHES>/ r $INPUT_PATCHES_WIPE" -e "/<PATCHES>/ r $INPUT_PATCHES_REM" -e "/<PATCHES>/ r $INPUT_PATCHES" $INSTALLER/system/addon.d/$MODID.sh	  
+        fi
 	  
-	  sed -i '/<PATCHES>/d' $INSTALLER/system/addon.d/$MODID.sh
+	    sed -i '/<PATCHES>/d' $INSTALLER/system/addon.d/$MODID.sh
+	  fi
+	  
 	  sys_cp_ch $INSTALLER/system/addon.d/$MODID.sh $SYS/addon.d/$MODID.sh 0644
+	  sys_cp_ch $INSTALLER/system/addon.d/$AMLID.sh $SYS/addon.d/$AMLID.sh 0644
     else
       ui_print "   ! Addon.d not detected. Backup script not installed..."
     fi
-  else
-    test "$MODID" != "$AMLID" && sys_cp_ch $INSTALLER/common/$AMLID/$MODID-service.sh $MODPATH/service.sh 0755
+  elif [ "$SYSOVER" == false ]; then
+    ui_print "   Installing scripts for Magisk SU..."
   fi
+  
+  test "$MAGISK" == true -o "$SYSOVER" == true && { test "$MODID" != "$AMLID" && sys_cp_ch $INSTALLER/common/$AMLID/$MODID-service.sh $MODPATH/service.sh 0755; }
 
   # INSTALL APPS & LIBRARIES
   ui_print "$APPTXT"
@@ -663,38 +665,33 @@ unity_mod_copy() {
   fi
 }
 
-magisk_aml() {
+aml_mod_patch() {
   ########################################################################################
-  # Audio Modification Library / This is where the magic happens for Magisk
+  # Audio Modification Library and file patcher for unity install
   ########################################################################################
   ### CREATE AUDIO MODIFICATION LIBRARY ###
   ui_print " "
   ui_print "- Installing Audio Modification Library -"
-
   for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
     if [ -f $CFG ]; then
+	  test ! "$(grep "$CFG" $AMLINFO)" && echo "$CFG" >> $AMLINFO
+	  test ! "$(grep "$CFG.bak" $AMLINFO)" && echo "$CFG.bak" >> $AMLINFO
       mkdir -p $AMLPATH${CFG%/*}
       if [ ! -f $AMLPATH$CFG.bak ]; then
-        test -f $CFG.bak && cp -af $CFG.bak $AMLPATH$CFG.bak || cp -af $CFG $AMLPATH$CFG.bak
+        test -f $CFG.bak && $CP_PRFXAML $CFG.bak $AMLPATH$CFG.bak$CP_SFFX || $CP_PRFXAML $CFG $AMLPATH$CFG.bak$CP_SFFX
       fi
-      test ! -f $AMLPATH$CFG && cp -af $CFG $AMLPATH$CFG
+      test ! -f $AMLPATH$CFG && $CP_PRFXAML $CFG $AMLPATH$CFG$CP_SFFX
     fi
   done
-  
-  ui_print "   Installing scripts for MagiskSU..."
-  test "$BOOTMODE" == "true" -a -d /magisk/$AMLID/service.sh && sys_cp_ch /magisk/$AMLID/service.sh $AMLPATH/service.sh 0755
-  test "$BOOTMODE" == "true" -a -d /magisk/$AMLID/system.prop && sys_cp_ch /magisk/$AMLID/system.prop $AMLPATH/system.prop 0644
-  test ! -f $AMLPATH/service.sh && sys_cp_ch $INSTALLER/common/$AMLID/$AMLID-service.sh $AMLPATH/service.sh 0755
-
-  aml_mod_patch 
-
+  if [ "$MAGISK" == true ] || [ "$SYSOVER" == true ]; then
+    test "$BOOTMODE" == "true" -a -d /magisk/$AMLID/service.sh && sys_cp_ch /magisk/$AMLID/service.sh $AMLPATH/service.sh 0755
+    test "$BOOTMODE" == "true" -a -d /magisk/$AMLID/system.prop && sys_cp_ch /magisk/$AMLID/system.prop $AMLPATH/system.prop 0644
+    test ! -f $AMLPATH/service.sh && sys_cp_ch $INSTALLER/common/$AMLID/$AMLID-service.sh $AMLPATH/service.sh 0755
+  fi
+  test "$MODID" != "$AMLID" && sed -i 's/\/system\///g' $AMLINFO
   ui_print "   ! AML framework by ahrion & zackptg5 @ XDA !"
-}
-
-aml_mod_patch() {
-  ########################################################################################
-  # Audio Modification Library file patcher for unity install
-  ########################################################################################
+  ui_print " "
+  
   #### PATCHING FILES ####
   ui_print "- Patching necessary files -"
 
@@ -777,17 +774,14 @@ unity_uninstall() {
 	test "$BOOTMODE" == "true" -a "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && magisk_aml_bootmode_uninstall
   fi
 
-  if [ "$MAGISK" == false ]; then
+  if [ "$MAGISK" == false ] && [ "$MODID" != "$AMLID" ]; then
     if [ -f $INFO ]; then
       ui_print "   System install detected, removing files..."
-      if [ "$SYSOVER" == false ]; then
-		sed -i -e "/$SH\/$AMLID$EXT/d" -e "/$SH\/$MODID$EXT/d" -e "/$SH\/$AUDMODLIB-props$EXT/d" $INFOS
-      fi
       cat $INFO | while read LINE; do
         if [ "$(dirname $LINE)" == "/su/su.d" ]; then
           sys_rm_ch $LINE
         else
-          sys_rm_ch $SYS/$LINE
+          test ! "$(dirname $LINE)" == "/vendor" && sys_rm_ch $SYS/$LINE || sys_rm_ch $(echo $LINE | sed "s/\/vendor/$VEN/")
         fi
       done
       rm -f $INFO
@@ -832,6 +826,21 @@ unity_uninstall() {
 	    fi
       done
     fi
+  elif [ "$MODID" == "$AMLID" ]; then
+    if [ -f $INFO ]; then
+      ui_print "   System install detected, removing files..."
+	  sed -i "/.bak/d" $INFO
+      cat $INFO | while read LINE; do
+        if [ "$(dirname $LINE)" == "/su/su.d" ]; then
+          sys_rm_ch $LINE
+        else
+          test ! "$(dirname $LINE)" == "/vendor" && sys_rm_ch $SYS/$LINE || sys_rm_ch $(echo $LINE | sed "s/\/vendor/$VEN/")
+        fi
+      done
+      rm -f $INFO
+    else
+      ui_print "   ! Mod not detected. Removing scripts..."
+    fi
   fi
 
   rm -f $SYS/addon.d/$MODID.sh $SYS/etc/init.d/$MODID /su/su.d/$MODID.sh $SYS/su.d/$MODID.sh
@@ -854,7 +863,7 @@ unity_uninstall() {
 ##########################################################################################
 
 # Check for min api version
-test -z $MINAPI || test $API -ge $MINAPI || require_new_api
+test -z $MINAPI || { test $API -ge $MINAPI || require_new_api; }
 
 # PROCESS FOLDERS/FILES
 
@@ -871,7 +880,7 @@ if is_mounted /data ; then
     system_install
     script_install_logic
 	app_install_logic
-	test "$AUDMODLIB" != "$MODID" && AMLSCRIPT=$SH/$AMLID-service.sh
+	test "$AUDMODLIB" != "$MODID" && AMLSCRIPT=$SH/$AMLID-service$EXT
 
     # Determine if mod is already installed. If same version is installed, uninstall
     mod_exist
@@ -886,19 +895,13 @@ if is_mounted /data ; then
 
       # Create mod paths
       unity_mod_directory
-
+	  
       # Copy files
       unity_mod_copy
 
       # Patch files
       test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && aml_mod_patch
 	  
-	  # post-fs-data mode scripts
-      $POSTFSDATA && sys_cp_ch $INSTALLER/common/post-fs-data.sh $SH/$MODID-post-fs-data$EXT 0700
-
-      # service mode scripts
-      $LATESTARTSERVICE && sys_cp_ch $INSTALLER/common/service.sh $SH/$MODID-service$EXT 0700
-
       #### COMPLETING INSTALL ####
       ui_print " "
       ui_print "- Completing install -"
@@ -987,27 +990,18 @@ if [ "$ACTION" == "Install" ]; then
   # Copy files
   unity_mod_copy
 
-  if [ "$SYSOVER" == true ]; then
+  # Patch files
+  test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && aml_mod_patch
 
-    # Patch files
-    test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && aml_mod_patch
+  # Handle replace folders
+  for TARGET in $REPLACE; do
+    mktouch $MODPATH$TARGET/.replace
+    test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && mktouch $AMLPATH$TARGET/.replace
+  done
 
-  else
-
-    # Patch files
-    test "$AUDMODLIB" != "$MODID" && magisk_aml
-
-    # Handle replace folders
-    for TARGET in $REPLACE; do
-      mktouch $MODPATH$TARGET/.replace
-      test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && mktouch $AMLPATH$TARGET/.replace
-    done
-
-    # Auto Mount
-    $AUTOMOUNT && touch $MODPATH/auto_mount
-    test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && $AUTOMOUNT && touch $AMLPATH/auto_mount
-
-  fi
+  # Auto Mount
+  $AUTOMOUNT && touch $MODPATH/auto_mount
+  test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && $AUTOMOUNT && touch $AMLPATH/auto_mount
   
   # Remove old AML files if in BOOTMODE
   test "$BOOTMODE" == "true" -a "$AUDMODLIB" != "$MODID" && { rm -rf /magisk/$AMLID; mkdir -p /magisk/$AMLID; }
