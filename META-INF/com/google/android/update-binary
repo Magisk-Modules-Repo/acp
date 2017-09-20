@@ -826,7 +826,7 @@ unity_uninstall() {
 	    fi
       done
     fi
-  elif [ "$MODID" == "$AMLID" ]; then
+  elif [ "$MAGISK" == false ] && [ "$MODID" == "$AMLID" ]; then
     if [ -f $INFO ]; then
       ui_print "   System install detected, removing files..."
 	  sed -i "/.bak/d" $INFO
