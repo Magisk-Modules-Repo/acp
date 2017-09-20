@@ -103,8 +103,7 @@ unity_prop_copy: adds all props in specified file to a common aml prop file. Exa
 unity_mod_wipe: removes all specified folders/files/patches that may conflict with install.
 unity_mod_directory: creates directories (folders) for files to be installed
 unity_mod_copy: copies/installs the files
-magisk_aml: a magical function that enables all config/policy/mixer files to be shared between all aml mods. You will have no need to call this function
-aml_mod_patch: patches specificed config/policy/mixer files
+aml_mod_patch: patches specificed config/policy/mixer files and enables all config/policy/mixer files to be shared between all aml mods
 unity_uninstall: uninstalls mod (removes applicable files/folders/patches). The uninstallation process is handled automatically so you probably won't need to call this function.
 ________________________________________________________________________________________________________________________________________________________________________
 

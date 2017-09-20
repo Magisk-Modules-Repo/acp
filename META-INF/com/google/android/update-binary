@@ -692,47 +692,49 @@ aml_mod_patch() {
   ui_print "   ! AML framework by ahrion & zackptg5 @ XDA !"
   ui_print " "
   
-  #### PATCHING FILES ####
-  ui_print "- Patching necessary files -"
+  if [ "$MODID" != "$AMLID" ]; then
+    #### PATCHING FILES ####
+    ui_print "- Patching necessary files -"
 
-  # Patch audmodlib-services script
-  test "$MODID" != "$AMLID" && aml_script_patch
+    # Patch audmodlib-services script
+    aml_script_patch
   
-  # REMOVE LIBRARIES & EFFECTS
-  ui_print "   Removing library & effect lines..."
+    # REMOVE LIBRARIES & EFFECTS
+    ui_print "   Removing library & effect lines..."
 
-  source $INPUT_PATCHES_WIPE
-  source $INPUT_PATCHES_REM
+    source $INPUT_PATCHES_WIPE
+    source $INPUT_PATCHES_REM
 
-  for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
-    if [ -f $CFG ]; then
-      if [ "$(grep ' proxy {#' $AMLPATH$CFG)" ]; then
-        # REMOVE LIBRARIES
-        sed -i '/proxy {/,/}/d' $AMLPATH$CFG
-      fi
-	  if [ ! "$(grep ' proxy {' $AMLPATH$CFG)" ]; then
-	    # ADD LIBRARIES
-        sed -i 's/^libraries {/libraries {\n  proxy {#\n    path \/system\/lib\/soundfx\/libeffectproxy.so\n  }/g' $AMLPATH$CFG
+    for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
+      if [ -f $CFG ]; then
+        if [ "$(grep ' proxy {#' $AMLPATH$CFG)" ]; then
+          # REMOVE LIBRARIES
+          sed -i '/proxy {/,/}/d' $AMLPATH$CFG
+        fi
+	    if [ ! "$(grep ' proxy {' $AMLPATH$CFG)" ]; then
+	      # ADD LIBRARIES
+          sed -i 's/^libraries {/libraries {\n  proxy {#\n    path \/system\/lib\/soundfx\/libeffectproxy.so\n  }/g' $AMLPATH$CFG
+	    fi
 	  fi
-	fi
-  done
+    done
   
-  for CFG in $CONFIG_FILE $V_CONFIG_FILE; do
-    if [ -f $CFG ] && [ ! "$(grep '# *output_session_processing' $AMLPATH$CFG)" ] && [ "$(grep '^.*output_session_processing' $AMLPATH$CFG)" ]; then
-	  sed -i ':a;N;$!ba;s/}\n/}@/g' $AMLPATH$CFG
-      sed -i '/^\( *\)output_session_processing {/,/}.*}.*}/ s/^/#/' $AMLPATH$CFG
-	  sed -i '/^#\( *\)output_session_processing {/,/}.*}.*}/ s/\( *\)}@/#\1}@/2' $AMLPATH$CFG
-      sed -i '/^#\( *\)output_session_processing {/,/}.*}.*}/ s/#\( *\)}@#\( *\)}@\(.*\)/#\1}@#\2}@#\3/g' $AMLPATH$CFG
-      sed -i ':a;N;$!ba;s/}@/}\n/g' $AMLPATH$CFG
-	fi
-  done
+    for CFG in $CONFIG_FILE $V_CONFIG_FILE; do
+      if [ -f $CFG ] && [ ! "$(grep '# *output_session_processing' $AMLPATH$CFG)" ] && [ "$(grep '^.*output_session_processing' $AMLPATH$CFG)" ]; then
+	    sed -i ':a;N;$!ba;s/}\n/}@/g' $AMLPATH$CFG
+        sed -i '/^\( *\)output_session_processing {/,/}.*}.*}/ s/^/#/' $AMLPATH$CFG
+	    sed -i '/^#\( *\)output_session_processing {/,/}.*}.*}/ s/\( *\)}@/#\1}@/2' $AMLPATH$CFG
+        sed -i '/^#\( *\)output_session_processing {/,/}.*}.*}/ s/#\( *\)}@#\( *\)}@\(.*\)/#\1}@#\2}@#\3/g' $AMLPATH$CFG
+        sed -i ':a;N;$!ba;s/}@/}\n/g' $AMLPATH$CFG
+	  fi
+    done
 
-  test "$MODID" != "$AMLID" && source $INPUT_PATCHES
+    source $INPUT_PATCHES
 
-  NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
-    test "$(grep "TIMEOFEXEC=4" $INPUT_RULES$NUM.sh)" && source $INPUT_RULES$NUM.sh
-    NUM=$((NUM+1))
-  done
+    NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
+      test "$(grep "TIMEOFEXEC=4" $INPUT_RULES$NUM.sh)" && source $INPUT_RULES$NUM.sh
+      NUM=$((NUM+1))
+    done
+  fi
 }
 
 magisk_aml_bootmode_uninstall() {
@@ -900,7 +902,7 @@ if is_mounted /data ; then
       unity_mod_copy
 
       # Patch files
-      test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && aml_mod_patch
+      test "$AUDMODLIB" != "$MODID" && aml_mod_patch
 	  
       #### COMPLETING INSTALL ####
       ui_print " "
@@ -991,7 +993,7 @@ if [ "$ACTION" == "Install" ]; then
   unity_mod_copy
 
   # Patch files
-  test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && aml_mod_patch
+  test "$AUDMODLIB" != "$MODID" && aml_mod_patch
 
   # Handle replace folders
   for TARGET in $REPLACE; do
