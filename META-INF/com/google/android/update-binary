@@ -332,7 +332,7 @@ if [ "$MODID" != "$AMLID" ]; then
   mv -f $INSTALLER/common/$AMLID/modid-service.sh $INSTALLER/common/$AMLID/$MODID-service.sh
 
   # INSERT MODID AND CUSTOM USER SCRIPT INTO MOD SCRIPT
-  sed -i -e "s/<MODID>/$MODID/" -e "/# CUSTOM USER PATCHES/ r $INPUT_SCRIPT" -e '/# CUSTOM USER PATCHES/d' $INSTALLER/common/$AMLID/$MODID-service.sh
+  sed -i -e "s/<MODID>/$MODID/" -e "/# CUSTOM USER SCRIPT/ r $INPUT_SCRIPT" -e '/# CUSTOM USER SCRIPT/d' $INSTALLER/common/$AMLID/$MODID-service.sh
 fi
 
 magisk_install() {
@@ -378,6 +378,10 @@ aml_script_patch() {
 
 custom_app_install() {
   $OLDAPP && $CP_PRFX $INSTALLER/custom/$1/$1.apk $UNITY$SYS/app/$1.apk || $CP_PRFX $INSTALLER/custom/$1/$1.apk $UNITY$SYS/priv-app/$1/$1.apk
+}
+
+custom_app_wipe() {
+  $OLDAPP && { test -f "$SYS/app/$1.apk" $RM_PRFX $SYS/app/$1.apk; } || { test -f "SYS/priv-app/$1/$1.apk" $RM_PRFX SYS/priv-app/$1/$1.apk; }
 }
 
 app_install_logic() {
@@ -505,9 +509,11 @@ unity_mod_wipe() {
   fi
 
   cat $INPUT_FILE_WIPE | while read LINE; do
-    if [ "$(echo "$LINE" | cut -c-3)" == "FOL" ] && [ -d "$(echo "$LINE" | cut -c-3)" ]; then
+    if [ "$(echo "$LINE" | cut -c-3)" == "FOL" ] && [ -d "$(echo "$LINE" | cut -c4-)" ]; then
       $RMFOL_PRFX $(eval "echo $LINE" | cut -c4-)$RMFOL_SFFX
-    else
+    elif [ "$(echo "$LINE" | cut -c-3)" == "APP" ]; then
+	  custom_app_wipe $(eval "echo $LINE" | cut -c4-)
+	else
       test -f "$(eval "echo $LINE")" && $RM_PRFX $(eval "echo $LINE")
     fi
   done
