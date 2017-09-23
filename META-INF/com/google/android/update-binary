@@ -373,7 +373,7 @@ aml_script_patch() {
   test "$MAGISK" == true && AMLSCRIPT=$AMLPATH/service.sh || AMLSCRIPT=$SH/$AMLID-service$EXT
   sed -i "/magisk\/$MODID/,/fi #$MODID/d" $AMLSCRIPT
   test ! -d $SYS/addon.d && sed -i 's/^/  /' $INPUT_PATCHES_REM
-  sed -i -e "/# MOD PATCHES/ a\if [ "\$MAGISK" == true ] && [ ! -d "/magisk/$MODID" ]; then" -e "/# MOD PATCHES/ a\  MODIDS=\"\${MODIDS} $MODID\"" -e "/# MOD PATCHES/ r $INPUT_PATCHES_REM" -e "/# MOD PATCHES/ a\fi #$MODID" $AMLSCRIPT
+  sed -i -e "/# MOD PATCHES/ a\if [ \"\$MAGISK\" == true ] && [ ! -d \"/magisk/$MODID\" ]; then" -e "/# MOD PATCHES/ a\  MODIDS=\"\${MODIDS} $MODID\"" -e "/# MOD PATCHES/ r $INPUT_PATCHES_REM" -e "/# MOD PATCHES/ a\fi #$MODID" $AMLSCRIPT
 }
 
 custom_app_install() {

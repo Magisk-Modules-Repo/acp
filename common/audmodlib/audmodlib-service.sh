@@ -77,6 +77,7 @@ EXT=".sh"
 AMLPATH=""
 MAGISK=false
 if [ -f /data/magisk.img ] || [ -f /cache/magisk.img ] || [ -d /magisk ]; then
+  MAGISK=true
   SEINJECT=magiskpolicy
   test -d /magisk/audmodlib$SYS && { MAGISK=true; AMLPATH=/magisk/audmodlib; }
 elif [ "$supersuimg" ] || [ -d /su ]; then
