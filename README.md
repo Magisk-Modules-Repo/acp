@@ -12,20 +12,30 @@ This hack fixes when streaming apps (Spotify, Pandora, etc) do not process audio
 * Works with nearly every device, kernel, and rom
 
 ## Change Log
-v2.5
-	- AudModLib v1.5: Update sepolicy for magisk 13
-	- AudModLib v1.5: Add unity system props
-	- AudModLib v1.5: Added file backup/restore of modified files
-	- AudModLib v1.5: Added vendor fix for nexus devices
-	- Audmodlib v1.5: Added system_root support for pixel devices
-	- Audmodlib v1.5: Added phh superuser and LOS su support (note, LOS doesn't support sepolicy patching)
-	- Audmodlib v1.5: Added support for magisk imgs located in /cache/audmodlib
-	- Audmodlib v1.5: Added @Osm0sis at xda-developers uninstaller idea (just add "uninstall" to zip name and it'll function as uninstaller)
-	- Audmodlib v1.5: Added autouninstall (if mod is already installed and you flash same version zip again, it'll uninstall)
-	- Audmodlib v1.5: Added system override (if you're on magisk but would rather have it install to system, add word "system" to zip name and it'll install everything but scripts to system)
-	- Audmodlib v1.5: Added file/folder backup/restore of normally wiped files
-	- Audmodlib v1.5: New modular approach - no need to modify update-binary anymore
-	- Audmodlib v1.5: Removed cache workaround
+v3.0
+	- AudModLib v2.0: Massive installer and script overhaul
+	- AudModLib v2.0: Added autouninstall (if mod is already installed and you flash same version zip again, it'll uninstall), thus removing the need for an uninstall zip
+	- AudModLib v2.0: Added file/folder backup/restore of modified files
+	- AudModLib v2.0: Added file/folder backup/restore of normally wiped files
+	- AudModLib v2.0: Added Osm0sis @ xda-developers uninstaller idea (just add "uninstall" to zip name and it'll function as uninstaller)
+	- AudModLib v2.0: Added phh's SuperUser and LOS su support (note, LOS doesn't support sepolicy patching)
+	- AudModLib v2.0: Added proxy library to AML to allow the proxy effects found in multiple audio modules
+	- AudModLib v2.0: Added support for Magisk imgs located in /cache/audmodlib
+	- AudModLib v2.0: Added system_root support for Pixel devices
+	- AudModLib v2.0: Added system override (if you're on magisk but would rather have it install to system, add word "system" to zip name and it'll install everything but scripts to system)
+	- AudModLib v2.0: Add Unity system props
+	- AudModLib v2.0: Added vendor fix for Nexus devices
+	- AudModLib v2.0: AML functionality and uses overhauled
+	- AudModLib v2.0: Bug fixes
+	- AudModLib v2.0: Modified Unity Installer to allow use for non AML modules
+	- AudModLib v2.0: Moved scripts from Magisk .core to the individual module folder due to .core limitations
+	- AudModLib v2.0: New modular approach - no need to modify update-binary anymore: check instructions for more details on how this works
+	- AudModLib v2.0: Reworked addon.d system install scripts
+	- AudModLib v2.0: Removed AML cache workaround by reworking AML changes via magisk_merge
+	- AudModLib v2.0: Reworked AML vendor audio_effects to not be overwritten by system audio_effects by commenting out conflicting lines
+	- AudModLib v2.0: Reworked script permissions
+	- AudModLib v2.0: Update sepolicy for Magisk 13+
+	- AudModLib v2.0: Updated to Magisk module template 1400
 
 v2.4
 	- AudModLib v1.4 update which changes SELinux live patching to allow better compatibility between different devices, kernels, and roms; while also keeping the amount of "allowances" to a minumum
