@@ -6,36 +6,38 @@ This hack fixes when streaming apps (Spotify, Pandora, etc) do not process audio
 
 ## Compatibility
 * Android Jellybean+
-* Magisk install (MagiskSU)
-* Pixel support
-* System install
+* init.d (LineageOS SU, phh's SU, & rootless)
+* MagiskSU & SuperSU
+* Magisk & System install
+* Nexus/Pixel support (A/B OTA)
+* SELinix enforcing (LOS SU & rootless need permissive)
 * Works with nearly every device, kernel, and rom
 
 ## Change Log
 v3.0
-	- AudModLib v2.0: Massive installer and script overhaul
-	- AudModLib v2.0: Added autouninstall (if mod is already installed and you flash same version zip again, it'll uninstall), thus removing the need for an uninstall zip
-	- AudModLib v2.0: Added file/folder backup/restore of modified files
-	- AudModLib v2.0: Added file/folder backup/restore of normally wiped files
-	- AudModLib v2.0: Added Osm0sis @ xda-developers uninstaller idea (just add "uninstall" to zip name and it'll function as uninstaller)
-	- AudModLib v2.0: Added phh's SuperUser and LOS su support (note, LOS doesn't support sepolicy patching)
-	- AudModLib v2.0: Added proxy library to AML to allow the proxy effects found in multiple audio modules
-	- AudModLib v2.0: Added support for Magisk imgs located in /cache/audmodlib
-	- AudModLib v2.0: Added system_root support for Pixel devices
-	- AudModLib v2.0: Added system override (if you're on magisk but would rather have it install to system, add word "system" to zip name and it'll install everything but scripts to system)
-	- AudModLib v2.0: Add Unity system props
-	- AudModLib v2.0: Added vendor fix for Nexus devices
-	- AudModLib v2.0: AML functionality and uses overhauled
-	- AudModLib v2.0: Bug fixes
-	- AudModLib v2.0: Modified Unity Installer to allow use for non AML modules
-	- AudModLib v2.0: Moved scripts from Magisk .core to the individual module folder due to .core limitations
-	- AudModLib v2.0: New modular approach - no need to modify update-binary anymore: check instructions for more details on how this works
-	- AudModLib v2.0: Reworked addon.d system install scripts
-	- AudModLib v2.0: Removed AML cache workaround by reworking AML changes via magisk_merge
-	- AudModLib v2.0: Reworked AML vendor audio_effects to not be overwritten by system audio_effects by commenting out conflicting lines
-	- AudModLib v2.0: Reworked script permissions
-	- AudModLib v2.0: Update sepolicy for Magisk 13+
-	- AudModLib v2.0: Updated to Magisk module template 1400
+	- Unity/AML v2.0: Massive installer and script overhaul
+	- Unity v2.0: Added autouninstall (if mod is already installed and you flash same version zip again, it'll uninstall), thus removing the need for an uninstall zip
+	- Unity v2.0: Added file/folder backup/restore of modified files
+	- Unity v2.0: Added file/folder backup/restore of normally wiped files
+	- Unity v2.0: Added Osm0sis @ xda-developers uninstaller idea (just add "uninstall" to zip name and it'll function as uninstaller)
+	- Unity/AML v2.0: Added phh's SuperUser and LOS su support (note, LOS doesn't support sepolicy patching)
+	- Unity/AML v2.0: Added proxy library to AML to allow the proxy effects found in multiple audio modules
+	- Unity/AML v2.0: Added support for Magisk imgs located in /cache/audmodlib
+	- Unity v2.0: Added system_root support for Pixel devices
+	- Unity v2.0: Added system override (if you're on magisk but would rather have it install to system, add word "system" to zip name and it'll install everything but scripts to system)
+	- Unity v2.0: Add Unity system props
+	- Unity v2.0: Added vendor fix for Nexus devices
+	- Unty/AML v2.0: AML functionality and uses overhauled
+	- Unity/AML v2.0: Bug fixes
+	- Unity/AML v2.0: Modified Unity Installer to allow use for non AML modules
+	- Unity/AML v2.0: Moved scripts from Magisk .core to the individual module folder due to .core limitations
+	- Unity/AML v2.0: New modular approach - no need to modify update-binary anymore: check instructions for more details on how this works
+	- Unity v2.0: Reworked addon.d system install scripts
+	- Unity/AML v2.0: Removed AML cache workaround by reworking AML changes via magisk_merge
+	- Unity/AML v2.0: Reworked AML vendor audio_effects to not be overwritten by system audio_effects by commenting out conflicting lines
+	- Unity v2.0: Reworked script permissions
+	- Unity/AML v2.0: Update sepolicy for Magisk 13+
+	- Unity/AML v2.0: Updated to Magisk module template 1400
 
 v2.4
 	- AudModLib v1.4 update which changes SELinux live patching to allow better compatibility between different devices, kernels, and roms; while also keeping the amount of "allowances" to a minumum
