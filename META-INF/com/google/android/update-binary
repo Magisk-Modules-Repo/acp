@@ -45,6 +45,24 @@ case $(basename $ZIP) in
   *) SYSOVER=false;;
 esac;
 
+is_mounted() {
+  if [ ! -z "$2" ]; then
+    cat /proc/mounts | grep $1 | grep $2, >/dev/null
+  else
+    cat /proc/mounts | grep $1 >/dev/null
+  fi
+  return $?
+}
+
+patch_util_functions() {
+  cp -f $MAGISKBIN/util_functions.sh $INSTALLER/common/audmodlib/util_functions.sh
+  sed -i -e 's|/system/vendor|$VEN|g' -e 's|/system|$SYS|g' -e "s|'\$SYS/build.prop'|\"\$SYS/build.prop\"|g" $INSTALLER/common/audmodlib/util_functions.sh
+  sed -i -e "/ABILONG=/ a\  MIUIVER=\`grep_prop ro.miui.ui.version.name\`" -e "/^ *ARCH=/ a\  DRVARCH=NEON" $INSTALLER/common/audmodlib/util_functions.sh
+  sed -ri "s|ARCH=x(.*);(.*);|ARCH=x\1; DRVARCH=X86;\2;|g" $INSTALLER/common/audmodlib/util_functions.sh
+  sed -i -e 's/- Unmounting partitions/   Unmounting partitions.../' -e 's|umount -l $SYS|umount -l /system|' $INSTALLER/common/audmodlib/util_functions.sh
+  echo "newer version detected"
+}
+
 # Mount /data and /cache to access MAGISKBIN
 mount /data 2>/dev/null
 mount /cache 2>/dev/null
@@ -58,10 +76,6 @@ rm -rf $TMPDIR 2>/dev/null
 mkdir -p $INSTALLER
 unzip -o "$ZIP" -d $INSTALLER 2>/dev/null
 
-# Load utility fuctions
-. $INSTALLER/common/audmodlib/util_functions.sh
-get_outfd
-
 if is_mounted /data; then
   IMG=/data/magisk.img
   MAGISKBIN=/data/magisk
@@ -74,6 +88,11 @@ else
   MAGISKBIN=/cache/data_bin
 fi
 
+# Load utility fuctions
+test -f $MAGISKBIN/util_functions.sh -a $(grep "MAGISK_VER_CODE=" $MAGISKBIN/util_functions.sh | sed 's/^.*=//') -gt $(grep "MAGISK_VER_CODE=" $INSTALLER/common/audmodlib/util_functions.sh | sed 's/^.*=//') && patch_util_functions
+. $INSTALLER/common/audmodlib/util_functions.sh
+get_outfd
+
 # DETECT IF SYSLESS SUPERSU
 supersuimg=$(ls /cache/su.img /data/su.img 2>/dev/null);
 
@@ -83,6 +102,24 @@ supersu_is_mounted() {
     *" $1 "*) echo 1;;
     *) echo 0;;
   esac;
+}
+
+require_new_magisk() {
+  ui_print "***********************************"
+  ui_print "! $MAGISKBIN isn't setup properly!"
+  ui_print "!  Please install Magisk v14.0+!"
+  ui_print "***********************************"
+  exit 1
+}
+
+require_new_api() {
+  ui_print "***********************************"
+  ui_print "!   Your system API of $API doesn't"
+  ui_print "!    meet the minimum API of $MINAPI"
+  ui_print "! Please upgrade to a newer version"
+  ui_print "!  of android with at least API $MINAPI"
+  ui_print "***********************************"
+  exit 1
 }
 
 # DETECT IF SAME VERSION OF MOD IS ALREADY INSTALLED
@@ -340,9 +377,9 @@ magisk_install() {
   MK_PRFX="mkdir -p"
   CP_PRFX="cp -af"
   CP_PRFXAML="cp -af"
-  RM_PRFX=mktouch
-  RMFOL_PRFX=mktouch
-  RMFOL_SFFX=/.replace
+  RM_PRFX="mktouch"
+  RMFOL_PRFX="mktouch"
+  RMFOL_SFFX="/.replace"
   UNITY="$MODPATH"
   MK_SFFX=""
   CP_SFFX=""
@@ -381,7 +418,7 @@ custom_app_install() {
 }
 
 custom_app_wipe() {
-  $OLDAPP && { test -f "$SYS/app/$1.apk" $RM_PRFX $SYS/app/$1.apk; } || { test -f "SYS/priv-app/$1/$1.apk" $RM_PRFX SYS/priv-app/$1/$1.apk; }
+  $OLDAPP && { test -f "$SYS/app/$1.apk" && $RM_PRFX $UNITY$SYS/app/$1.apk; } || { test -f "SYS/priv-app/$1/$1.apk" && $RM_PRFX $UNITY$SYS/priv-app/$1/$1.apk; }
 }
 
 app_install_logic() {

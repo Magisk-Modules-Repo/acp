@@ -3,11 +3,14 @@
 # Magisk General Utility Functions
 # by topjohnwu
 #
-# Modified for Unity Installer by Ahrion and Zackptg5
-# Base Script Version: 1400
+# Used in flash_script.sh, addon.d.sh, magisk module installers, and uninstaller
 #
 ##########################################################################################
-
+				 
+MAGISK_VER="14.0"
+MAGISK_VER_CODE=1400
+SCRIPT_VERSION=$MAGISK_VER_CODE					
+							   
 get_outfd() {
   readlink /proc/$$/fd/$OUTFD 2>/dev/null | grep /tmp >/dev/null
   if [ "$?" -eq "0" ]; then
@@ -138,7 +141,7 @@ api_level_arch_detect() {
   ABI2=`grep_prop ro.product.cpu.abi2 | cut -c-3`
   ABILONG=`grep_prop ro.product.cpu.abi`
   MIUIVER=`grep_prop ro.miui.ui.version.name`
-
+			
   ARCH=arm
   DRVARCH=NEON
   IS64BIT=false
@@ -226,22 +229,4 @@ image_size_check() {
   curUsedM=`echo "$SIZE" | cut -d" " -f1`
   curSizeM=`echo "$SIZE" | cut -d" " -f2`
   curFreeM=$((curSizeM - curUsedM))
-}
-
-require_new_magisk() {
-  ui_print "***********************************"
-  ui_print "! $MAGISKBIN isn't setup properly!"
-  ui_print "!  Please install Magisk v14.0+!"
-  ui_print "***********************************"
-  exit 1
-}
-
-require_new_api() {
-  ui_print "***********************************"
-  ui_print "!   Your system API of $API doesn't"
-  ui_print "!    meet the minimum API of $MINAPI"
-  ui_print "! Please upgrade to a newer version"
-  ui_print "!  of android with at least API $MINAPI"
-  ui_print "***********************************"
-  exit 1
 }
