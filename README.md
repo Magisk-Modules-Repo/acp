@@ -15,6 +15,7 @@ This hack fixes when streaming apps (Spotify, Pandora, etc) do not process audio
 
 ## Change Log
 v3.0
+	- Reworked the way deep_buffer removals function when a user uninstalls
 	- Unity/AML v2.0: Massive installer and script overhaul
 	- Unity v2.0: Added autouninstall (if mod is already installed and you flash same version zip again, it'll uninstall), thus removing the need for an uninstall zip
 	- Unity v2.0: Added file/folder backup/restore of modified files
