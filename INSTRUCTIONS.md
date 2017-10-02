@@ -6,23 +6,25 @@ Further instructions are contained in each file
 2. Place your files in their respective directories in the system folder (where they will be installed to)
  2a. For apps, place in system/app/APPNAME/APPNAME.apk
  2b. For vendor, just create the vendor folder in the system folder
-3. Place any files that need conditionals (only installed in some circumstances) in the custom folder (can be placed however you want)
- 3a. Place apps in custom/APPNAME/APPNAME.apk
-4. Add your min android version and other variables to common/unity-uservariables.sh (more instructions are in the file)
- 4a. Note the Audmodlib variable in this file. Uncomment it if you're making an audio module
-5. Add any scripts you want run at boot (late service start in magisk) to common/unity-scripts.sh
-6. Modify the post-fs-data.sh in common as you would with any other magisk module (most everything should be a late start, not post-fs-data)
- 6a. If post-fs-data is going to be used, set their values to true in config.sh (THESE WILL BE INSTALLED AS REGULAR BOOT SCRIPTS IF NOT A MAGISK INSTALL)
-7. Add any build props you want added into the unity-props.prop
-8. Add any build props you want removed into the unity-props-remove.prop
-9. Add any possibly conflicting files you want removed/wiped before install into the unity-file-wipe.sh
-10. Add any config/policy/mixer patches you want added into the aml-patches.sh (audio module only)
-11. Add the removal of your patches into the aml-patches-remove.sh (audio module only)
-12. Add any other config/policy/mixer patches you want removed/wiped (may conflict with your patches) before install into the aml-patches-wipe.sh (audio module only)
-13. Add any custom permissions needed into config.sh (this will apply to both magisk and system installs) (default permissions is 755 for folders and 644 for files)
- 13a. DON'T MODIFY ANY OTHER PARTS OF CONFIG.SH (this is different from normal magisk modules)
-14. Add any custom install/uninstall logic to unity-customrules1.sh (follow the instructions inside)
- 14a. This is where you would put your stuff for any custom files and whatever else isn't taken care of already
+3. Place your files in their respective directories in the data folder (where they will be installed to)\
+ 3a. Note that these files will always be installed to /data regardless of root method
+4. Place any files that need conditionals (only installed in some circumstances) in the custom folder (can be placed however you want)
+ 4a. Place apps in custom/APPNAME/APPNAME.apk
+5. Add your min android version and other variables to common/unity-uservariables.sh (more instructions are in the file)
+ 5a. Note the Audmodlib variable in this file. Uncomment it if you're making an audio module
+6. Add any scripts you want run at boot (late service start in magisk) to common/unity-scripts.sh
+7. Modify the post-fs-data.sh in common as you would with any other magisk module (most everything should be a late start, not post-fs-data)
+ 7a. If post-fs-data is going to be used, set their values to true in config.sh (THESE WILL BE INSTALLED AS REGULAR BOOT SCRIPTS IF NOT A MAGISK INSTALL)
+8. Add any build props you want added into the unity-props.prop
+9. Add any build props you want removed into the unity-props-remove.prop
+10. Add any possibly conflicting files you want removed/wiped before install into the unity-file-wipe.sh
+11. Add any config/policy/mixer patches you want added into the aml-patches.sh (audio module only)
+12. Add the removal of your patches into the aml-patches-remove.sh (audio module only)
+13. Add any other config/policy/mixer patches you want removed/wiped (may conflict with your patches) before install into the aml-patches-wipe.sh (audio module only)
+14. Add any custom permissions needed into config.sh (this will apply to both magisk and system installs) (default permissions is 755 for folders and 644 for files)
+ 14a. DON'T MODIFY ANY OTHER PARTS OF CONFIG.SH (this is different from normal magisk modules)
+15. Add any custom install/uninstall logic to unity-customrules1.sh (follow the instructions inside)
+ 15a. This is where you would put your stuff for any custom files and whatever else isn't taken care of already
 
 *NOTE FOR PATCHING: patches for audio_effects need to be put into both system/etc/audio_effects (CONFIG_FILE) and /vendor/etc/audio_effects (V_CONFIG_FILE)
 ________________________________________________________________________________________________________________________________________________________________________
@@ -77,9 +79,9 @@ MK_PRFX                (Contains the proper mkdir command regardless of install 
 MK_SFFX                (Contains proper permissions for mkdir command regardless of install method. Always put this at end of any mkdir command)
 CP_PRFX                (Contains the proper copy command regardless of install method. Always use this instead of a manual cp command)
 CP_SFFX                (Contains proper permissions for cp command regardless of install method. Always put this at end of any cp command)
-RM_PRFX                (Contains the proper rm command for files regardless of install method. Always use this instead of a manual rm command)
-RMFOL_PRFX             (Contains the proper rm command for folders regardless of install method. Always use this instead of a manual rm -r command)
-RMFOL_SFFX             (Contains proper suffix (.replace for magisk installs) for rm -r command regardless of install method. Always put this at end of any rm -r command)
+WP_PRFX                (Non-data files only. Contains the proper rm command for files regardless of install method. Always use this instead of a manual rm command)
+WPFOL_PRFX             (Non-data folders only. Contains the proper rm command for folders regardless of install method. Always use this instead of a manual rm -r command)
+WPFOL_SFFX             (Non-data folders only. Contains proper suffix (.replace for magisk installs) for rm -r command regardless of install method. Always put this at end of any $RMFOL_PRFX command)
 UNITY                  (Conatins proper location for mod regardless of install method - MODPATH for magisk installs)
 EXT                    (Only applicable to unity-scripts. The extension for script files in $SH)
 SH                     (Only applicable to unity-scripts. The directory in which the script is running)
@@ -103,6 +105,8 @@ abort                  (Prints message, unmounts partitions, and exits installer
 mktouch                (Creates an empty file. Ex: mktouch $SYS/etc/exlib.so)
 set_perm               (Only applicable to config.sh - see file for examples. Sets the permissions of the file)
 set_perm_recursive     (Only applicable to config.sh - see file for examples. Sets the permissions of the folder and all files in it recurssively)
+sys_wipe_ch            (Only for files being removed from /data - backs up/removes specified file. Ex: sys_wipe_ch /data/app/com.audlabs.viperfx-1)
+sys_wipefol_ch         (Only for folders being removed from /data - backs up/removes specified folder. Ex: sys_wipefol_ch data/app/com.vipercn.viper4android_v2-1)
 
 NOT USABLE VARIABLES - You'll have no need to use these, they're just listed for reference
 
@@ -185,6 +189,7 @@ curFreeM
 NOT USABLE FUNCTIONS - You'll have no need to use these, they're just listed for reference
 
 supersu_is_mounted
+supersuimg_mount
 mod_exist
 action_complete
 magisk_install
@@ -206,6 +211,7 @@ find_boot_image
 migrate_boot_backup
 sign_chromeos
 is_mounted
+patch_util_functions
 remove_system_su
 api_level_arch_detect
 boot_actions
@@ -220,5 +226,5 @@ sys_mk_ch
 sys_cp_ch
 sys_cpbak_ch
 sys_rm_ch
-sys_wipe_ch
-sys_wipefol_ch
+magisk_procedure_extras
+standard_procedure

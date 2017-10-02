@@ -1,9 +1,10 @@
 id=Udb_Remover
 name=Universal deep_buffer Remover
-version=v3.0
-versionCode=6
+version=v3.1
+versionCode=7
 author=ahrion, zackptg5
 description=deep_buffer Remover is a fix for when streaming apps (Spotify, Pandora, etc) do not process audio effects for various equalizer applications
 support=https://forum.xda-developers.com/apps/magisk/module-universal-deepbuffer-remover-t3577067
 donate=https://github.com/therealahrion/Universal-deep_buffer-Remover
-template=1400
+template=1410
+minVer=1400

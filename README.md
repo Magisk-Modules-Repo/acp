@@ -14,6 +14,15 @@ This hack fixes when streaming apps (Spotify, Pandora, etc) do not process audio
 * Works with nearly every device, kernel, and rom
 
 ## Change Log
+v3.1
+	- Unity/AML v2.1: Updated for Magisk v14.2
+	- Unity/AML v2.1: Updated to Magisk module template 1420
+	- Unity/AML v2.1: Further A/B OTA (Pixel family) improvements
+	- Unity/AML v2.1: System backup/restore fully automated (no need to manually write files to INFO file anymore)
+	- Unity/AML v2.1: Various script fixes and improvements
+	- Unity/AML v2.1: Fix cache system installs
+	- Unity/AML v2.1: Added support for supersu bindsbin mode
+	
 v3.0
 	- Reworked the way deep_buffer removals function when a user uninstalls
 	- Unity/AML v2.0: Massive installer and script overhaul

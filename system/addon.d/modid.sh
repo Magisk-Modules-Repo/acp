@@ -20,12 +20,7 @@ else
   ROOT=""
   SYS=$ROOT/system
 fi
-
-if [ $isABDevice == true ] || [ ! -d $SYS/vendor ]; then
-  VEN=/vendor
-else
-  VEN=$SYS/vendor
-fi
+test -L /system/vendor && VEN=/vendor || VEN=/system/vendor
 
 ### FILE LOCATIONS ###
 # AUDIO EFFECTS
@@ -59,14 +54,14 @@ EOF
 case "$1" in
   backup)
     list_files | while read FILE DUMMY; do
-      backup_file $S/$FILE
+      backup_file $FILE
     done
   ;;
   restore)
     list_files | while read FILE REPLACEMENT; do
       R=""
-      [ -n "$REPLACEMENT" ] && R="$S/$REPLACEMENT"
-      [ -f "$C/$S/$FILE" ] && restore_file $S/$FILE $R
+      [ -n "$REPLACEMENT" ] && R="$REPLACEMENT"
+      [ -f "$C/$FILE" ] && restore_file $FILE $R
     done
   ;;
   pre-backup)

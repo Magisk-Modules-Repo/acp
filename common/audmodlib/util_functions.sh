@@ -3,14 +3,14 @@
 # Magisk General Utility Functions
 # by topjohnwu
 #
-# Used in flash_script.sh, addon.d.sh, magisk module installers, and uninstaller
+# Used everywhere in Magisk
 #
 ##########################################################################################
 				 
-MAGISK_VER="14.0"
-MAGISK_VER_CODE=1400
-SCRIPT_VERSION=$MAGISK_VER_CODE					
-							   
+MAGISK_VER="14.2"
+MAGISK_VER_CODE=1420
+SCRIPT_VERSION=$MAGISK_VER_CODE
+
 get_outfd() {
   readlink /proc/$$/fd/$OUTFD 2>/dev/null | grep /tmp >/dev/null
   if [ "$?" -eq "0" ]; then
@@ -38,11 +38,47 @@ ui_print() {
   fi
 }
 
+mount_partitions() {
+  # Check A/B slot
+  test -f /data/magisk.img -o -f /cache/magisk.img -o -d /magisk -o "$SYSOVER" == true && WRITE=ro || WRITE=rw
+  SYS=/system
+  SLOT=`getprop ro.boot.slot_suffix`
+  [ -z $SLOT ] || ui_print "- A/B partition detected, current slot: $SLOT"
+  ui_print "- Mounting filesystems -"
+  ui_print "   Mounting /system, /vendor"
+  is_mounted /system || [ -f /system/build.prop ] || mount -o $WRITE /system 2>/dev/null
+  if ! is_mounted /system && ! [ -f /system/build.prop ]; then
+    SYSTEMBLOCK=`find /dev/block -iname system$SLOT | head -n 1`
+    mount -t ext4 -o $WRITE $SYSTEMBLOCK /system
+  fi
+  is_mounted /system || [ -f /system/build.prop ] || abort "! Cannot mount /system"
+  cat /proc/mounts | grep -E '/dev/root|/system_root' >/dev/null && SKIP_INITRAMFS=true || SKIP_INITRAMFS=false
+  if [ -f /system/init.rc ]; then
+    SKIP_INITRAMFS=true
+    mkdir /system_root 2>/dev/null
+    mount --move /system /system_root
+    mount -o bind /system_root/system /system
+  fi
+  $SKIP_INITRAMFS && ui_print "   ! Device skip_initramfs detected"
+  if [ -L /system/vendor ]; then
+    # Seperate /vendor partition
+	VEN=/vendor
+    is_mounted /vendor || mount -o $WRITE /vendor 2>/dev/null
+    if ! is_mounted /vendor; then
+      VENDORBLOCK=`find /dev/block -iname vendor$SLOT | head -n 1`
+      mount -t ext4 -o $WRITE $VENDORBLOCK /vendor
+    fi
+    is_mounted /vendor || abort "! Cannot mount /vendor"
+  else
+    VEN=/system/vendor
+  fi
+}
+
 grep_prop() {
   REGEX="s/^$1=//p"
   shift
   FILES=$@
-  [ -z "$FILES" ] && FILES="$SYS/build.prop"
+  [ -z "$FILES" ] && FILES='/system/build.prop'
   sed -n "$REGEX" $FILES 2>/dev/null | head -n 1
 }
 
@@ -50,44 +86,76 @@ getvar() {
   local VARNAME=$1
   local VALUE=$(eval echo \$$VARNAME)
   [ ! -z $VALUE ] && return
-  for DIR in /dev /data /cache $SYS; do
+  for DIR in /dev /data /cache /system; do
     VALUE=`grep_prop $VARNAME $DIR/.magisk`
     [ ! -z $VALUE ] && break;
   done
   eval $VARNAME=\$VALUE
 }
 
+resolve_link() {
+  RESOLVED="$1"
+  while RESOLVE=`readlink $RESOLVED`; do
+    RESOLVED=$RESOLVE
+  done
+  echo $RESOLVED
+}
+				
 find_boot_image() {
   if [ -z "$BOOTIMAGE" ]; then
-    for BLOCK in boot_a kern-a android_boot kernel boot lnx; do
-      BOOTIMAGE=`find /dev/block -iname $BLOCK | head -n 1` 2>/dev/null
-      [ ! -z $BOOTIMAGE ] && break
-    done
+    if [ ! -z $SLOT ]; then
+      BOOTIMAGE=`find /dev/block -iname boot$SLOT | head -n 1` 2>/dev/null
+    else
+      for BLOCK in boot_a kern-a android_boot kernel boot lnx bootimg; do
+        BOOTIMAGE=`find /dev/block -iname $BLOCK | head -n 1` 2>/dev/null
+        [ ! -z $BOOTIMAGE ] && break
+      done
+    fi
   fi
   # Recovery fallback
   if [ -z "$BOOTIMAGE" ]; then
     for FSTAB in /etc/*fstab*; do
-      BOOTIMAGE=`grep -v '#' $FSTAB | grep -E '\b/boot\b' | grep -oE '/dev/[a-zA-Z0-9_./-]*'`
+      BOOTIMAGE=`grep -v '#' $FSTAB | grep -E '/boot[^a-zA-Z]' | grep -oE '/dev/[a-zA-Z0-9_./-]*'`
       [ ! -z $BOOTIMAGE ] && break
     done
   fi
-  [ -L "$BOOTIMAGE" ] && BOOTIMAGE=`readlink $BOOTIMAGE`
+  BOOTIMAGE=`resolve_link $BOOTIMAGE`
 }
 
 migrate_boot_backup() {
   # Update the broken boot backup
   if [ -f /data/stock_boot_.img.gz ]; then
-    ./magiskboot --decompress /data/stock_boot_.img.gz
+    $MAGISKBIN/magiskboot --decompress /data/stock_boot_.img.gz
     mv /data/stock_boot_.img /data/stock_boot.img
   fi
   # Update our previous backup to new format if exists
   if [ -f /data/stock_boot.img ]; then
     ui_print "- Migrating boot image backup"
-    SHA1=`./magiskboot --sha1 /data/stock_boot.img 2>/dev/null`
+    SHA1=`$MAGISKBIN/magiskboot --sha1 /data/stock_boot.img 2>/dev/null`
     STOCKDUMP=/data/stock_boot_${SHA1}.img
     mv /data/stock_boot.img $STOCKDUMP
-    ./magiskboot --compress $STOCKDUMP
+    $MAGISKBIN/magiskboot --compress $STOCKDUMP
   fi
+  mv /data/magisk/stock_boot* /data 2>/dev/null
+}
+
+flash_boot_image() {
+  # Make sure all blocks are writable
+  $MAGISKBIN/magisk --unlock-blocks
+  case "$1" in
+    *.gz) COMMAND="gzip -d < \"$1\"";;
+    *)    COMMAND="cat \"$1\"";;
+  esac
+  case "$2" in
+    /dev/block/*)
+      ui_print "- Flashing new boot image"
+      eval $COMMAND | cat - /dev/zero | dd of="$2" bs=4096 >/dev/null 2>&1
+      ;;
+    *)
+      ui_print "- Storing new boot image"
+      eval $COMMAND | dd of="$2" bs=4096 >/dev/null 2>&1
+      ;;
+  esac
 }
 
 sign_chromeos() {
@@ -111,27 +179,27 @@ is_mounted() {
 }
 
 remove_system_su() {
-  if [ -f $SYS/bin/su -o -f $SYS/xbin/su ] && [ ! -f /su/bin/su ]; then
+  if [ -f /system/bin/su -o -f /system/xbin/su ] && [ ! -f /su/bin/su ]; then
     ui_print "! System installed root detected, mount rw :("
-    mount -o rw,remount $SYS
+    mount -o rw,remount /system
     # SuperSU
-    if [ -e $SYS/bin/.ext/.su ]; then
-      mv -f $SYS/bin/app_process32_original $SYS/bin/app_process32 2>/dev/null
-      mv -f $SYS/bin/app_process64_original $SYS/bin/app_process64 2>/dev/null
-      mv -f $SYS/bin/install-recovery_original.sh $SYS/bin/install-recovery.sh 2>/dev/null
-      cd $SYS/bin
+    if [ -e /system/bin/.ext/.su ]; then
+      mv -f /system/bin/app_process32_original /system/bin/app_process32 2>/dev/null
+      mv -f /system/bin/app_process64_original /system/bin/app_process64 2>/dev/null
+      mv -f /system/bin/install-recovery_original.sh /system/bin/install-recovery.sh 2>/dev/null
+      cd /system/bin
       if [ -e app_process64 ]; then
         ln -sf app_process64 app_process
       else
         ln -sf app_process32 app_process
       fi
     fi
-    rm -rf $SYS/.pin $SYS/bin/.ext $SYS/etc/.installed_su_daemon $SYS/etc/.has_su_daemon \
-    $SYS/xbin/daemonsu $SYS/xbin/su $SYS/xbin/sugote $SYS/xbin/sugote-mksh $SYS/xbin/supolicy \
-    $SYS/bin/app_process_init $SYS/bin/su /cache/su $SYS/lib/libsupol.so $SYS/lib64/libsupol.so \
-    $SYS/su.d $SYS/etc/install-recovery.sh $SYS/etc/init.d/99SuperSUDaemon /cache/install-recovery.sh \
-    $SYS/.supersu /cache/.supersu /data/.supersu \
-    $SYS/app/Superuser.apk $SYS/app/SuperSU /cache/Superuser.apk  2>/dev/null
+    rm -rf /system/.pin /system/bin/.ext /system/etc/.installed_su_daemon /system/etc/.has_su_daemon \
+    /system/xbin/daemonsu /system/xbin/su /system/xbin/sugote /system/xbin/sugote-mksh /system/xbin/supolicy \
+    /system/bin/app_process_init /system/bin/su /cache/su /system/lib/libsupol.so /system/lib64/libsupol.so \
+    /system/su.d /system/etc/install-recovery.sh /system/etc/init.d/99SuperSUDaemon /cache/install-recovery.sh \
+    /system/.supersu /cache/.supersu /data/.supersu \
+    /system/app/Superuser.apk /system/app/SuperSU /cache/Superuser.apk  2>/dev/null
   fi
 }
 
@@ -175,7 +243,7 @@ recovery_actions() {
   # Temporarily block out all custom recovery binaries/libs
   mv /sbin /sbin_tmp
   # Add all possible library paths
-  $IS64BIT && export LD_LIBRARY_PATH=$SYS/lib64:$VEN/lib64 || export LD_LIBRARY_PATH=$SYS/lib:$VEN/lib
+  $IS64BIT && export LD_LIBRARY_PATH=/system/lib64:/system/vendor/lib64 || export LD_LIBRARY_PATH=/system/lib:/system/vendor/lib
 }
 
 recovery_cleanup() {
@@ -183,6 +251,7 @@ recovery_cleanup() {
   export LD_LIBRARY_PATH=$OLD_LD_PATH
   [ -z $OLD_PATH ] || export PATH=$OLD_PATH
   ui_print "   Unmounting partitions..."
+  umount -l /system_root 2>/dev/null
   umount -l /system 2>/dev/null
   umount -l /vendor 2>/dev/null
   umount -l /dev/random 2>/dev/null
@@ -197,7 +266,7 @@ abort() {
 set_perm() {
   chown $2:$3 $1 || exit 1
   chmod $4 $1 || exit 1
-  [ -z $5 ] && chcon -h 'u:object_r:system_file:s0' $1 || chcon -h $5 $1
+  [ -z $5 ] && chcon 'u:object_r:system_file:s0' $1 || chcon $5 $1
 }
 
 set_perm_recursive() {
