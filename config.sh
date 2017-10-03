@@ -27,8 +27,8 @@
 # Most mods would like it to be enabled
 AUTOMOUNT=true
 
-# Set to true if you need post-fs-data script
-POSTFSDATA=false
+# Set to true if you need late_start service script
+LATESTARTSERVICE=false
 
 ##########################################################################################
 # Installation Message

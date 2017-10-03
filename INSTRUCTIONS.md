@@ -12,9 +12,9 @@ Further instructions are contained in each file
  4a. Place apps in custom/APPNAME/APPNAME.apk
 5. Add your min android version and other variables to common/unity-uservariables.sh (more instructions are in the file)
  5a. Note the Audmodlib variable in this file. Uncomment it if you're making an audio module
-6. Add any scripts you want run at boot (late service start in magisk) to common/unity-scripts.sh
-7. Modify the post-fs-data.sh in common as you would with any other magisk module (most everything should be a late start, not post-fs-data)
- 7a. If post-fs-data is going to be used, set their values to true in config.sh (THESE WILL BE INSTALLED AS REGULAR BOOT SCRIPTS IF NOT A MAGISK INSTALL)
+6. Add any scripts you want run at boot (post-fs-data mode in magisk) to common/unity-scripts.sh
+7. Modify the service.sh in common as you would with any other magisk module (most everything should be a late start, not post-fs-data)
+ 7a. If service is going to be used, set it's value to true in config.sh (THESE WILL BE INSTALLED AS REGULAR BOOT SCRIPTS IF NOT A MAGISK INSTALL)
 8. Add any build props you want added into the unity-props.prop
 9. Add any build props you want removed into the unity-props-remove.prop
 10. Add any possibly conflicting files you want removed/wiped before install into the unity-file-wipe.sh
