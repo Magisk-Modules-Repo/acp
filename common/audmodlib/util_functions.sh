@@ -62,7 +62,7 @@ mount_partitions() {
   $SKIP_INITRAMFS && ui_print "   ! Device skip_initramfs detected"
   if [ -L /system/vendor ]; then
     # Seperate /vendor partition
-	VEN=/vendor
+	[ -f /data/magisk.img -o -f /cache/magisk.img -o -d /magisk ] && [ "$SYSOVER" == false ] && VEN=/system/vendor || VEN=/vendor
     is_mounted /vendor || mount -o $WRITE /vendor 2>/dev/null
     if ! is_mounted /vendor; then
       VENDORBLOCK=`find /dev/block -iname vendor$SLOT | head -n 1`
