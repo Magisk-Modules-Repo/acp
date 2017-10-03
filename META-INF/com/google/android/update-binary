@@ -58,7 +58,6 @@ mount /cache 2>/dev/null
 TMPDIR=/dev/tmp
 INSTALLER=$TMPDIR/install
 MOUNTPATH=$TMPDIR/magisk_img
-$BOOTMODE && IMG=/data/magisk_merge.img || IMG=/data/magisk.img
 
 rm -rf $TMPDIR 2>/dev/null
 mkdir -p $INSTALLER
