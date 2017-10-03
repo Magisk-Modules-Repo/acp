@@ -228,7 +228,7 @@ action_complete() {
   ui_print " "
   test "$ACTION" == "Install" && ui_print "    --------- INSTALLATION SUCCESSFUL ---------" || ui_print "    --------- RESTORATION SUCCESSFUL ---------"
   ui_print " "
-  test "$ACTION" == "Install" && ui_print "Unity Installer by ahrion & zackptg5 @ XDA" || ui_print "Unity Uninstaller by ahrion & zackptg5 @ XDA"
+  test "$ACTION" == "Install" && ui_print "    Unity Installer by ahrion & zackptg5 @ XDA" || ui_print "    Unity Uninstaller by ahrion & zackptg5 @ XDA"
 }
 
 ##########################################################################################
