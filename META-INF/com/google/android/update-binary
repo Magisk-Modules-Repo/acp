@@ -813,7 +813,7 @@ unity_uninstall() {
       done
 	  if [ "$AUDMODLIB" != "$MODID" ]; then
 	    # RESTORE CONFIGS, LIBRARIES, & EFFECTS
-        sed -i "/magisk\/$MODID/,/fi #$MODID/d" $AMLSCRIPT
+        sed -i "/magisk\/$MODID/,/fi #$MODID/d" $AMLPATH/post-fs-data.sh
         ui_print "   Restoring necessary files"
 	    source $INPUT_PATCHES_REM
 	  fi
