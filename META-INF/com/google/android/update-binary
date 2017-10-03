@@ -661,6 +661,10 @@ unity_mod_copy() {
   
   test "$MAGISK" == true -o "$SYSOVER" == true && { test "$MODID" != "$AMLID" && sys_cp_ch $INSTALLER/common/$AMLID/$MODID-service.sh $MODPATH/service.sh 0755; }
 
+  # ADD BUILDPROPS
+  ui_print "   Adding build.props..."
+  unity_prop_copy $INPUT_PROPS
+  
   # INSTALL APPS & LIBRARIES
   ui_print "$APPTXT"
   
@@ -671,10 +675,6 @@ unity_mod_copy() {
   cat $TVFILES | while read LINE; do
     $CP_PRFX $INSTALLER/system/vendor$LINE $UNITY$VEN$LINE$CP_SFFX
   done
-
-  # ADD BUILDPROPS
-  ui_print "   Adding build.props..."
-  unity_prop_copy $INPUT_PROPS
 
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
     test "$(grep "TIMEOFEXEC=3" $INPUT_RULES$NUM.sh)" && source $INPUT_RULES$NUM.sh
