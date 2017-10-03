@@ -45,7 +45,7 @@ patch_util_functions() {
   sed -i -e '/MAGISKBIN=\/data\/magisk/d' -e 's/-o ro/-o $WRITE/g' $INSTALLER/common/audmodlib/util_functions.sh
   sed -i -e "/ABILONG=/ a\  MIUIVER=\`grep_prop ro.miui.ui.version.name\`" -e "/^ *ARCH=/ a\  DRVARCH=NEON" $INSTALLER/common/audmodlib/util_functions.sh
   sed -ri "s|ARCH=x(.*);(.*);|ARCH=x\1; DRVARCH=X86;\2;|g" $INSTALLER/common/audmodlib/util_functions.sh
-  sed -i -e '/# Check A/B slot/ a\  SYS=\/system' -e '/# Check A/B slot/ a\  test -f \/data\/magisk.img -o -f \/cache\/magisk.img -o -d \/magisk -o \"$SYSOVER\" == true && WRITE=ro || WRITE=rw' $INSTALLER/common/audmodlib/util_functions.sh
+  sed -i -e '/# Check A/B slot/ a\  SYS=\/system' -e '/# Check A/B slot/ a\  [ -f \/data\/magisk.img -o -f \/cache\/magisk.img -o -d \/magisk ] && [ \"$SYSOVER\" == false ] && WRITE=ro || WRITE=rw' $INSTALLER/common/audmodlib/util_functions.sh
   sed -i -e '/# Seperate \/vendor partition/ a\    VEN=\/vendor' -e 'is_mounted \/vendor \|\| abort "! Cannot mount \/vendor"/ a\  else\n    VEN=\/system\/vendor' $INSTALLER/common/audmodlib/util_functions.sh
   sed -i -e 's|- Mounting /system, /vendor|   Mounting /system, /vendor...|' -e '/   Mounting \/system, \/vendor.../ i\ui_print "- Mounting Filesystems -"' -e 's/- Unmounting partitions/   Unmounting partitions.../' -e 's/- Device skip_initramfs detected/   ! Device skip_initramfs detected' $INSTALLER/common/audmodlib/util_functions.sh
 }

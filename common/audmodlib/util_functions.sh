@@ -40,7 +40,7 @@ ui_print() {
 
 mount_partitions() {
   # Check A/B slot
-  test -f /data/magisk.img -o -f /cache/magisk.img -o -d /magisk -o "$SYSOVER" == true && WRITE=ro || WRITE=rw
+  [ -f /data/magisk.img -o -f /cache/magisk.img -o -d /magisk ] && [ "$SYSOVER" == false ] && WRITE=ro || WRITE=rw
   SYS=/system
   SLOT=`getprop ro.boot.slot_suffix`
   [ -z $SLOT ] || ui_print "- A/B partition detected, current slot: $SLOT"
