@@ -157,9 +157,16 @@ mod_exist() {
   if [ -f "$MOD_VER" ]; then
     if [ $(grep_prop versionCode $MOD_VER) -ge $(grep_prop versionCode $INSTALLER/module.prop) ]; then
       ui_print " "
-      ui_print "   ! Current version detected. Uninstalling!"
-      ACTION=Uninstall
+      ui_print "   ! Current or newer version detected. Uninstalling!"
+	  UPGRADE=false
+	else
+	  ui_print " "
+      ui_print "   ! Older version detected. Removing..."
+	  UPGRADE=true
     fi
+	ACTION=Uninstall
+  else
+    UPGRADE=false
   fi
 }
 
@@ -916,9 +923,16 @@ standard_procedure() {
 
     # UNINSTALL
     unity_uninstall
-
-    # COMPLETING UNINSTALL
-    [ "$MAGISK" == true ] || [ "$MAGISK" == true -a "$SYSOVER" == true ] && { ui_print " "; ui_print "- Completing uninstall -"; } || { action_complete; exit 0; }
+	
+	if $UPGRADE; then
+	  ACTION=Install
+	  ui_print " "
+	  ui_print "- Uninstall completed. Beginning install -"
+	  standard_procedure
+	else
+      # COMPLETING UNINSTALL
+      [ "$MAGISK" == true ] || [ "$MAGISK" == true -a "$SYSOVER" == true ] && { ui_print " "; ui_print "- Completing uninstall -"; } || { action_complete; exit 0; }
+    fi
   fi
 }
 
