@@ -6,7 +6,7 @@
 # Used everywhere in Magisk
 #
 ##########################################################################################
-				 
+
 MAGISK_VER="14.2"
 MAGISK_VER_CODE=1420
 SCRIPT_VERSION=$MAGISK_VER_CODE
@@ -62,7 +62,7 @@ mount_partitions() {
   $SKIP_INITRAMFS && ui_print "   ! Device skip_initramfs detected"
   if [ -L /system/vendor ]; then
     # Seperate /vendor partition
-	[ -f /data/magisk.img -o -f /cache/magisk.img -o -d /magisk ] && [ "$SYSOVER" == false ] && VEN=/system/vendor || VEN=/vendor
+    [ -f /data/magisk.img -o -f /cache/magisk.img -o -d /magisk ] && [ "$SYSOVER" == false ] && VEN=/system/vendor || VEN=/vendor
     is_mounted /vendor || mount -o $WRITE /vendor 2>/dev/null
     if ! is_mounted /vendor; then
       VENDORBLOCK=`find /dev/block -iname vendor$SLOT | head -n 1`
@@ -100,7 +100,7 @@ resolve_link() {
   done
   echo $RESOLVED
 }
-				
+
 find_boot_image() {
   if [ -z "$BOOTIMAGE" ]; then
     if [ ! -z $SLOT ]; then
@@ -168,7 +168,7 @@ sign_chromeos() {
   rm -f empty new-boot.img
   mv new-boot.img.signed new-boot.img
 }
-					   
+
 is_mounted() {
   if [ ! -z "$2" ]; then
     cat /proc/mounts | grep $1 | grep $2, >/dev/null
@@ -209,7 +209,7 @@ api_level_arch_detect() {
   ABI2=`grep_prop ro.product.cpu.abi2 | cut -c-3`
   ABILONG=`grep_prop ro.product.cpu.abi`
   MIUIVER=`grep_prop ro.miui.ui.version.name`
-			
+
   ARCH=arm
   DRVARCH=NEON
   IS64BIT=false

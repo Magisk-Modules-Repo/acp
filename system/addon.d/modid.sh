@@ -71,7 +71,7 @@ case "$1" in
     # Stub
   ;;
   pre-restore)
-	# Stub
+    # Stub
   ;;
   post-restore)
     <PATCHES>
