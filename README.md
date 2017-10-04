@@ -15,14 +15,20 @@ This hack fixes when streaming apps (Spotify, Pandora, etc) do not process audio
 
 ## Change Log
 v3.1
-	- Unity/AML v2.1: Updated for Magisk v14.2
-	- Unity/AML v2.1: Updated to Magisk module template 1420
-	- Unity/AML v2.1: Further A/B OTA (Pixel family) improvements
-	- Unity/AML v2.1: System backup/restore fully automated (no need to manually write files to INFO file anymore)
-	- Unity/AML v2.1: Various script fixes and improvements
-	- Unity/AML v2.1: Fix cache system installs
-	- Unity/AML v2.1: Added support for supersu bindsbin mode
-	- Unity/AML v2.1: Moved scripts to post-fs-data for magisk installs, fixes some issues such as AM3D white screen on compatible devices
+    - Unity/AML v2.1: Updated for Magisk v14.2
+    - Unity/AML v2.1: Updated to Magisk module template 1410
+    - Unity/AML v2.1: Silently uninstall previous version before new version upgrades (this is to keep every upgrade install clean in cases where the new version doesnt include files the previous version may have included)
+    - Unity/AML v2.1: Further A/B OTA (Pixel family) improvements
+    - Unity/AML v2.1: System backup/restore fully automated (no need to manually write files to INFO file anymore)
+    - Unity/AML v2.1: Added cabability for modifications to modify /data partition
+    - Unity/AML v2.1: Added "minVer" (an internal check that should always be equal to the latest stable Magisk release in cases where the template is based off of a beta release)
+    - Unity/AML v2.1: Added support for SuperSU BINDSBIN mode
+    - Unity/AML v2.1: Fix cache system installs
+    - Unity/AML v2.1: Moved scripts to post-fs-data for Magisk installs (fixes some issues such as AM3D white screen on compatible devices)
+    - Unity/AML v2.1: Fixed System override issues some were facing
+    - Unity/AML v2.1: Fixed System install partition re-mounting
+    - Unity/AML v2.1: Updated Instructions (for developers only)
+    - Unity/AML v2.1: Various script fixes and improvements
 	
 v3.0
 	- Reworked the way deep_buffer removals function when a user uninstalls
