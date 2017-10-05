@@ -19,26 +19,29 @@ Further instructions are contained in each file
 9. Add any build props you want removed into the unity-props-remove.prop
 10. Add any possibly conflicting files you want removed/wiped before install into the unity-file-wipe.sh
 11. Add any config/policy/mixer patches you want added into the aml-patches.sh (audio module only)
+ 11a. Any patching of xml files with xmlstarlet should go into aml-xml-patches.sh
 12. Add the removal of your patches into the aml-patches-remove.sh (audio module only)
+ 12a. Any removal patching of xml files with xmlstarlet should go into aml-xml-patches-rem.sh
 13. Add any other config/policy/mixer patches you want removed/wiped (may conflict with your patches) before install into the aml-patches-wipe.sh (audio module only)
+ 13a. Any wipe patching of xml files with xmlstarlet should go into aml-xml-patches-wipe.sh
 14. Add any custom permissions needed into config.sh (this will apply to both magisk and system installs) (default permissions is 755 for folders and 644 for files)
  14a. DON'T MODIFY ANY OTHER PARTS OF CONFIG.SH (this is different from normal magisk modules)
 15. Add any custom install/uninstall logic to unity-customrules1.sh (follow the instructions inside)
  15a. This is where you would put your stuff for any custom files and whatever else isn't taken care of already
 
 *NOTE FOR PATCHING: patches for audio_effects need to be put into both system/etc/audio_effects (CONFIG_FILE) and /vendor/etc/audio_effects (V_CONFIG_FILE)
+*NOTE FOR XMLSTARLET: you may need to have the command write to a temporary files and then replace the original file with the temporary one for it to work
 ________________________________________________________________________________________________________________________________________________________________________
 
 TIMEOFEXEC VALUES - when the customrules file will execute in the (un)installer script
 
 0=File will not be run (default)
 1=unity_mod_wipe
-2=unity_mod_directory
-3=unity_mod_copy
-4=aml_mod_patch
-5=unity_uninstall
+2=unity_mod_copy
+3=aml_mod_patch
+4=unity_uninstall
 
-*HINT: If you have props you want set under certain conditions, have that customrule's TIMEOFEXEC=3. Example: unity_prop_copy $INSTALLER/common/customprops.prop
+*HINT: If you have props you want set under certain conditions, have that customrule's TIMEOFEXEC=2. Example: unity_prop_copy $INSTALLER/common/customprops.prop
 If you have props you want removed under certain conditions, have that customrule's TIMEOFEXEC=1. Example: unity_prop_remove $INSTALLER/common/customprops.prop
 ________________________________________________________________________________________________________________________________________________________________________
 
@@ -79,9 +82,8 @@ MK_PRFX                (Contains the proper mkdir command regardless of install 
 MK_SFFX                (Contains proper permissions for mkdir command regardless of install method. Always put this at end of any mkdir command)
 CP_PRFX                (Contains the proper copy command regardless of install method. Always use this instead of a manual cp command)
 CP_SFFX                (Contains proper permissions for cp command regardless of install method. Always put this at end of any cp command)
-WP_PRFX                (Non-data files only. Contains the proper rm command for files regardless of install method. Always use this instead of a manual rm command)
-WPFOL_PRFX             (Non-data folders only. Contains the proper rm command for folders regardless of install method. Always use this instead of a manual rm -r command)
-WPFOL_SFFX             (Non-data folders only. Contains proper suffix (.replace for magisk installs) for rm -r command regardless of install method. Always put this at end of any $RMFOL_PRFX command)
+WP_PRFX                (Backs up and removes specified file/folder. Ex: wipe_ch /data/app/com.audlabs.viperfx-1)
+XML_PRFX               (Location of xmlstarlet binary for patching xml files - use for patching xml files)
 UNITY                  (Conatins proper location for mod regardless of install method - MODPATH for magisk installs)
 EXT                    (Only applicable to unity-scripts. The extension for script files in $SH)
 SH                     (Only applicable to unity-scripts. The directory in which the script is running)
@@ -102,11 +104,9 @@ unity_prop_remove      (Removes all props in specified file from a common aml pr
 unity_prop_copy        (Adds all props in specified file to a common aml prop file. Ex: unity_prop_copy $INSTALLER/common/props.props)
 ui_print               (Prints out message. Ex: ui_print "Audmodlib is awesome")
 abort                  (Prints message, unmounts partitions, and exits installer with error code of 1. Ex: abort "!Error! Exiting installer!")
-mktouch                (Creates an empty file. Ex: mktouch $SYS/etc/exlib.so)
+mktouch                (Creates an empty file and the directories for that file. Ex: mktouch $SYS/etc/exlib.so)
 set_perm               (Only applicable to config.sh - see file for examples. Sets the permissions of the file)
 set_perm_recursive     (Only applicable to config.sh - see file for examples. Sets the permissions of the folder and all files in it recurssively)
-sys_wipe_ch            (Only for files being removed from /data - backs up/removes specified file. Ex: sys_wipe_ch /data/app/com.audlabs.viperfx-1)
-sys_wipefol_ch         (Only for folders being removed from /data - backs up/removes specified folder. Ex: sys_wipefol_ch data/app/com.vipercn.viper4android_v2-1)
 
 NOT USABLE VARIABLES - You'll have no need to use these, they're just listed for reference
 
@@ -129,6 +129,7 @@ SPECCHARS
 CHARS
 SPACES
 TOTSPACE
+WPAPP_PRFX
 INPUT_FILE_WIPE
 INPUT_PATCHES
 INPUT_PATCHES_REM
@@ -139,6 +140,7 @@ INPUT_VAR
 INPUT_RULES
 INPUT_SCRIPT
 CP_PRFXAML
+FILE
 loop
 SPACE
 WRITE
@@ -200,7 +202,6 @@ custom_app_wipe
 app_install_logic
 script_install_logic
 unity_mod_wipe
-unity_mod_directory
 unity_mod_copy
 unity_uninstall
 aml_mod
@@ -227,5 +228,9 @@ sys_mk_ch
 sys_cp_ch
 sys_cpbak_ch
 sys_rm_ch
+sys_wipe_ch
+sys_wipefol_ch
+wipe_ch
+xml_install
 magisk_procedure_extras
 standard_procedure

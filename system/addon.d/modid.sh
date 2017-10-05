@@ -44,6 +44,7 @@ MIX_PATH_TASH=$SYS/etc/mixer_paths_tasha.xml
 STRIGG_MIX_PATH=$SYS/sound_trigger_mixer_paths.xml
 STRIGG_MIX_PATH_9330=$SYS/sound_trigger_mixer_paths_wcd9330.xml
 V_MIX_PATH=$VEN/etc/mixer_paths.xml
+XMLSTARLET=$SYS/bin/xmlstarlet
 
 list_files() {
 cat <<EOF
