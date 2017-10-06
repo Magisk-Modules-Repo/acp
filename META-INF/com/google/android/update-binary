@@ -346,7 +346,7 @@ TVFILES=$INSTALLER/tvfiles
 
 # PROCESS FOLDERS AND FILES
 find $INSTALLER/system -type f -print > $TFILES
-test $(find $INSTALLER/data -type f -print) != "$INSTALLER/data/placeholder" && find $INSTALLER/data -type f -print >> $TFILES
+test "$(find $INSTALLER/data -type f -print)" != "$INSTALLER/data/placeholder" && find $INSTALLER/data -type f -print >> $TFILES
 sed -i -e '/addon.d/ d' -e 's/&/\\&/g' -e "s|$INSTALLER||g" $TFILES
 $IS64BIT || sed -i '/lib64/ d' $TFILES
 cp $TFILES $TVFILES
