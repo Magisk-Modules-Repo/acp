@@ -495,7 +495,7 @@ unity_prop_copy() {
   fi
   NEWDIR="${AMLPROP%/*}"
   if [ "$(cat $1)" ]; then
-    test ! -f $AMLPROP && touch $AMLPROP
+    test ! -f $AMLPROP && { test "$MAGISK" == true && mktouch $AMLPROP || mktouch $AMLPROP "#!/system/bin/sh"; }
 	cat $1 | while read PROP; do
 	  PRESENT=false
 	  cat $AMLPROP | while read OLDPROP; do
