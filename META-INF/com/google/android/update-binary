@@ -198,7 +198,7 @@ sys_rm_ch() {
   else
     rm -f "$1"
   fi
-  if [ $(echo "${1%/*}" | grep '.*/app/.*\|.*/priv-app/.*') ] && [ ! "$(ls -A "${1%/*}")" ]; then
+  if [ ! "$(ls -A "${1%/*}")" ]; then
     rm -rf ${1%/*}
   fi
 }
@@ -405,10 +405,10 @@ system_install() {
 aml_script_patch() {
   # INSERT UNITY REMOVE PATCHES INTO MOD SCRIPT
   sed -i "/magisk\/$MODID/,/fi #$MODID/d" $AMLPATH/post-fs-data.sh
-  test ! -d $SYS/addon.d && { sed -i 's/^/  /' $INPUT_PATCHES_REM; { test ! -z $XML_PRFX && sed -i 's/^/  /' $INPUT_XML_PATCHES_REM; }; }
-  sed -i -e "/# MOD PATCHES/ a\if [ ! -d \"/magisk/$MODID\" ]; then" -e "/# MOD PATCHES/ a\  MODIDS=\"\${MODIDS} $MODID\"" -e "/# MOD PATCHES/ r $INPUT_PATCHES_REM" $AMLPATH/post-fs-data.sh
-  test ! -z $XML_PRFX && sed -i "/# MOD PATCHES/ r $INPUT_XML_PATCHES_REM" $AMLPATH/post-fs-data.sh
-  sed -i "/# MOD PATCHES/ a\fi #$MODID" $AMLPATH/post-fs-data.sh
+  sed -i 's/^/  /' $INPUT_PATCHES_REM
+  test ! -z $XML_PRFX && sed -i 's/^/  /' $INPUT_XML_PATCHES_REM;
+  sed -i -e "/# MOD PATCHES/ a\if [ ! -d \"/magisk/$MODID\" ]; then" -e "/# MOD PATCHES/ a\  MODIDS=\"\${MODIDS} $MODID\"" -e "/# MOD PATCHES/ r $INPUT_PATCHES_REM" -e "/# MOD PATCHES/ a\TEMP$MODID" $AMLPATH/post-fs-data.sh
+  test ! -z $XML_PRFX && sed -i -e "/TEMP$MODID/ r $INPUT_XML_PATCHES_REM" -e "/TEMP$MODID/ a\fi #$MODID" -e "/TEMP$MODID/d" $AMLPATH/post-fs-data.sh || sed -i -e "/TEMP$MODID/ a\fi #$MODID" -e "/TEMP$MODID/d" $AMLPATH/post-fs-data.sh
 }
 
 custom_app_install() {
@@ -474,10 +474,9 @@ unity_prop_remove() {
   fi
   if [ -f $AMLPROP ]; then
     if [ "$(cat $1)" ]; then
-      NEWPROPS="$(cat $1)"
-      printf '%s\n' "$NEWPROPS" | while IFS= read -r linenew; do
-        test "$(grep "$linenew" $AMLPROP)" && sed -i "/$linenew/d" $AMLPROP
-      done
+      cat $1 | while read PROP; do
+        test "$(grep "$PROP" $AMLPROP)" && sed -i "/$PROP/d" $AMLPROP
+	  done
     fi
 	test ! -s $AMLPROP && rm -f $AMLPROP
   fi
@@ -496,18 +495,14 @@ unity_prop_copy() {
   fi
   NEWDIR="${AMLPROP%/*}"
   if [ "$(cat $1)" ]; then
-    test ! -f $AMLPROP && { test "$MAGISK" == true && mktouch $AMLPROP || mktouch $AMLPROP "#!/system/bin/sh"; }
-    OLDPROPS="$(cat $AMLPROP)"
-    NEWPROPS="$(cat $1)"
-    printf '%s\n' "$NEWPROPS" | while IFS= read -r linenew; do
-      PRESENT=false
-      printf '%s\n' "$OLDPROPS" | {
-        while IFS= read -r lineold; do
-          test "$linenew" == "$lineold" && PRESENT=true
-        done
-        test $PRESENT == false && sed -i -e "\$a$linenew" $AMLPROP
-       }
-    done
+    test ! -f $AMLPROP && touch $AMLPROP
+	cat $1 | while read PROP; do
+	  PRESENT=false
+	  cat $AMLPROP | while read OLDPROP; do
+	    test "$PROP" == "$OLDPROP" && PRESENT=true
+	  done
+	  test $PRESENT == false && echo "$PROP" >> $AMLPROP
+	done
     if [ "$MAGISK" == false ]; then
       chmod 0700 $AMLPROP
       restorecon $AMLPROP
@@ -616,8 +611,8 @@ unity_mod_copy() {
           # INSERT AML REMOVE, WIPE, AND REGULAR PATCHES INTO ADDON.D SCRIPT
           sed -i 's/^/  /' $INPUT_PATCHES; sed -i "/<PATCHES>/ r $INPUT_PATCHES_WIPE" $INSTALLER/system/addon.d/$MODID.sh
 		  test ! -z $XML_PRFX && { sed -i 's/^/  /' $INPUT_XML_PATCHES_WIPE; sed -i "/<PATCHES>/ r $INPUT_XML_PATCHES_WIPE" $INSTALLER/system/addon.d/$MODID.sh; }
-          sed -i 's/^/  /' $INPUT_PATCHES_REM; sed -i "/<PATCHES>/ r $INPUT_PATCHES_REM" $INSTALLER/system/addon.d/$MODID.sh
-		  test ! -z $XML_PRFX && { sed -i 's/^/  /' $INPUT_XML_PATCHES_REM; sed -i "/<PATCHES>/ r $INPUT_XML_PATCHES_REM" $INSTALLER/system/addon.d/$MODID.sh; }
+          test "$MAGISK" == false && sed -i 's/^/  /' $INPUT_PATCHES_REM; sed -i "/<PATCHES>/ r $INPUT_PATCHES_REM" $INSTALLER/system/addon.d/$MODID.sh
+		  test "$MAGISK" == false -a ! -z $XML_PRFX && { sed -i 's/^/  /' $INPUT_XML_PATCHES_REM; sed -i "/<PATCHES>/ r $INPUT_XML_PATCHES_REM" $INSTALLER/system/addon.d/$MODID.sh; }
           sed -i 's/^/  /' $INPUT_PATCHES_WIPE; sed -i "/<PATCHES>/ r $INPUT_PATCHES" $INSTALLER/system/addon.d/$MODID.sh
 		  test ! -z $XML_PRFX && { sed -i 's/^/  /' $INPUT_XML_PATCHES; sed -i "/<PATCHES>/ r $INPUT_XML_PATCHES" $INSTALLER/system/addon.d/$MODID.sh; }
         fi
@@ -643,7 +638,7 @@ unity_mod_copy() {
   
   cat $TFILES | while read LINE; do
     $OLDAPP && LINE2=$(echo $LINE | sed 's|/app/.*/|/app/|') || LINE2=$(echo $LINE | sed 's|/app/|/priv-app/|')
-    $CP_PRFX $INSTALLER$LINE $UNITY$LINE2
+    test "$(echo "$LINE" | cut -c 1-6)" == "/data/" && sys_cpbak_ch $INSTALLER$LINE $LINE || $CP_PRFX $INSTALLER$LINE $UNITY$LINE2
   done
   cat $TVFILES | while read LINE; do
     $CP_PRFX $INSTALLER/system/vendor$LINE $UNITY$VEN$LINE
