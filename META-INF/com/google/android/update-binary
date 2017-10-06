@@ -173,9 +173,9 @@ mod_exist() {
 # COPY SYS FILE
 cp_ch() {
   mkdir -p "${2%/*}"
-  chmod "$3" "${2%/*}"
+  chmod 0755 "${2%/*}"
   cp -af "$1" "$2"
-  chmod "$4" "$2"
+  test -z $3 && chmod 0644 "$2" || chmod "$3" "$2"
   restorecon "$2"
 }
 
@@ -186,7 +186,7 @@ sys_cpbak_ch() {
     echo "$2.bak" >> $INFO
   fi
   test ! "$(grep "$2" $INFO)" && echo "$2" >> $INFO
-  cp_ch $1 $2 $3 $4
+  cp_ch $1 $2 $3
 }
 
 # REMOVE MOD FILE
@@ -375,7 +375,6 @@ esac
 
 # FUNCTION VARIABLES
 CP_NBPRFX="cp_ch"
-CP_SFFX=" 0755 0644"
 WP_PRFX="wipe_ch"
 
 magisk_install() {
@@ -425,10 +424,10 @@ app_install_logic() {
   # Logic for correct application installation
   ########################################################################################
   if [ -d $SYS/priv-app ]; then
-    APPTXT="   Installing apps/libs for Lollipop & above..."
+    APPTXT="   Installing files for Lollipop & above..."
     OLDAPP=false
   else
-    APPTXT="   Installing apps/libs for Lollipop & below..."
+    APPTXT="   Installing files for Lollipop & below..."
     OLDAPP=true
   fi
 }
@@ -579,25 +578,25 @@ unity_mod_copy() {
     test "$MODID" != "$AMLID" -a ! -f $AMLINFO && touch $AMLINFO
 
     # COPY MODULE.PROP FILE FOR VERSION CHECKING
-    $CP_NBPRFX $INSTALLER/module.prop $MOD_VER$CP_SFFX
-    test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && $CP_NBPRFX $INSTALLER/common/$AMLID/audmodlibmodule.prop $SYS/etc/$AMLID-module.prop$CP_SFFX
+    $CP_NBPRFX $INSTALLER/module.prop $MOD_VER
+    test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && $CP_NBPRFX $INSTALLER/common/$AMLID/audmodlibmodule.prop $SYS/etc/$AMLID-module.prop
     add_to_info $MOD_VER $INFO
     test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && add_to_info $SYS/etc/$AMLID-module.prop $AMLINFO
 
     # COPY SCRIPTS FOR SYSTEM INSTALLS
 	if [ "$SYSOVER" == false ]; then
-      test "$AUDMODLIB" != "$MODID" -a ! -f $SH/$AMLID-post-fs-data$EXT && $CP_NBPRFX $INSTALLER/common/$AMLID/$AMLID-post-fs-data.sh $SH/$AMLID-post-fs-data$EXT 0755 0700
-      test "$MODID" != "$AMLID" && $CP_NBPRFX $INSTALLER/common/$AMLID/$MODID-post-fs-data.sh $SH/$MODID-post-fs-data$EXT 0755 0700
+      test "$AUDMODLIB" != "$MODID" -a ! -f $SH/$AMLID-post-fs-data$EXT && $CP_NBPRFX $INSTALLER/common/$AMLID/$AMLID-post-fs-data.sh $SH/$AMLID-post-fs-data$EXT 0700
+      test "$MODID" != "$AMLID" && $CP_NBPRFX $INSTALLER/common/$AMLID/$MODID-post-fs-data.sh $SH/$MODID-post-fs-data$EXT 0700
       test "$AUDMODLIB" != "$MODID" && add_to_info $SH/$AMLID-post-fs-data$EXT $AMLINFO
       add_to_info $SH/$MODID-post-fs-data$EXT $INFO
       test -f "$SH/$AUDMODLIB-props$EXT" && add_to_info $SH/$AUDMODLIB-props$EXT $AMLINFO
     else
-      $CP_NBPRFX $INSTALLER/module.prop $MODPATH/module.prop$CP_SFFX
-      test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && $CP_NBPRFX $INSTALLER/common/$AMLID/audmodlibmodule.prop $MOUNTPATH/$AMLID/module.prop$CP_SFFX
+      $CP_NBPRFX $INSTALLER/module.prop $MODPATH/module.prop
+      test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && $CP_NBPRFX $INSTALLER/common/$AMLID/audmodlibmodule.prop $MOUNTPATH/$AMLID/module.prop
     fi
 
     # INSTALL SERVICE MODE SCRIPTS
-    $LATESTARTSERVICE && { test "$SYSOVER" == false && { $CP_NBPRFX $INSTALLER/common/service.sh $SH/$MODID-service$EXT 0755 0700; add_to_info $SH/$MODID-service$EXT $INFO; } || $CP_NBPRFX $INSTALLER/common/service.sh $MODPATH/service.sh$CP_SFFX; }
+    $LATESTARTSERVICE && { test "$SYSOVER" == false && { $CP_NBPRFX $INSTALLER/common/service.sh $SH/$MODID-service$EXT 0700; add_to_info $SH/$MODID-service$EXT $INFO; } || $CP_NBPRFX $INSTALLER/common/service.sh $MODPATH/service.sh; }
 
     # INSTALL ROM BACKUP SCRIPT
     if [ -d $SYS/addon.d ]; then
@@ -623,9 +622,9 @@ unity_mod_copy() {
 		  test ! -z $XML_PRFX && { sed -i 's/^/  /' $INPUT_XML_PATCHES; sed -i "/<PATCHES>/ r $INPUT_XML_PATCHES" $INSTALLER/system/addon.d/$MODID.sh; }
         fi
         sed -i '/<PATCHES>/d' $INSTALLER/system/addon.d/$MODID.sh
-        $CP_NBPRFX $INSTALLER/system/addon.d/$MODID.sh $SYS/addon.d/$MODID.sh 0755 0755
+        $CP_NBPRFX $INSTALLER/system/addon.d/$MODID.sh $SYS/addon.d/$MODID.sh 0755
       fi 
-      $CP_NBPRFX $INSTALLER/system/addon.d/$AMLID.sh $SYS/addon.d/$AMLID.sh 0755 0755
+      $CP_NBPRFX $INSTALLER/system/addon.d/$AMLID.sh $SYS/addon.d/$AMLID.sh 0755
     else
       ui_print "   ! Addon.d not detected. Backup script not installed..."
     fi
@@ -633,7 +632,7 @@ unity_mod_copy() {
     ui_print "   Installing scripts for MagiskSU..."
   fi
   
-  test "$MAGISK" == true -o "$SYSOVER" == true && { test "$MODID" != "$AMLID" && $CP_NBPRFX $INSTALLER/common/$AMLID/$MODID-post-fs-data.sh $MODPATH/post-fs-data.sh 0755 0755; }
+  test "$MAGISK" == true -o "$SYSOVER" == true && { test "$MODID" != "$AMLID" && $CP_NBPRFX $INSTALLER/common/$AMLID/$MODID-post-fs-data.sh $MODPATH/post-fs-data.sh 0755; }
 
   # ADD BUILDPROPS
   ui_print "   Adding build.props..."
@@ -644,10 +643,10 @@ unity_mod_copy() {
   
   cat $TFILES | while read LINE; do
     $OLDAPP && LINE2=$(echo $LINE | sed 's|/app/.*/|/app/|') || LINE2=$(echo $LINE | sed 's|/app/|/priv-app/|')
-    $CP_PRFX $INSTALLER$LINE $UNITY$LINE2$CP_SFFX
+    $CP_PRFX $INSTALLER$LINE $UNITY$LINE2
   done
   cat $TVFILES | while read LINE; do
-    $CP_PRFX $INSTALLER/system/vendor$LINE $UNITY$VEN$LINE$CP_SFFX
+    $CP_PRFX $INSTALLER/system/vendor$LINE $UNITY$VEN$LINE
   done
 
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
@@ -668,27 +667,27 @@ aml_mod() {
     if [ -f $CFG ]; then
       test "$MAGISK" == false && { add_to_info $CFG $AMLINFO; add_to_info $CFG.bak $AMLINFO; }
       if [ ! -f $AMLPATH$CFG.bak ]; then
-        test -f $CFG.bak && $CP_NBPRFX $CFG.bak $AMLPATH$CFG.bak$CP_SFFX || $CP_NBPRFX $CFG $AMLPATH$CFG.bak$CP_SFFX
+        test -f $CFG.bak && $CP_NBPRFX $CFG.bak $AMLPATH$CFG.bak || $CP_NBPRFX $CFG $AMLPATH$CFG.bak
       fi
-      test ! -f $AMLPATH$CFG && $CP_NBPRFX $CFG $AMLPATH$CFG$CP_SFFX
+      test ! -f $AMLPATH$CFG && $CP_NBPRFX $CFG $AMLPATH$CFG
     fi
   done
   
   if [ ! -z $XML_PRFX ]; then
     if [ "$MAGISK" == true ]; then
-	  test ! -f $AMLPATH/system/xbin/xmlstarlet && $CP_PRFX "$XML_PRFX" $AMLPATH/system/xbin/xmlstarlet 0755 0755
+	  test ! -f $AMLPATH/system/xbin/xmlstarlet && $CP_PRFX "$XML_PRFX" $AMLPATH/system/xbin/xmlstarlet 0755
 	elif [ "${SH%/*}" != "$SYS/etc" ]; then
-      test ! -f $AMLPATH${SH%/*}/xbin/xmlstarlet && $CP_PRFX "$XML_PRFX" $AMLPATH${SH%/*}/xbin/xmlstarlet 0755 0755
+      test ! -f $AMLPATH${SH%/*}/xbin/xmlstarlet && $CP_PRFX "$XML_PRFX" $AMLPATH${SH%/*}/xbin/xmlstarlet 0755
 	else
-	  test ! -f $AMLPATH$SYS/xbin/xmlstarlet && $CP_PRFX "$XML_PRFX" $AMLPATH$SYS/xbin/xmlstarlet 0755 0755
+	  test ! -f $AMLPATH$SYS/xbin/xmlstarlet && $CP_PRFX "$XML_PRFX" $AMLPATH$SYS/xbin/xmlstarlet 0755
 	fi
   fi
   
   if [ "$MAGISK" == true ] || [ "$SYSOVER" == true ]; then
-    test "$BOOTMODE" == "true" -a -f /magisk/$AMLID/post-fs-data.sh && $CP_NBPRFX /magisk/$AMLID/post-fs-data.sh $AMLPATH/post-fs-data.sh 0755 0755
-    test "$BOOTMODE" == "true" -a -f /magisk/$AMLID/system.prop && $CP_NBPRFX /magisk/$AMLID/system.prop $AMLPATH/system.prop$CP_SFFX
-    test "$ACTION" == "Install" -a ! -f $MOUNTPATH/$AMLID/post-fs-data.sh && $CP_NBPRFX $INSTALLER/common/$AMLID/$AMLID-post-fs-data.sh $MOUNTPATH/$AMLID/post-fs-data.sh 0755 0755
-    test "$BOOTMODE" == "true" -a "$ACTION" == "Uninstall" && { $CP_NBPRFX $INSTALLER/common/$AMLID/audmodlibmodule.prop $MOUNTPATH/$AMLID/module.prop$CP_SFFX; mktouch /magisk/$AMLID/update; mktouch /magisk/$AMLID/auto_mount; }
+    test "$BOOTMODE" == "true" -a -f /magisk/$AMLID/post-fs-data.sh && $CP_NBPRFX /magisk/$AMLID/post-fs-data.sh $AMLPATH/post-fs-data.sh 0755
+    test "$BOOTMODE" == "true" -a -f /magisk/$AMLID/system.prop && $CP_NBPRFX /magisk/$AMLID/system.prop $AMLPATH/system.prop
+    test "$ACTION" == "Install" -a ! -f $MOUNTPATH/$AMLID/post-fs-data.sh && $CP_NBPRFX $INSTALLER/common/$AMLID/$AMLID-post-fs-data.sh $MOUNTPATH/$AMLID/post-fs-data.sh 0755
+    test "$BOOTMODE" == "true" -a "$ACTION" == "Uninstall" && { $CP_NBPRFX $INSTALLER/common/$AMLID/audmodlibmodule.prop $MOUNTPATH/$AMLID/module.prop; mktouch /magisk/$AMLID/update; mktouch /magisk/$AMLID/auto_mount; }
   fi
 
   ui_print "   ! AML framework by ahrion & zackptg5 @ XDA !"
@@ -808,18 +807,18 @@ magisk_procedure_extras() {
   test "$BOOTMODE" == "true" -a "$AUDMODLIB" != "$MODID" && { rm -rf /magisk/$AMLID; mkdir -p /magisk/$AMLID; }
 
   # MODULE INFO
-  $CP_NBPRFX $INSTALLER/module.prop $MODPATH/module.prop$CP_SFFX
-  test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && $CP_NBPRFX $INSTALLER/common/$AMLID/audmodlibmodule.prop $AMLPATH/module.prop$CP_SFFX
+  $CP_NBPRFX $INSTALLER/module.prop $MODPATH/module.prop
+  test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && $CP_NBPRFX $INSTALLER/common/$AMLID/audmodlibmodule.prop $AMLPATH/module.prop
   if $BOOTMODE; then
     # UPDATE INFO FOR MAGISK MANAGER
     mktouch /magisk/$MODID/update
     test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && mktouch /magisk/$AMLID/update
-    $CP_NBPRFX $INSTALLER/module.prop /magisk/$MODID/module.prop$CP_SFFX
-    test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && $CP_NBPRFX $INSTALLER/common/$AMLID/audmodlibmodule.prop /magisk/$AMLID/module.prop$CP_SFFX
+    $CP_NBPRFX $INSTALLER/module.prop /magisk/$MODID/module.prop
+    test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && $CP_NBPRFX $INSTALLER/common/$AMLID/audmodlibmodule.prop /magisk/$AMLID/module.prop
   fi
 
   # SERVICE MODE SCRIPTS
-  $LATESTARTSERVICE && $CP_NBPRFX $INSTALLER/common/service.sh $MODPATH/service.sh$CP_SFFX
+  $LATESTARTSERVICE && $CP_NBPRFX $INSTALLER/common/service.sh $MODPATH/service.sh
 }
 
 standard_procedure() {
