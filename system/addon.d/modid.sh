@@ -22,7 +22,34 @@ else
 fi
 test -L /system/vendor && VEN=/vendor || VEN=/system/vendor
 
+# DETERMINE SCRIPTS LOCATIONS
+if [ -d "/data/adb/su/bin" ]; then
+  SH=/data/adb/su/su.d
+elif [ -d "/data/supersu_install/bin" ]; then
+  SH=/data/supersu_install/su.d
+elif [ -d "/cache/supersu_install/bin" ]; then
+  SH=/cache/supersu_install/su.d
+elif [ "$supersuimg" ] || [ -d /su ]; then
+  SH=/su/su.d
+elif [ -d $SYS/su ] || [ -f $SYS/xbin/daemonsu ] || [ -f $SYS/xbin/sugote ]; then
+  SH=$SYS/su.d
+elif [ -f $SYS/xbin/su ]; then
+  if [ "$(grep "SuperSU" $SYS/xbin/su)" ]; then
+    SH=$SYS/su.d
+  else
+    SH=$SYS/etc/init.d
+  fi
+else
+  SH=$SYS/etc/init.d
+fi
+
 ### FILE LOCATIONS ###
+# XMLSTARLET
+if [ "${SH%/*}" != "$SYS/etc" ]; then
+  XML_PRFX=$AMLPATH${SH%/*}/xbin/xmlstarlet
+else
+  XML_PRFX=$AMLPATH$SYS/xbin/xmlstarlet
+fi
 # AUDIO EFFECTS
 CONFIG_FILE=$SYS/etc/audio_effects.conf
 HTC_CONFIG_FILE=$SYS/etc/htc_audio_effects.conf
@@ -44,7 +71,6 @@ MIX_PATH_TASH=$SYS/etc/mixer_paths_tasha.xml
 STRIGG_MIX_PATH=$SYS/sound_trigger_mixer_paths.xml
 STRIGG_MIX_PATH_9330=$SYS/sound_trigger_mixer_paths_wcd9330.xml
 V_MIX_PATH=$VEN/etc/mixer_paths.xml
-XMLSTARLET=$SYS/bin/xmlstarlet
 
 list_files() {
 cat <<EOF

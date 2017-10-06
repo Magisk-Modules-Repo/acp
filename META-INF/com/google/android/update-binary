@@ -172,8 +172,8 @@ mod_exist() {
 
 # COPY SYS FILE
 cp_ch() {
-  mkdir -p "$(dirname $2)"
-  chmod "$3" "$(dirname $2)"
+  mkdir -p "${2%/*}"
+  chmod "$3" "${2%/*}"
   cp -af "$1" "$2"
   chmod "$4" "$2"
   restorecon "$2"
@@ -194,12 +194,12 @@ sys_rm_ch() {
   if [ -f "$1.bak" ]; then
     mv -f "$1.bak" "$1"
   elif [ -f "$1.tar" ]; then
-    tar -xf "$1.tar" -C "$(dirname "$1")"
+    tar -xf "$1.tar" -C "${1%/*}"
   else
     rm -f "$1"
   fi
-  if [ $(echo "$(dirname $1)" | grep '.*/app/.*\|.*/priv-app/.*') ] && [ "$(ls -A "$(dirname $1)")" == "" ]; then
-    rm -rf $(dirname $1)
+  if [ $(echo "${1%/*}" | grep '.*/app/.*\|.*/priv-app/.*') ] && [ ! "$(ls -A "${1%/*}")" ]; then
+    rm -rf ${1%/*}
   fi
 }
 
@@ -285,8 +285,7 @@ for FIL in $INPUT_FILE_WIPE $INPUT_PATCHES $INPUT_XML_PATCHES $INPUT_PATCHES_REM
   if [ "$FIL" == "$INPUT_RULES" ]; then
     NUM=1; while true; do
       if [ -f $FIL$NUM.sh ]; then
-        sed -i '/^#/ d' $FIL$NUM.sh
-        sed -i 's/$SYS\/$VEN/$VEN/g' $FIL$NUM.sh
+        sed -i -e '/^#/ d' -e 's/$SYS\/$VEN/$VEN/g' $FIL$NUM.sh
       else
         NUMOFCUSTRULES=$(($NUM-1))
         break
@@ -295,8 +294,7 @@ for FIL in $INPUT_FILE_WIPE $INPUT_PATCHES $INPUT_XML_PATCHES $INPUT_PATCHES_REM
     done
   else
     if [ -f $FIL ]; then
-      sed -i '/^#/ d' $FIL
-      sed -i 's/$SYS\/$VEN/$VEN/g' $FIL
+      sed -i -e '/^#/ d' -e 's/$SYS\/$VEN/$VEN/g' $FIL
     else
       ui_print "   !$FIL missing!"
       ui_print "   !Copy it back to above and try again!"
@@ -366,19 +364,16 @@ fi
 # XMLSTARLET - THANKS TO @JAMES34602 @XDADEVELOPERS FOR PORTING IT
 case $ABILONG in
   arm64*) XMLPATH="arm64"
-          xml_install
-          ;;
+          xml_install;;
   arm*) XMLPATH="arm"
-        xml_install
-        ;;
+        xml_install;;
   x86*) XMLPATH="x86"
-        xml_install
-        ;;
+        xml_install;;
   *)  ui_print "   ! Only arm, arm64, and x86 devices are compatible for xml patching"
-      ui_print "   ! XML Patching will be skipped"
-      ;;
+      ui_print "   ! XML Patching will be skipped";;
 esac
 
+# FUNCTION VARIABLES
 CP_NBPRFX="cp_ch"
 CP_SFFX=" 0755 0644"
 WP_PRFX="wipe_ch"
@@ -473,27 +468,19 @@ unity_prop_remove() {
   # Logic for unity prop removals
   ########################################################################################
   if [ "$MAGISK" == true ] || [ "$SYSOVER" == true ]; then
-    rm -f $SYS/etc/init.d/$AUDMODLIB-props /su/su.d/$AUDMODLIB-props.sh $SYS/su.d/$AUDMODLIB-props.sh
     test "$AUDMODLIB" != "$MODID" && AMLPROP="$AMLPATH/system.prop" || AMLPROP="$MODPATH/system.prop"
     sed -i -e "s/setprop //g" -e "s/ /=/g" $1
   else
     AMLPROP="$SH/$AUDMODLIB-props$EXT"
-    for OLDSCRIPT in $SYS/etc/init.d/$AUDMODLIB-props /su/su.d/$AUDMODLIB-props.sh $SYS/su.d/$AUDMODLIB-props.sh; do
-      if [ "$AMLPROP" != "$OLDSCRIPT" ]; then
-        rm -f $OLDSCRIPT
-      fi
-    done
   fi
   if [ -f $AMLPROP ]; then
     if [ "$(cat $1)" ]; then
       NEWPROPS="$(cat $1)"
-      printf '%s\n' "$NEWPROPS" | while IFS= read -r linenew
-      do
-        if [ "$(grep "$linenew" $AMLPROP)" ]; then
-          sed -i "/$linenew/d" $AMLPROP
-        fi
+      printf '%s\n' "$NEWPROPS" | while IFS= read -r linenew; do
+        test "$(grep "$linenew" $AMLPROP)" && sed -i "/$linenew/d" $AMLPROP
       done
     fi
+	test ! -s $AMLPROP && rm -f $AMLPROP
   fi
 }
 
@@ -508,24 +495,18 @@ unity_prop_copy() {
   else
     AMLPROP="$SH/$AUDMODLIB-props$EXT"
   fi
-  NEWDIR="$(dirname $AMLPROP)"
+  NEWDIR="${AMLPROP%/*}"
   if [ "$(cat $1)" ]; then
-    test ! -f $AMLPROP && { test "$MAGISK" == true && mktouch $AMLPROP || mktouch "#!/system/bin/sh" $AMLPROP; }
+    test ! -f $AMLPROP && { test "$MAGISK" == true && mktouch $AMLPROP || mktouch $AMLPROP "#!/system/bin/sh"; }
     OLDPROPS="$(cat $AMLPROP)"
     NEWPROPS="$(cat $1)"
-    printf '%s\n' "$NEWPROPS" | while IFS= read -r linenew
-    do
+    printf '%s\n' "$NEWPROPS" | while IFS= read -r linenew; do
       PRESENT=false
       printf '%s\n' "$OLDPROPS" | {
-        while IFS= read -r lineold
-        do
-          if [ "$linenew" == "$lineold" ]; then
-            PRESENT=true
-          fi
+        while IFS= read -r lineold; do
+          test "$linenew" == "$lineold" && PRESENT=true
         done
-        if [ $PRESENT == false ]; then
-          sed -i -e "\$a$linenew" $AMLPROP
-        fi
+        test $PRESENT == false && sed -i -e "\$a$linenew" $AMLPROP
        }
     done
     if [ "$MAGISK" == false ]; then
@@ -549,12 +530,7 @@ unity_mod_wipe() {
 
   # REMOVE FILES
   ui_print "   Removing files..."
-  if [ "$MAGISK" == true ] || [ "$SYSOVER" == true ]; then 
-    rm -rf $MODPATH 2>/dev/null
-  elif [ "$MAGISK" == false ]; then
-    rm -f $SYS/etc/init.d/$MODID $SYS/etc/init.d/$AMLID $SYS/addon.d/$MODID.sh /su/su.d/$MODID.sh /su/su.d/$AMLID.sh $SYS/su.d/$MODID.sh $SYS/su.d/$AMLID.sh
-  fi
-  
+  test "$MAGISK" == true -o "$SYSOVER" == true && rm -rf $MODPATH 2>/dev/null
   test ! -f "$INFO" && mktouch $INFO
 
   cat $INPUT_FILE_WIPE | while read LINE; do
@@ -608,7 +584,8 @@ unity_mod_copy() {
     add_to_info $MOD_VER $INFO
     test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && add_to_info $SYS/etc/$AMLID-module.prop $AMLINFO
 
-    if [ "$SYSOVER" == false ]; then
+    # COPY SCRIPTS FOR SYSTEM INSTALLS
+	if [ "$SYSOVER" == false ]; then
       test "$AUDMODLIB" != "$MODID" -a ! -f $SH/$AMLID-post-fs-data$EXT && $CP_NBPRFX $INSTALLER/common/$AMLID/$AMLID-post-fs-data.sh $SH/$AMLID-post-fs-data$EXT 0755 0700
       test "$MODID" != "$AMLID" && $CP_NBPRFX $INSTALLER/common/$AMLID/$MODID-post-fs-data.sh $SH/$MODID-post-fs-data$EXT 0755 0700
       test "$AUDMODLIB" != "$MODID" && add_to_info $SH/$AMLID-post-fs-data$EXT $AMLINFO
@@ -620,7 +597,7 @@ unity_mod_copy() {
     fi
 
     # INSTALL SERVICE MODE SCRIPTS
-    $LATESTARTSERVICE && { test "$SYSOVER" == false && $CP_NBPRFX $INSTALLER/common/service.sh $SH/$MODID-service.sh$EXT 0755 0700 || $CP_NBPRFX $INSTALLER/common/service.sh $MODPATH/service.sh$CP_SFFX; }
+    $LATESTARTSERVICE && { test "$SYSOVER" == false && { $CP_NBPRFX $INSTALLER/common/service.sh $SH/$MODID-service$EXT 0755 0700; add_to_info $SH/$MODID-service$EXT $INFO; } || $CP_NBPRFX $INSTALLER/common/service.sh $MODPATH/service.sh$CP_SFFX; }
 
     # INSTALL ROM BACKUP SCRIPT
     if [ -d $SYS/addon.d ]; then
@@ -645,11 +622,9 @@ unity_mod_copy() {
           sed -i 's/^/  /' $INPUT_PATCHES_WIPE; sed -i "/<PATCHES>/ r $INPUT_PATCHES" $INSTALLER/system/addon.d/$MODID.sh
 		  test ! -z $XML_PRFX && { sed -i 's/^/  /' $INPUT_XML_PATCHES; sed -i "/<PATCHES>/ r $INPUT_XML_PATCHES" $INSTALLER/system/addon.d/$MODID.sh; }
         fi
-        sed -i '/<PATCHES>/d' $INSTALLER/system/addon.d/$MODID.sh		
-
+        sed -i '/<PATCHES>/d' $INSTALLER/system/addon.d/$MODID.sh
         $CP_NBPRFX $INSTALLER/system/addon.d/$MODID.sh $SYS/addon.d/$MODID.sh 0755 0755
-      fi
-      
+      fi 
       $CP_NBPRFX $INSTALLER/system/addon.d/$AMLID.sh $SYS/addon.d/$AMLID.sh 0755 0755
     else
       ui_print "   ! Addon.d not detected. Backup script not installed..."
@@ -699,8 +674,14 @@ aml_mod() {
     fi
   done
   
-  if [ ! -z $XML_PRFX ] && [ ! -f $AMLPATH/system/bin/xmlstarlet ]; then
-    $CP_PRFX "$XML_PRFX" $AMLPATH/system/bin/xmlstarlet 0755 0755
+  if [ ! -z $XML_PRFX ]; then
+    if [ "$MAGISK" == true ]; then
+	  test ! -f $AMLPATH/system/xbin/xmlstarlet && $CP_PRFX "$XML_PRFX" $AMLPATH/system/xbin/xmlstarlet 0755 0755
+	elif [ "${SH%/*}" != "$SYS/etc" ]; then
+      test ! -f $AMLPATH${SH%/*}/xbin/xmlstarlet && $CP_PRFX "$XML_PRFX" $AMLPATH${SH%/*}/xbin/xmlstarlet 0755 0755
+	else
+	  test ! -f $AMLPATH$SYS/xbin/xmlstarlet && $CP_PRFX "$XML_PRFX" $AMLPATH$SYS/xbin/xmlstarlet 0755 0755
+	fi
   fi
   
   if [ "$MAGISK" == true ] || [ "$SYSOVER" == true ]; then
@@ -792,7 +773,7 @@ unity_uninstall() {
 	test ! -z $XML_PRFX && source $INPUT_XML_PATCHES_REM
   fi
 	
-  test "$MAGISK" == false && rm -f $SYS/addon.d/$MODID.sh $SYS/etc/init.d/$MODID /su/su.d/$MODID.sh $SYS/su.d/$MODID.sh
+  test "$MAGISK" == false && rm -f $SYS/addon.d/$MODID.sh
   
   if [ "$MAGISK" == true ] || [ "$SYSOVER" == true ]; then
     rm -rf $MODPATH
@@ -963,11 +944,7 @@ if [ $curSizeM -gt $newSizeM ]; then
   $MAGISKBIN/magisk --resizeimg $IMG $newSizeM
 fi
 
-if ! $BOOTMODE; then
-  if [ "$supersuimg" ] || [ -d /su ]; then
-    umount /su
-  fi
-fi
+! $BOOTMODE && { test "$supersuimg" -o -d /su && umount /su; }
 
 $BOOTMODE || recovery_cleanup
 rm -rf $TMPDIR

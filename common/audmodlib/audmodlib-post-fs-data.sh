@@ -82,6 +82,15 @@ else
   fi
 fi
 
+# XMLSTARLET
+if [ "$MAGISK" == true]; then
+  XML_PRFX=$AMLPATH/system/xbin/xmlstarlet
+elif [ "${SH%/*}" != "$SYS/etc" ]; then
+  XML_PRFX=$AMLPATH${SH%/*}/xbin/xmlstarlet
+else
+  XML_PRFX=$AMLPATH$SYS/xbin/xmlstarlet
+fi
+
 # AUDIO EFFECTS
 CONFIG_FILE=$AMLPATH$SYS/etc/audio_effects.conf
 HTC_CONFIG_FILE=$AMLPATH$SYS/etc/htc_audio_effects.conf
@@ -105,7 +114,6 @@ MIX_PATH_TASH=$AMLPATH$SYS/etc/mixer_paths_tasha.xml
 STRIGG_MIX_PATH=$AMLPATH$SYS/sound_trigger_mixer_paths.xml
 STRIGG_MIX_PATH_9330=$AMLPATH$SYS/sound_trigger_mixer_paths_wcd9330.xml
 V_MIX_PATH=$AMLPATH$VEN/etc/mixer_paths.xml
-XMLSTARLET=$AMLPATH$SYS/bin/xmlstarlet
 
 test -d $SYS/priv-app && SOURCE=priv_app || SOURCE=system_app
 
