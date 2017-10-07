@@ -206,7 +206,8 @@ sys_rm_ch() {
 # BACKUP/REMOVE FILE
 sys_wipe_ch() {
   TPARTMOD=false
-  cat $INFO | while read LINE; do
+  cat $INFO | {
+  while read LINE; do
     test "$1" == "$(eval echo $LINE)" && { TPARTMOD=true; sed -i "/$1/d" $INFO; }
   done
   if [ -f "$1" ] && [ ! -f "$1.bak" ] && [ "$TPARTMOD" != true ]; then
@@ -215,6 +216,7 @@ sys_wipe_ch() {
   else
     rm -f "$1"
   fi
+  }
 }
 
 # BACKUP/REMOVE FOLDER
@@ -475,7 +477,7 @@ unity_prop_remove() {
   if [ -f $AMLPROP ]; then
     if [ "$(cat $1)" ]; then
       cat $1 | while read PROP; do
-        test "$(grep "$PROP" $AMLPROP)" && sed -i "/$PROP/d" $AMLPROP
+        test "$(grep "#$PROP" $AMLPROP)" && sed -i "\|#$PROP|d" $AMLPROP || { test "$(grep "$PROP" $AMLPROP)" && sed -i "\|$PROP|d" $AMLPROP; }
 	  done
     fi
 	test ! -s $AMLPROP && rm -f $AMLPROP
@@ -494,14 +496,17 @@ unity_prop_copy() {
     AMLPROP="$SH/$AUDMODLIB-props$EXT"
   fi
   NEWDIR="${AMLPROP%/*}"
+  mkfifo
   if [ "$(cat $1)" ]; then
     test ! -f $AMLPROP && { test "$MAGISK" == true && mktouch $AMLPROP || mktouch $AMLPROP "#!/system/bin/sh"; }
 	cat $1 | while read PROP; do
 	  PRESENT=false
-	  cat $AMLPROP | while read OLDPROP; do
+	  cat $AMLPROP | { 
+	  while read OLDPROP; do
 	    test "$PROP" == "$OLDPROP" && PRESENT=true
-	  done
-	  test $PRESENT == false && echo "$PROP" >> $AMLPROP
+	  done 
+	  test "$PRESENT" == false && echo "$PROP" >> $AMLPROP || echo "#$PROP" >> $AMLPROP
+	  }
 	done
     if [ "$MAGISK" == false ]; then
       chmod 0700 $AMLPROP
@@ -761,7 +766,7 @@ unity_uninstall() {
     ui_print "   ! Mod not detected. Removing scripts..."
   fi
   
-  if [ "$MODID" != "$AMLID" ] && [ "$AUDMODLIB" != "$MODID" ]; then
+  if [ "$AUDMODLIB" != "$MODID" ]; then
     # RESTORE CONFIGS, LIBRARIES, & EFFECTS
     source $INPUT_PATCHES_REM
 	test ! -z $XML_PRFX && source $INPUT_XML_PATCHES_REM
