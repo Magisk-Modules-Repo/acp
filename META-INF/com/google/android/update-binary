@@ -496,7 +496,6 @@ unity_prop_copy() {
     AMLPROP="$SH/$AUDMODLIB-props$EXT"
   fi
   NEWDIR="${AMLPROP%/*}"
-  mkfifo
   if [ "$(cat $1)" ]; then
     test ! -f $AMLPROP && { test "$MAGISK" == true && mktouch $AMLPROP || mktouch $AMLPROP "#!/system/bin/sh"; }
 	cat $1 | while read PROP; do
