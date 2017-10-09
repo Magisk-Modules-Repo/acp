@@ -41,7 +41,6 @@ if [ -f /data/magisk.img ] || [ -f /cache/magisk.img ] || [ -d /magisk ]; then
   SYS=/system
   MAGISK=true
   SEINJECT=magiskpolicy
-  SH=/magisk/audmodlib
   test -d /magisk/audmodlib$SYS && { MAGISK=true; AMLPATH=/magisk/audmodlib; VEN=/system/vendor; }
 else
   # DETERMINE IF PIXEL (A/B OTA) DEVICE
@@ -53,31 +52,23 @@ else
   supersuimg_mount
   if [ -d "/data/adb/su/bin" ]; then
     SEINJECT=/data/adb/su/bin/supolicy
-	SH=/data/adb/su/su.d
   elif [ -d "/data/supersu_install/bin" ]; then
     SEINJECT=/data/supersu_install/bin/supolicy
-	SH=/data/supersu_install/su.d
   elif [ -d "/cache/supersu_install/bin" ]; then
     SEINJECT=/cache/supersu_install/bin/supolicy
-	SH=/cache/supersu_install/su.d
   elif [ "$supersuimg" ] || [ -d /su ]; then
     SEINJECT=/su/bin/supolicy
-	SH=/su/su.d
   elif [ -d $SYS/su ] || [ -f $SYS/xbin/daemonsu ] || [ -f $SYS/xbin/sugote ]; then
     SEINJECT=$SYS/xbin/supolicy
-	SH=$SYS/su.d
   elif [ -f $SYS/xbin/su ]; then
     if [ "$(cat $SYS/xbin/su | grep SuperSU)" ]; then
       SEINJECT=$SYS/xbin/supolicy
-	  SH=$SYS/su.d
     else
       SEINJECT=/sepolicy
-	  SH=$SYS/etc/init.d
       EXT=""
     fi
   else
     SEINJECT=/sepolicy
-	SH=$SYS/etc/init.d
     EXT=""
   fi
 fi
