@@ -73,7 +73,7 @@ else
 fi
 
 # XMLSTARLET
-if [ "$MAGISK" == true]; then
+if [ "$MAGISK" == true ]; then
   XML_PRFX=$AMLPATH/system/xbin/xmlstarlet
 elif [ "${SH%/*}" != "$SYS/etc" ]; then
   XML_PRFX=$AMLPATH${SH%/*}/xbin/xmlstarlet
