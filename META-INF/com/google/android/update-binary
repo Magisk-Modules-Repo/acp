@@ -322,7 +322,7 @@ test -z $MODID && MODID=`grep_prop id $INSTALLER/module.prop`
 AMLID=audmodlib
 MODPATH=$MOUNTPATH/$MODID
 AMLPATH=$MOUNTPATH/$AMLID
-test -z $AUDMODLIB && AUDMODLIB=$MODID || AUDMODLIB=unity
+test -z $AUDMODLIB -o "$AUDMOBLIB" == false && AUDMODLIB=$MODID || AUDMODLIB=unity
 
 # AUDIO EFFECTS
 CONFIG_FILE=$SYS/etc/audio_effects.conf
