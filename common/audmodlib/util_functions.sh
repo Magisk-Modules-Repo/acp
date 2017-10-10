@@ -30,17 +30,12 @@ get_outfd() {
 }
 
 ui_print() {
-  if $BOOTMODE; then
-    echo "$1"
-  else
-    echo -n -e "ui_print $1\n" >> /proc/self/fd/$OUTFD
-    echo -n -e "ui_print\n" >> /proc/self/fd/$OUTFD
-  fi
+  $BOOTMODE && echo "$1" || echo -e "ui_print $1\nui_print" >> /proc/self/fd/$OUTFD
 }
 
 mount_partitions() {
   # Check A/B slot
-  [ -f /data/magisk.img -o -f /cache/magisk.img -o -d /magisk ] && [ "$SYSOVER" == false ] && WRITE=ro || WRITE=rw
+  [ -f /data/magisk.img -o -f /cache/magisk.img -o -d /magisk ] && WRITE=ro || WRITE=rw
   SYS=/system
   SLOT=`getprop ro.boot.slot_suffix`
   [ -z $SLOT ] || ui_print "- A/B partition detected, current slot: $SLOT"
@@ -62,7 +57,7 @@ mount_partitions() {
   $SKIP_INITRAMFS && ui_print "   ! Device skip_initramfs detected"
   if [ -L /system/vendor ]; then
     # Seperate /vendor partition
-    [ -f /data/magisk.img -o -f /cache/magisk.img -o -d /magisk ] && [ "$SYSOVER" == false ] && VEN=/system/vendor || VEN=/vendor
+    [ -f /data/magisk.img -o -f /cache/magisk.img -o -d /magisk ] && VEN=/system/vendor || VEN=/vendor
     is_mounted /vendor || mount -o $WRITE /vendor 2>/dev/null
     if ! is_mounted /vendor; then
       VENDORBLOCK=`find /dev/block -iname vendor$SLOT | head -n 1`
@@ -159,8 +154,9 @@ flash_boot_image() {
 }
 
 sign_chromeos() {
-  echo > empty
+  ui_print "- Signing ChromeOS boot image"
 
+  echo > empty
   ./chromeos/futility vbutil_kernel --pack new-boot.img.signed \
   --keyblock ./chromeos/kernel.keyblock --signprivate ./chromeos/kernel_data_key.vbprivk \
   --version 1 --vmlinuz new-boot.img --config empty --arch arm --bootloader empty --flags 0x1

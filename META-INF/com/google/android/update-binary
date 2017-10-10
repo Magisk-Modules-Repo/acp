@@ -25,11 +25,10 @@ case $(basename $ZIP) in
   *uninstall*|*Uninstall*|*UNINSTALL*) ACTION=Uninstall;;
   *) ACTION=Install;;
 esac
-# GET SYSTEM OVERRIDE FROM ZIP NAME
-case $(basename $ZIP) in
-  *system*|*System*|*SYSTEM*) SYSOVER=true;;
-  *) SYSOVER=false;;
-esac
+
+ui_print() {
+  $BOOTMODE && echo "$1" || echo -e "ui_print $1\nui_print" >> /proc/self/fd/$OUTFD
+}
 
 is_mounted() {
   if [ ! -z "$2" ]; then
@@ -45,8 +44,8 @@ patch_util_functions() {
   sed -i -e '/MAGISKBIN=\/data\/magisk/d' -e 's/-o ro/-o $WRITE/g' $INSTALLER/common/audmodlib/util_functions.sh
   sed -i -e "/ABILONG=/ a\  MIUIVER=\`grep_prop ro.miui.ui.version.name\`" -e "/^ *ARCH=/ a\  DRVARCH=NEON" $INSTALLER/common/audmodlib/util_functions.sh
   sed -ri "s|ARCH=x(.*);(.*);|ARCH=x\1; DRVARCH=X86;\2;|g" $INSTALLER/common/audmodlib/util_functions.sh
-  sed -i -e '/# Check A/B slot/ a\  SYS=\/system' -e '/# Check A/B slot/ a\  [ -f \/data\/magisk.img -o -f \/cache\/magisk.img -o -d \/magisk ] && [ \"$SYSOVER\" == false ] && WRITE=ro || WRITE=rw' $INSTALLER/common/audmodlib/util_functions.sh
-  sed -i -e '/# Seperate \/vendor partition/ a\    [ -f \/data\/magisk.img -o -f \/cache\/magisk.img -o -d \/magisk ] && [ \"$SYSOVER\" == false ] && VEN=\/system\/vendor || VEN=\/vendor' -e 'is_mounted \/vendor \|\| abort "! Cannot mount \/vendor"/ a\  else\n    VEN=\/system\/vendor' $INSTALLER/common/audmodlib/util_functions.sh
+  sed -i -e '/# Check A/B slot/ a\  SYS=\/system' -e '/# Check A/B slot/ a\  [ -f \/data\/magisk.img -o -f \/cache\/magisk.img -o -d \/magisk ] && WRITE=ro || WRITE=rw' $INSTALLER/common/audmodlib/util_functions.sh
+  sed -i -e '/# Seperate \/vendor partition/ a\    [ -f \/data\/magisk.img -o -f \/cache\/magisk.img -o -d \/magisk ] && VEN=\/system\/vendor || VEN=\/vendor' -e 'is_mounted \/vendor \|\| abort "! Cannot mount \/vendor"/ a\  else\n    VEN=\/system\/vendor' $INSTALLER/common/audmodlib/util_functions.sh
   sed -i -e 's|- Mounting /system, /vendor|   Mounting /system, /vendor...|' -e '/   Mounting \/system, \/vendor.../ i\ui_print "- Mounting Filesystems -"' -e 's/- Unmounting partitions/   Unmounting partitions.../' -e 's/- Device skip_initramfs detected/   ! Device skip_initramfs detected' $INSTALLER/common/audmodlib/util_functions.sh
 }
 
@@ -58,6 +57,9 @@ mount /cache 2>/dev/null
 TMPDIR=/dev/tmp
 INSTALLER=$TMPDIR/install
 MOUNTPATH=$TMPDIR/magisk_img
+
+ui_print " "
+ui_print "Unzipping files..."
 
 rm -rf $TMPDIR 2>/dev/null
 mkdir -p $INSTALLER
@@ -80,7 +82,7 @@ get_outfd
 
 # INSERT MODULE INFO INTO CONFIG.SH
 for VAR in version name author; do
-  NEW=$(grep "$VAR=" $INSTALLER/module.prop | sed 's/^.*=//')
+  NEW=$(grep_prop $VAR $INSTALLER/module.prop)
   test "$VAR" == "author" && NEW="by ${NEW}"
   SPECCHARS=$(echo "$NEW" | tr -cd "©®" | wc -m)
   CHARS=$((${#NEW}-$SPECCHARS))
@@ -126,8 +128,6 @@ supersuimg_mount() {
     fi
   fi
 }
-
-test "$SYSOVER" == true && ui_print "! Warning: Forcing a system $ACTION!"
 
 mount_partitions
 
@@ -255,11 +255,6 @@ wipe_ch() {
   esac
 }
 
-xml_install() {
-  XML_PRFX=$INSTALLER/common/$AMLID/xmlstarlet/$XMLPATH/xmlstarlet
-  chmod 777 $XML_PRFX
-}
-
 # PRINT OUT COMPLETETION OF (UN)INSTALL
 action_complete() {
   ui_print " "
@@ -319,10 +314,9 @@ test -z $MAXAPI || { test $API -le $MAXAPI || require_new_api 'maximum'; }
 
 # SET MODID, MODPATH, AMLPATH, and AML variables
 test -z $MODID && MODID=`grep_prop id $INSTALLER/module.prop`
-AMLID=audmodlib
 MODPATH=$MOUNTPATH/$MODID
-AMLPATH=$MOUNTPATH/$AMLID
-test -z $AUDMODLIB -o "$AUDMOBLIB" == false && AUDMODLIB=$MODID || AUDMODLIB=unity
+AMLPATH=$MOUNTPATH/audmodlib
+test -z $AUDMODLIB && AUDMODLIB=$MODID || AUDMODLIB=unity
 
 # AUDIO EFFECTS
 CONFIG_FILE=$SYS/etc/audio_effects.conf
@@ -361,24 +355,20 @@ cp $TFILES $TVFILES
 sed -i -e '/\/vendor\// d' $TFILES 
 sed -i -e '/\/vendor/!d' -e "s/\/system\/vendor//g" $TVFILES
 
-if [ "$MODID" != "$AMLID" ]; then
+if [ "$MODID" != "audmodlib" ]; then
   # RENAME MODID-SERVICE SCRIPT
-  mv -f $INSTALLER/common/$AMLID/modid-post-fs-data.sh $INSTALLER/common/$AMLID/$MODID-post-fs-data.sh
+  mv -f $INSTALLER/common/audmodlib/modid-post-fs-data.sh $INSTALLER/common/audmodlib/$MODID-post-fs-data.sh
 
   # INSERT MODID AND CUSTOM USER SCRIPT INTO MOD SCRIPT
-  sed -i -e "s/<MODID>/$MODID/" -e "/# CUSTOM USER SCRIPT/ r $INPUT_SCRIPT" -e '/# CUSTOM USER SCRIPT/d' $INSTALLER/common/$AMLID/$MODID-post-fs-data.sh
+  sed -i -e "s/<MODID>/$MODID/" -e "/# CUSTOM USER SCRIPT/ r $INPUT_SCRIPT" -e '/# CUSTOM USER SCRIPT/d' $INSTALLER/common/audmodlib/$MODID-post-fs-data.sh
 fi
 
 # XMLSTARLET - THANKS TO @JAMES34602 and @LAZERL0RD @XDADEVELOPERS FOR PORTING IT
 case $ABILONG in
-  arm64*) XMLPATH="arm64"
-          xml_install;;
-  arm*) XMLPATH="arm"
-        xml_install;;
-  x86*) XMLPATH="x86"
-        xml_install;;
-  *)  ui_print "   ! Only arm, arm64, and x86 devices are compatible for xml patching"
-      ui_print "   ! XML Patching will be skipped";;
+  arm64*) XML_PRFX=$INSTALLER/common/audmodlib/xmlstarlet/arm64/xmlstarlet; chmod 777 $XML_PRFX;; 
+  arm*) XML_PRFX=$INSTALLER/common/audmodlib/xmlstarlet/arm/xmlstarlet; chmod 777 $XML_PRFX;;
+  x86*) XML_PRFX=$INSTALLER/common/audmodlib/xmlstarlet/x86/xmlstarlet; chmod 777 $XML_PRFX;;				 
+  *) ui_print "   ! Only arm, arm64, and x86 devices are compatible for xml patching"; ui_print "   ! XML Patching will be skipped";;
 esac
 
 # FUNCTION VARIABLES
@@ -403,10 +393,10 @@ system_install() {
   MOD_VER="$SYS/etc/$MODID-module.prop"
   if [ -d $SYS/addon.d ]; then
     INFO=$SYS/addon.d/$MODID-files
-    AMLINFO=$SYS/addon.d/$AMLID-files
+    AMLINFO=$SYS/addon.d/audmodlib-files
   else
     INFO=$SYS/etc/$MODID-files
-    AMLINFO=$SYS/etc/$AMLID-files
+    AMLINFO=$SYS/etc/audmodlib-files
   fi
 }
 
@@ -474,7 +464,7 @@ unity_prop_remove() {
   ########################################################################################
   # Logic for unity prop removals
   ########################################################################################
-  if [ "$MAGISK" == true ] || [ "$SYSOVER" == true ]; then
+  if [ "$MAGISK" == true ]; then
     test "$AUDMODLIB" != "$MODID" && AMLPROP="$AMLPATH/system.prop" || AMLPROP="$MODPATH/system.prop"
     sed -i -e "s/setprop //g" -e "s/ /=/g" $1
   else
@@ -495,7 +485,7 @@ unity_prop_copy() {
   # Logic for unity prop install
   ########################################################################################
   sed -i "/#/d" $1
-  if [ "$MAGISK" == true ] || [ "$SYSOVER" == true ]; then
+  if [ "$MAGISK" == true ]; then
     test "$AUDMODLIB" != "$MODID" && AMLPROP="$AMLPATH/system.prop" || AMLPROP="$MODPATH/system.prop"
     sed -i -e "s/setprop //g" -e "s/ /=/g" $1
   else
@@ -534,7 +524,7 @@ unity_mod_wipe() {
 
   # REMOVE FILES
   ui_print "   Removing files..."
-  test "$MAGISK" == true -o "$SYSOVER" == true && rm -rf $MODPATH 2>/dev/null
+  test "$MAGISK" == true && rm -rf $MODPATH 2>/dev/null
   test ! -f "$INFO" && mktouch $INFO
 
   cat $INPUT_FILE_WIPE | while read LINE; do
@@ -556,10 +546,8 @@ unity_mod_copy() {
   ui_print "- Installing modification -"
 
   # INSTALL SCRIPTS
-  if [ "$MAGISK" == false ]; then
-    if [ "$SYSOVER" == true ]; then
-      ui_print "   Installing scripts for MagiskSU..."
-    elif [ -d "/data/adb/su/bin" ]; then
+  if [ "$MAGISK" == false ]; then												  
+    if [ -d "/data/adb/su/bin" ]; then
       ui_print "   Installing scripts for BINDSBIN SuperSU..."
     elif [ -d "/data/supersu_install/bin" ]; then
       ui_print "   Installing scripts for BINDSBIN SuperSU..."
@@ -580,37 +568,32 @@ unity_mod_copy() {
     fi
 
     # CREATE FILE CONTAINING LIST OF ALL INSTALLED MOD FILES
-    test "$MODID" != "$AMLID" -a ! -f $AMLINFO && touch $AMLINFO
+    test "$MODID" != "audmodlib" -a ! -f $AMLINFO && touch $AMLINFO
 
     # COPY MODULE.PROP FILE FOR VERSION CHECKING
     $CP_NBPRFX $INSTALLER/module.prop $MOD_VER
-    test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && $CP_NBPRFX $INSTALLER/common/$AMLID/audmodlibmodule.prop $SYS/etc/$AMLID-module.prop
+    test "$AUDMODLIB" != "$MODID" -a "$MODID" != "audmodlib" && $CP_NBPRFX $INSTALLER/common/audmodlib/audmodlibmodule.prop $SYS/etc/audmodlib-module.prop
     add_to_info $MOD_VER $INFO
-    test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && add_to_info $SYS/etc/$AMLID-module.prop $AMLINFO
+    test "$AUDMODLIB" != "$MODID" -a "$MODID" != "audmodlib" && add_to_info $SYS/etc/audmodlib-module.prop $AMLINFO
 
-    # COPY SCRIPTS FOR SYSTEM INSTALLS
-	if [ "$SYSOVER" == false ]; then
-      test "$AUDMODLIB" != "$MODID" -a ! -f $SH/$AMLID-post-fs-data$EXT && $CP_NBPRFX $INSTALLER/common/$AMLID/$AMLID-post-fs-data.sh $SH/$AMLID-post-fs-data$EXT 0700
-      test "$MODID" != "$AMLID" && $CP_NBPRFX $INSTALLER/common/$AMLID/$MODID-post-fs-data.sh $SH/$MODID-post-fs-data$EXT 0700
-      test "$AUDMODLIB" != "$MODID" && add_to_info $SH/$AMLID-post-fs-data$EXT $AMLINFO
-      add_to_info $SH/$MODID-post-fs-data$EXT $INFO
-      test -f "$SH/$AUDMODLIB-props$EXT" && add_to_info $SH/$AUDMODLIB-props$EXT $AMLINFO
-    else
-      $CP_NBPRFX $INSTALLER/module.prop $MODPATH/module.prop
-      test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && $CP_NBPRFX $INSTALLER/common/$AMLID/audmodlibmodule.prop $MOUNTPATH/$AMLID/module.prop
-    fi
+    # COPY SCRIPTS FOR SYSTEM INSTALLS			 
+    test "$AUDMODLIB" != "$MODID" -a ! -f $SH/audmodlib-post-fs-data$EXT && $CP_NBPRFX $INSTALLER/common/audmodlib/audmodlib-post-fs-data.sh $SH/audmodlib-post-fs-data$EXT 0700
+    test "$MODID" != "audmodlib" && $CP_NBPRFX $INSTALLER/common/audmodlib/$MODID-post-fs-data.sh $SH/$MODID-post-fs-data$EXT 0700
+    test "$AUDMODLIB" != "$MODID" && add_to_info $SH/audmodlib-post-fs-data$EXT $AMLINFO
+    add_to_info $SH/$MODID-post-fs-data$EXT $INFO
+    test -f "$SH/$AUDMODLIB-props$EXT" && add_to_info $SH/$AUDMODLIB-props$EXT $AMLINFO
 
     # INSTALL SERVICE MODE SCRIPTS
-    $LATESTARTSERVICE && { test "$SYSOVER" == false && { $CP_NBPRFX $INSTALLER/common/service.sh $SH/$MODID-service$EXT 0700; add_to_info $SH/$MODID-service$EXT $INFO; } || $CP_NBPRFX $INSTALLER/common/service.sh $MODPATH/service.sh; }
+    $LATESTARTSERVICE && { $CP_NBPRFX $INSTALLER/common/service.sh $SH/$MODID-service$EXT 0700; add_to_info $SH/$MODID-service$EXT $INFO; }
 
     # INSTALL ROM BACKUP SCRIPT
     if [ -d $SYS/addon.d ]; then
       ui_print "   Installing addon.d backup script..."
 
       # RENAME AML ADDON.D SCRIPT
-      mv -f $INSTALLER/system/addon.d/amlid.sh $INSTALLER/system/addon.d/$AMLID.sh
+      mv -f $INSTALLER/system/addon.d/amlid.sh $INSTALLER/system/addon.d/audmodlib.sh
 
-      if [ "$MODID" != "$AMLID" ]; then  
+      if [ "$MODID" != "audmodlib" ]; then
 
         # RENAME ADDON.D SCRIPT
         mv -f $INSTALLER/system/addon.d/modid.sh $INSTALLER/system/addon.d/$MODID.sh
@@ -629,15 +612,13 @@ unity_mod_copy() {
         sed -i '/<PATCHES>/d' $INSTALLER/system/addon.d/$MODID.sh
         $CP_NBPRFX $INSTALLER/system/addon.d/$MODID.sh $SYS/addon.d/$MODID.sh 0755
       fi 
-      $CP_NBPRFX $INSTALLER/system/addon.d/$AMLID.sh $SYS/addon.d/$AMLID.sh 0755
+      $CP_NBPRFX $INSTALLER/system/addon.d/audmodlib.sh $SYS/addon.d/audmodlib.sh 0755
     else
       ui_print "   ! Addon.d not detected. Backup script not installed..."
     fi
-  elif [ "$SYSOVER" == false ]; then
-    ui_print "   Installing scripts for MagiskSU..."
+  else
+    test "$MODID" != "audmodlib" && $CP_NBPRFX $INSTALLER/common/audmodlib/$MODID-post-fs-data.sh $MODPATH/post-fs-data.sh 0755
   fi
-  
-  test "$MAGISK" == true -o "$SYSOVER" == true && { test "$MODID" != "$AMLID" && $CP_NBPRFX $INSTALLER/common/$AMLID/$MODID-post-fs-data.sh $MODPATH/post-fs-data.sh 0755; }
 
   # ADD BUILDPROPS
   ui_print "   Adding build.props..."
@@ -688,17 +669,17 @@ aml_mod() {
 	fi
   fi
   
-  if [ "$MAGISK" == true ] || [ "$SYSOVER" == true ]; then
-    test "$BOOTMODE" == "true" -a -f /magisk/$AMLID/post-fs-data.sh && $CP_NBPRFX /magisk/$AMLID/post-fs-data.sh $AMLPATH/post-fs-data.sh 0755
-    test "$BOOTMODE" == "true" -a -f /magisk/$AMLID/system.prop && $CP_NBPRFX /magisk/$AMLID/system.prop $AMLPATH/system.prop
-    test "$ACTION" == "Install" -a ! -f $MOUNTPATH/$AMLID/post-fs-data.sh && $CP_NBPRFX $INSTALLER/common/$AMLID/$AMLID-post-fs-data.sh $MOUNTPATH/$AMLID/post-fs-data.sh 0755
-    test "$BOOTMODE" == "true" -a "$ACTION" == "Uninstall" && { $CP_NBPRFX $INSTALLER/common/$AMLID/audmodlibmodule.prop $MOUNTPATH/$AMLID/module.prop; mktouch /magisk/$AMLID/update; mktouch /magisk/$AMLID/auto_mount; }
+  if [ "$MAGISK" == true ]; then
+    test "$BOOTMODE" == "true" -a -f /magisk/audmodlib/post-fs-data.sh && $CP_NBPRFX /magisk/audmodlib/post-fs-data.sh $AMLPATH/post-fs-data.sh 0755
+    test "$BOOTMODE" == "true" -a -f /magisk/audmodlib/system.prop && $CP_NBPRFX /magisk/audmodlib/system.prop $AMLPATH/system.prop
+    test "$ACTION" == "Install" -a ! -f $MOUNTPATH/audmodlib/post-fs-data.sh && $CP_NBPRFX $INSTALLER/common/audmodlib/audmodlib-post-fs-data.sh $MOUNTPATH/audmodlib/post-fs-data.sh 0755
+    test "$BOOTMODE" == "true" -a "$ACTION" == "Uninstall" && { $CP_NBPRFX $INSTALLER/common/audmodlib/audmodlibmodule.prop $MOUNTPATH/audmodlib/module.prop; mktouch /magisk/audmodlib/update; mktouch /magisk/audmodlib/auto_mount; }
   fi
 
   ui_print "   ! AML framework by ahrion & zackptg5 @ XDA !"
   ui_print " "
 
-  test "$ACTION" == "Install" -a "$MODID" != "$AMLID" && aml_mod_patch
+  test "$ACTION" == "Install" -a "$MODID" != "audmodlib" && aml_mod_patch
 }
 
 aml_mod_patch() {
@@ -762,7 +743,7 @@ unity_uninstall() {
   # REMOVE FILES
   if [ -f $INFO ]; then
     ui_print "   Removing/restoring files..."
-    test "$MODID" == "$AMLID" && sed -i "/.bak$/d" $INFO
+    test "$MODID" == "audmodlib" && sed -i "/.bak$/d" $INFO
     cat $INFO | while read LINE; do
       sys_rm_ch $LINE
     done
@@ -779,12 +760,12 @@ unity_uninstall() {
 	
   test "$MAGISK" == false && rm -f $SYS/addon.d/$MODID.sh
   
-  if [ "$MAGISK" == true ] || [ "$SYSOVER" == true ]; then
+  if [ "$MAGISK" == true ]; then
     rm -rf $MODPATH
     rm -rf /magisk/$MODID
-	test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && sed -i "/magisk\/$MODID/,/fi #$MODID/d" $AMLPATH/post-fs-data.sh
+	  test "$AUDMODLIB" != "$MODID" -a "$MODID" != "audmodlib" && sed -i "/magisk\/$MODID/,/fi #$MODID/d" $AMLPATH/post-fs-data.sh
     # Use magisk_merge for aml during bootmode uninstall
-    test "$BOOTMODE" == "true" -a "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && aml_mod
+    test "$BOOTMODE" == "true" -a "$AUDMODLIB" != "$MODID" -a "$MODID" != "audmodlib" && aml_mod
   fi
 
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
@@ -801,25 +782,25 @@ magisk_procedure_extras() {
   # HANDLE REPLACE FOLDERS
   for TARGET in $REPLACE; do
     mktouch $MODPATH$TARGET/.replace
-    test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && mktouch $AMLPATH$TARGET/.replace
+    test "$AUDMODLIB" != "$MODID" -a "$MODID" != "audmodlib" && mktouch $AMLPATH$TARGET/.replace
   done
 
   # AUTO MOUNT
   $AUTOMOUNT && touch $MODPATH/auto_mount
-  test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && { $AUTOMOUNT && touch $AMLPATH/auto_mount; }
+  test "$AUDMODLIB" != "$MODID" -a "$MODID" != "audmodlib" && { $AUTOMOUNT && touch $AMLPATH/auto_mount; }
 
   # REMOVE OLD AML FILES IF IN BOOTMODE
-  test "$BOOTMODE" == "true" -a "$AUDMODLIB" != "$MODID" && { rm -rf /magisk/$AMLID; mkdir -p /magisk/$AMLID; }
+  test "$BOOTMODE" == "true" -a "$AUDMODLIB" != "$MODID" && { rm -rf /magisk/audmodlib; mkdir -p /magisk/audmodlib; }
 
   # MODULE INFO
   $CP_NBPRFX $INSTALLER/module.prop $MODPATH/module.prop
-  test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && $CP_NBPRFX $INSTALLER/common/$AMLID/audmodlibmodule.prop $AMLPATH/module.prop
+  test "$AUDMODLIB" != "$MODID" -a "$MODID" != "audmodlib" && $CP_NBPRFX $INSTALLER/common/audmodlib/audmodlibmodule.prop $AMLPATH/module.prop
   if $BOOTMODE; then
     # UPDATE INFO FOR MAGISK MANAGER
     mktouch /magisk/$MODID/update
-    test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && mktouch /magisk/$AMLID/update
+    test "$AUDMODLIB" != "$MODID" -a "$MODID" != "audmodlib" && mktouch /magisk/audmodlib/update
     $CP_NBPRFX $INSTALLER/module.prop /magisk/$MODID/module.prop
-    test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && $CP_NBPRFX $INSTALLER/common/$AMLID/audmodlibmodule.prop /magisk/$AMLID/module.prop
+    test "$AUDMODLIB" != "$MODID" -a "$MODID" != "audmodlib" && $CP_NBPRFX $INSTALLER/common/audmodlib/audmodlibmodule.prop /magisk/audmodlib/module.prop
   fi
 
   # SERVICE MODE SCRIPTS
@@ -852,15 +833,15 @@ standard_procedure() {
     ui_print "- Completing install -"
     ui_print "   Setting permissions..."
     if [ "$MAGISK" == true ]; then
-      test "$AUDMODLIB" != "$MODID" -a "$MODID" != "$AMLID" && set_perm_recursive $AMLPATH 0 0 0755 0644
+      test "$AUDMODLIB" != "$MODID" -a "$MODID" != "audmodlib" && set_perm_recursive $AMLPATH 0 0 0755 0644
       set_permissions
     else
       set_permissions
       action_complete
-      test "$SYSOVER" == false && exit 0
+      exit 0
     fi
   else
-    test "$MAGISK" == false -a "$SYSOVER" == false && { ui_print " "; ui_print "   ! Magisk is not installed!"; ui_print "    ! Uninstalling on system!"; }
+    test "$MAGISK" == false && { ui_print " "; ui_print "   ! Magisk is not installed!"; ui_print "    ! Uninstalling on system!"; }
 
     # UNINSTALL
     unity_uninstall
@@ -872,7 +853,7 @@ standard_procedure() {
       standard_procedure
     else
       # COMPLETING UNINSTALL
-      [ "$MAGISK" == true ] || [ "$MAGISK" == true -a "$SYSOVER" == true ] && { ui_print " "; ui_print "- Completing uninstall -"; } || { action_complete; exit 0; }
+      test "$MAGISK" == true && { ui_print " "; ui_print "- Completing uninstall -"; } || { action_complete; exit 0; }
     fi
   fi
 }
@@ -930,7 +911,7 @@ MAGISKLOOP=`$MAGISKBIN/magisk --mountimg $IMG $MOUNTPATH`
 is_mounted $MOUNTPATH || abort "     $IMG mount failed..."
 
 # PREPARE (UN)INSTALL
-test "$SYSOVER" == true && { system_install; script_install_logic; } || magisk_install
+magisk_install
 standard_procedure
 
 ##########################################################################################
@@ -944,7 +925,7 @@ rmdir $MOUNTPATH
 image_size_check $IMG
 newSizeM=$((curUsedM / 32 * 32 + 64))
 if [ $curSizeM -gt $newSizeM ]; then
-  ui_print "   Shrinking $IMG to ${newSizeM}M"
+  ui_print "- Shrinking $IMG to ${newSizeM}M"
   $MAGISKBIN/magisk --resizeimg $IMG $newSizeM
 fi
 
