@@ -422,12 +422,11 @@ app_install_logic() {
   # Logic for correct application installation
   ########################################################################################
   if [ -d $SYS/priv-app ]; then
-    APPTXT="   Installing files for Lollipop & above..."
     OLDAPP=false
   else
-    APPTXT="   Installing files for Lollipop & below..."
     OLDAPP=true
   fi
+  APPTXT="   Installing files for $ARCH SDK $API device..."
 }
 
 script_install_logic() {
@@ -848,8 +847,6 @@ standard_procedure() {
 
     if $UPGRADE; then
       ACTION=Install
-      ui_print " "
-      ui_print "- Uninstall completed. Beginning install -"
       standard_procedure
     else
       # COMPLETING UNINSTALL
