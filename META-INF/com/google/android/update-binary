@@ -506,8 +506,7 @@ unity_mod_wipe() {
   ui_print "- Cleaning up previous installations -"
 
   # REMOVE PROPS
-  ui_print "   Removing obsolete props..."
-  unity_prop_remove $INPUT_PROPS_REM
+  test -s $INSTALLER/common/unity-props-remove.prop && { ui_print "   Removing obsolete props..."; unity_prop_remove $INSTALLER/common/unity-props-remove.prop; }
 
   # REMOVE FILES
   ui_print "   Removing files..."
@@ -608,11 +607,10 @@ unity_mod_copy() {
   fi
 
   # ADD BUILDPROPS
-  ui_print "   Adding build.props..."
-  unity_prop_copy $INPUT_PROPS
+  test -s $INSTALLER/common/unity-props.prop && { ui_print "   Adding build.props..."; unity_prop_copy $INSTALLER/common/unity-props.prop; }
   
   # INSTALL APPS & LIBRARIES
-  ui_print "Installing files for $ARCH SDK $API device..."
+  ui_print "   Installing files for $ARCH SDK $API device..."
   
   cat $TFILES | while read LINE; do
     $OLDAPP && LINE2=$(echo $LINE | sed 's|/app/.*/|/app/|') || LINE2=$(echo $LINE | sed 's|/app/|/priv-app/|')
