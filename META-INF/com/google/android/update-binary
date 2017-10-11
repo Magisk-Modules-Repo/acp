@@ -417,18 +417,6 @@ add_to_info() {
   test ! "$(grep "$1" $2)" && echo "$1" >> $2
 }
 
-app_install_logic() {
-  ########################################################################################
-  # Logic for correct application installation
-  ########################################################################################
-  if [ -d $SYS/priv-app ]; then
-    OLDAPP=false
-  else
-    OLDAPP=true
-  fi
-  APPTXT="   Installing files for $ARCH SDK $API device..."
-}
-
 script_install_logic() {
   ########################################################################################
   # Logic for correct system script installation
@@ -624,7 +612,7 @@ unity_mod_copy() {
   unity_prop_copy $INPUT_PROPS
   
   # INSTALL APPS & LIBRARIES
-  ui_print "$APPTXT"
+  ui_print "Installing files for $ARCH SDK $API device..."
   
   cat $TFILES | while read LINE; do
     $OLDAPP && LINE2=$(echo $LINE | sed 's|/app/.*/|/app/|') || LINE2=$(echo $LINE | sed 's|/app/|/priv-app/|')
@@ -808,7 +796,7 @@ magisk_procedure_extras() {
 
 standard_procedure() {
   # PREPARE (UN)INSTALL
-  app_install_logic
+  test -d $SYS/priv-app && OLDAPP=false || OLDAPP=true
 
   # DETERMINE IF MOD IS ALREADY INSTALLED. IF SAME VERSION IS INSTALLED, UNINSTALL
   mod_exist
@@ -847,6 +835,8 @@ standard_procedure() {
 
     if $UPGRADE; then
       ACTION=Install
+	  ui_print " "
+      ui_print  "! Uninstall completed, beginning install !"
       standard_procedure
     else
       # COMPLETING UNINSTALL
