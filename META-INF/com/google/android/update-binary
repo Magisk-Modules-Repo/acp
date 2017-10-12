@@ -695,9 +695,8 @@ $BOOTMODE && ! is_mounted /magisk && abort "! Magisk is not activated!"
 $BOOTMODE && boot_actions || recovery_actions
 
 # CHECK THE MIN MAGISK VERSION
-MIN_VER=`grep_prop minVer $INSTALLER/module.prop`
 MAGISK_VER_CODE=`grep_prop MAGISK_VER_CODE $MAGISKBIN/util_functions.sh`
-[ ! -z $MAGISK_VER_CODE -a $MAGISK_VER_CODE -ge $MIN_VER ] || require_new_magisk
+[ ! -z $MAGISK_VER_CODE -a $MAGISK_VER_CODE -ge 1400 ] || require_new_magisk
 
 # MOUNT MAGISK IMG
 request_zip_size_check "$ZIP"

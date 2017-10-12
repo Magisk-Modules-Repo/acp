@@ -7,4 +7,3 @@ description=deep_buffer Remover is a fix for when streaming apps (Spotify, Pando
 support=https://forum.xda-developers.com/apps/magisk/module-universal-deepbuffer-remover-t3577067
 donate=https://github.com/therealahrion/Universal-deep_buffer-Remover
 template=1410
-minVer=1400
