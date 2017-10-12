@@ -401,9 +401,6 @@ unity_mod_copy() {
     else
       ui_print "   ! Addon.d not detected. Backup script not installed..."
     fi
-  else
-    # INSTALL AML SCRIPT FOR MAGISK INSTALLS
-    $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh $AMLPATH/post-fs-data.sh 0755
   fi
 
   # ADD BUILDPROPS
@@ -453,7 +450,7 @@ aml_mod() {
   fi
   
   if [ "$MAGISK" == true ]; then
-    patch_script $AMLPATH/post-fs-data.sh
+    test ! -f $AMLPATH/post-fs-data.sh && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh $AMLPATH/post-fs-data.sh 0755; patch_script $AMLPATH/post-fs-data.sh; }
     test "$BOOTMODE" == "true" -a -f /magisk/audmodlib/post-fs-data.sh && $CP_NBPRFX /magisk/audmodlib/post-fs-data.sh $AMLPATH/post-fs-data.sh 0755
     test "$BOOTMODE" == "true" -a -f /magisk/audmodlib/system.prop && $CP_NBPRFX /magisk/audmodlib/system.prop $AMLPATH/system.prop
     test "$ACTION" == "Install" -a ! -f $MOUNTPATH/audmodlib/post-fs-data.sh && $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh $MOUNTPATH/audmodlib/post-fs-data.sh 0755
