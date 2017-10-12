@@ -8,7 +8,6 @@ XML_PRFX=<XML_PRFX>
 ROOT=<ROOT>
 SYS=<SYS>
 VEN=<VEN>
-LOG_FILE=/cache/audmodlib-service.log
 MODIDS=""
 
 # AUDIO EFFECTS
@@ -49,9 +48,9 @@ $SEINJECT --live "permissive $SOURCE audio_prop"
 # MOD PATCHES
 
 for MOD in ${MODIDS}; do
-  sed -i "/magisk\/${MOD}/,/fi #${MOD}/d" $AMLPATH/post-fs-data.sh
+  sed -i "/magisk\/${MOD}/,/fi #${MOD}/d" $SH/post-fs-data.sh
 done
 
-test -f "$LOG_FILE" && rm -f $LOG_FILE
+test -f /cache/audmodlib.log && rm -f /cache/audmodlib.log
 
-echo "Audmodlib service script ($SH/service$EXT) has run successfully $(date +"%m-%d-%Y %H:%M:%S")" | tee -a $LOG_FILE
+echo "Audmodlib script has run successfully $(date +"%m-%d-%Y %H:%M:%S")" | tee -a /cache/audmodlib.log
