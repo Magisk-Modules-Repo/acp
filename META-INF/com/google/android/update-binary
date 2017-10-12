@@ -129,6 +129,9 @@ MODPATH=$MOUNTPATH/$MODID
 AMLPATH=$MOUNTPATH/audmodlib
 test -z $AUDMODLIB && AUDMODLIB=$MODID || AUDMODLIB=unity
 
+# ALWAYS UNINSTALL IF ZIP IS AUDIO MODIFICATION LIBRARY
+test "$MODID" == "audmodlib" && ACTION=Uninstall
+
 # PROCESS FOLDERS AND FILES
 find $INSTALLER/system -type f -print > $INSTALLER/tfiles
 test "$(find $INSTALLER/data -type f -print)" != "$INSTALLER/data/placeholder" && find $INSTALLER/data -type f -print >> $INSTALLER/tfiles
@@ -138,16 +141,13 @@ cp $INSTALLER/tfiles $INSTALLER/tvfiles
 sed -i -e '\|/vendor/|d' $INSTALLER/tfiles 
 sed -i -e '\|/vendor/|!d' -e "s|/system/vendor||g" $INSTALLER/tvfiles
 
-# PREPARE MOD BOOT SCRIPTS
-if [ "$MODID" != "audmodlib" ]; then
-  # MAKE MODID SERVICE AND POST-FS-DATA SCRIPTS
-  cp -f $INSTALLER/common/unity-audmodlib/modid.sh $INSTALLER/common/unity-audmodlib/$MODID-post-fs-data.sh
-  mv -f $INSTALLER/common/unity-audmodlib/modid.sh $INSTALLER/common/unity-audmodlib/$MODID-service.sh
+# MAKE MODID SERVICE AND POST-FS-DATA SCRIPTS
+cp -f $INSTALLER/common/unity-audmodlib/modid.sh $INSTALLER/common/unity-audmodlib/$MODID-post-fs-data.sh
+mv -f $INSTALLER/common/unity-audmodlib/modid.sh $INSTALLER/common/unity-audmodlib/$MODID-service.sh
 
-  # INSERT MODID AND CUSTOM USER SCRIPT INTO MOD SCRIPT
-  sed -i -e "s/<MODID>/$MODID/" -e "/# CUSTOM USER SCRIPT/ r $INSTALLER/common/post-fs-data.sh" -e '/# CUSTOM USER SCRIPT/d' $INSTALLER/common/unity-audmodlib/$MODID-post-fs-data.sh
-  sed -i -e "s/<MODID>/$MODID/" -e "/# CUSTOM USER SCRIPT/ r $INSTALLER/common/service.sh" -e '/# CUSTOM USER SCRIPT/d' $INSTALLER/common/unity-audmodlib/$MODID-service.sh
-fi
+# INSERT MODID AND CUSTOM USER SCRIPT INTO MOD SCRIPT
+sed -i -e "s/<MODID>/$MODID/" -e "/# CUSTOM USER SCRIPT/ r $INSTALLER/common/post-fs-data.sh" -e '/# CUSTOM USER SCRIPT/d' $INSTALLER/common/unity-audmodlib/$MODID-post-fs-data.sh
+sed -i -e "s/<MODID>/$MODID/" -e "/# CUSTOM USER SCRIPT/ r $INSTALLER/common/service.sh" -e '/# CUSTOM USER SCRIPT/d' $INSTALLER/common/unity-audmodlib/$MODID-service.sh
 
 # XMLSTARLET - THANKS TO @JAMES34602 and @LAZERL0RD @XDADEVELOPERS FOR PORTING IT
 case $ABILONG in
@@ -343,20 +343,20 @@ unity_mod_copy() {
     fi
 
     # CREATE FILE CONTAINING LIST OF ALL INSTALLED MOD FILES
-    test "$MODID" != "audmodlib" -a ! -f $AMLINFO && touch $AMLINFO
+    test ! -f $AMLINFO && touch $AMLINFO
 
     # COPY MODULE.PROP FILE FOR VERSION CHECKING
     $CP_NBPRFX $INSTALLER/module.prop $MOD_VER
-    test "$AUDMODLIB" != "$MODID" -a "$MODID" != "audmodlib" && $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlibmodule.prop $SYS/etc/audmodlib-module.prop
+    test "$AUDMODLIB" != "$MODID" && $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlibmodule.prop $SYS/etc/audmodlib-module.prop
     add_to_info $MOD_VER $INFO
-    test "$AUDMODLIB" != "$MODID" -a "$MODID" != "audmodlib" && add_to_info $SYS/etc/audmodlib-module.prop $AMLINFO
+    test "$AUDMODLIB" != "$MODID" && add_to_info $SYS/etc/audmodlib-module.prop $AMLINFO
 
     # INSTALL AML SCRIPT FOR SYSTEM INSTALLS			 
     test "$AUDMODLIB" != "$MODID" -a ! -f $SH/audmodlib-post-fs-data$EXT && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh $SH/audmodlib-post-fs-data$EXT 0700; add_to_info $SH/audmodlib-post-fs-data$EXT $AMLINFO; }
     test -f "$SH/$AUDMODLIB-props$EXT" && add_to_info $SH/$AUDMODLIB-props$EXT $AMLINFO
 
     # INSTALL POST-FS-DATA MODE SCRIPTS
-    if $POSTFSDATA && [ "$MODID" != "audmodlib" ]; then
+    if $POSTFSDATA; then
 	  $CP_NBPRFX $INSTALLER/common/unity-audmodlib/$MODID-post-fs-data.sh $SH/$MODID-post-fs-data$EXT 0700
 	  add_to_info $SH/$MODID-post-fs-data$EXT $INFO
 	  test "$AUDMODLIB" == "$MODID" && patch_script $SH/$MODID-post-fs-data$EXT
@@ -376,30 +376,27 @@ unity_mod_copy() {
       # RENAME AML ADDON.D SCRIPT
       mv -f $INSTALLER/system/addon.d/amlid.sh $INSTALLER/system/addon.d/audmodlib.sh
 
-      if [ "$MODID" != "audmodlib" ]; then
+      # RENAME ADDON.D SCRIPT
+      mv -f $INSTALLER/system/addon.d/modid.sh $INSTALLER/system/addon.d/$MODID.sh
 
-        # RENAME ADDON.D SCRIPT
-        mv -f $INSTALLER/system/addon.d/modid.sh $INSTALLER/system/addon.d/$MODID.sh
-
-        # INSERT MODID INTO ADDON.D SCRIPT
-        sed -i "s/<MODID>/$MODID/" $INSTALLER/system/addon.d/$MODID.sh
-        if [ "$AUDMODLIB" != "$MODID" ]; then
-          # INSERT AML REMOVE, WIPE, AND REGULAR PATCHES INTO ADDON.D SCRIPT
-          sed -i 's/^/  /' $INSTALLER/common/aml-patches.sh; sed -i "/<PATCHES>/ r $INSTALLER/common/aml-patches-wipe.sh" $INSTALLER/system/addon.d/$MODID.sh
-		  test ! -z $XML_PRFX && { sed -i 's/^/  /' $INSTALLER/common/aml-xml-patches-wipe.sh; sed -i "\|<PATCHES>| r $INSTALLER/common/aml-xml-patches-wipe.sh" $INSTALLER/system/addon.d/$MODID.sh; }
-          test "$MAGISK" == false && sed -i 's/^/  /' $INSTALLER/common/aml-patches-remove.sh; sed -i "\|<PATCHES>| r $INSTALLER/common/aml-patches-remove.sh" $INSTALLER/system/addon.d/$MODID.sh
-		  test "$MAGISK" == false -a ! -z $XML_PRFX && { sed -i 's/^/  /' $INSTALLER/common/aml-xml-patches-remove.sh; sed -i "\|<PATCHES>| r $INSTALLER/common/aml-xml-patches-remove.sh" $INSTALLER/system/addon.d/$MODID.sh; }
-          sed -i 's/^/  /' $INSTALLER/common/aml-patches-wipe.sh; sed -i "\|<PATCHES>| r $INSTALLER/common/aml-patches.sh" $INSTALLER/system/addon.d/$MODID.sh
-		  test ! -z $XML_PRFX && { sed -i 's/^/  /' $INSTALLER/common/aml-xml-patches.sh; sed -i "\|<PATCHES>| r $INSTALLER/common/aml-xml-patches.sh" $INSTALLER/system/addon.d/$MODID.sh; }
-        fi
-        sed -i '/<PATCHES>/d' $INSTALLER/system/addon.d/$MODID.sh
-        $CP_NBPRFX $INSTALLER/system/addon.d/$MODID.sh $SYS/addon.d/$MODID.sh 0755
-		patch_script $SYS/addon.d/$MODID.sh
-      fi 
+      # INSERT MODID INTO ADDON.D SCRIPT
+      sed -i "s/<MODID>/$MODID/" $INSTALLER/system/addon.d/$MODID.sh
+      if [ "$AUDMODLIB" != "$MODID" ]; then
+        # INSERT AML REMOVE, WIPE, AND REGULAR PATCHES INTO ADDON.D SCRIPT
+        sed -i 's/^/  /' $INSTALLER/common/aml-patches.sh; sed -i "/<PATCHES>/ r $INSTALLER/common/aml-patches-wipe.sh" $INSTALLER/system/addon.d/$MODID.sh
+		test ! -z $XML_PRFX && { sed -i 's/^/  /' $INSTALLER/common/aml-xml-patches-wipe.sh; sed -i "\|<PATCHES>| r $INSTALLER/common/aml-xml-patches-wipe.sh" $INSTALLER/system/addon.d/$MODID.sh; }
+        test "$MAGISK" == false && sed -i 's/^/  /' $INSTALLER/common/aml-patches-remove.sh; sed -i "\|<PATCHES>| r $INSTALLER/common/aml-patches-remove.sh" $INSTALLER/system/addon.d/$MODID.sh
+		test "$MAGISK" == false -a ! -z $XML_PRFX && { sed -i 's/^/  /' $INSTALLER/common/aml-xml-patches-remove.sh; sed -i "\|<PATCHES>| r $INSTALLER/common/aml-xml-patches-remove.sh" $INSTALLER/system/addon.d/$MODID.sh; }
+        sed -i 's/^/  /' $INSTALLER/common/aml-patches-wipe.sh; sed -i "\|<PATCHES>| r $INSTALLER/common/aml-patches.sh" $INSTALLER/system/addon.d/$MODID.sh
+		test ! -z $XML_PRFX && { sed -i 's/^/  /' $INSTALLER/common/aml-xml-patches.sh; sed -i "\|<PATCHES>| r $INSTALLER/common/aml-xml-patches.sh" $INSTALLER/system/addon.d/$MODID.sh; }
+      fi
+      sed -i '/<PATCHES>/d' $INSTALLER/system/addon.d/$MODID.sh
+      $CP_NBPRFX $INSTALLER/system/addon.d/$MODID.sh $SYS/addon.d/$MODID.sh 0755
+      patch_script $SYS/addon.d/$MODID.sh
       $CP_NBPRFX $INSTALLER/system/addon.d/audmodlib.sh $SYS/addon.d/audmodlib.sh 0755
 	  patch_script $SYS/addon.d/audmodlib.sh
     else
-      ui_print "   ! Addon.d not detected. Backup script not installed..."
+      Zui_print "   ! Addon.d not detected. Backup script not installed..."
     fi
   fi
 
@@ -457,14 +454,14 @@ aml_mod() {
     test "$BOOTMODE" == "true" -a "$ACTION" == "Uninstall" && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlibmodule.prop $MOUNTPATH/audmodlib/module.prop; mktouch /magisk/audmodlib/update; mktouch /magisk/audmodlib/auto_mount; }
   else
     patch_script $SH/audmodlib-post-fs-data$EXT
-    $POSTFSDATA && { test "$MODID" != "audmodlib" && patch_script $SH/$MODID-post-fs-data$EXT; }
+    $POSTFSDATA && patch_script $SH/$MODID-post-fs-data$EXT
     $LATESTARTSERVICE && patch_script $SH/$MODID-service$EXT
   fi
 
   ui_print "   ! AML framework by ahrion & zackptg5 @ XDA !"
   ui_print " "
 
-  test "$ACTION" == "Install" -a "$MODID" != "audmodlib" && aml_mod_patch
+  test "$ACTION" == "Install" && aml_mod_patch
 }
 
 # AML FILE PATCHER
@@ -530,7 +527,6 @@ unity_uninstall() {
   # REMOVE FILES
   if [ -f $INFO ]; then
     ui_print "   Removing/restoring files..."
-    test "$MODID" == "audmodlib" && sed -i "/.bak$/d" $INFO
     cat $INFO | while read LINE; do
       sys_rm_ch $LINE
     done
@@ -550,9 +546,9 @@ unity_uninstall() {
   if [ "$MAGISK" == true ]; then
     rm -rf $MODPATH
     rm -rf /magisk/$MODID
-	  test "$AUDMODLIB" != "$MODID" -a "$MODID" != "audmodlib" && sed -i "/magisk\/$MODID/,/fi #$MODID/d" $AMLPATH/post-fs-data.sh
+	  test "$AUDMODLIB" != "$MODID" && sed -i "/magisk\/$MODID/,/fi #$MODID/d" $AMLPATH/post-fs-data.sh
     # Use magisk_merge for aml during bootmode uninstall
-    test "$BOOTMODE" == "true" -a "$AUDMODLIB" != "$MODID" -a "$MODID" != "audmodlib" && aml_mod
+    test "$BOOTMODE" == "true" -a "$AUDMODLIB" != "$MODID" && aml_mod
   fi
 
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
@@ -566,29 +562,29 @@ magisk_procedure_extras() {
   # HANDLE REPLACE FOLDERS
   for TARGET in $REPLACE; do
     mktouch $MODPATH$TARGET/.replace
-    test "$AUDMODLIB" != "$MODID" -a "$MODID" != "audmodlib" && mktouch $AMLPATH$TARGET/.replace
+    test "$AUDMODLIB" != "$MODID" && mktouch $AMLPATH$TARGET/.replace
   done
 
   # AUTO MOUNT
   $AUTOMOUNT && touch $MODPATH/auto_mount
-  test "$AUDMODLIB" != "$MODID" -a "$MODID" != "audmodlib" && { $AUTOMOUNT && touch $AMLPATH/auto_mount; }
+  test "$AUDMODLIB" != "$MODID" && { $AUTOMOUNT && touch $AMLPATH/auto_mount; }
 
   # REMOVE OLD AML FILES IF IN BOOTMODE
   test "$BOOTMODE" == "true" -a "$AUDMODLIB" != "$MODID" && { rm -rf /magisk/audmodlib; mkdir -p /magisk/audmodlib; }
 
   # MODULE INFO
   $CP_NBPRFX $INSTALLER/module.prop $MODPATH/module.prop
-  test "$AUDMODLIB" != "$MODID" -a "$MODID" != "audmodlib" && $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlibmodule.prop $AMLPATH/module.prop
+  test "$AUDMODLIB" != "$MODID" && $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlibmodule.prop $AMLPATH/module.prop
   if $BOOTMODE; then
     # UPDATE INFO FOR MAGISK MANAGER
     mktouch /magisk/$MODID/update
-    test "$AUDMODLIB" != "$MODID" -a "$MODID" != "audmodlib" && mktouch /magisk/audmodlib/update
+    test "$AUDMODLIB" != "$MODID" && mktouch /magisk/audmodlib/update
     $CP_NBPRFX $INSTALLER/module.prop /magisk/$MODID/module.prop
-    test "$AUDMODLIB" != "$MODID" -a "$MODID" != "audmodlib" && $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlibmodule.prop /magisk/audmodlib/module.prop
+    test "$AUDMODLIB" != "$MODID" && $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlibmodule.prop /magisk/audmodlib/module.prop
   fi
   
   # INSTALL POST-FS-DATA MODE SCRIPTS
-  $POSTFSDATA && { test "$MODID" != "audmodlib" && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/$MODID-post-fs-data.sh $MODPATH/post-fs-data.sh; patch_script $MODPATH/post-fs-data.sh; }; }
+  $POSTFSDATA && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/$MODID-post-fs-data.sh $MODPATH/post-fs-data.sh; patch_script $MODPATH/post-fs-data.sh; }
 
   # SERVICE MODE SCRIPTS
   $LATESTARTSERVICE && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/$MODID-service.sh $MODPATH/service.sh; patch_script $MODPATH/service.sh; }
@@ -634,7 +630,7 @@ standard_procedure() {
     ui_print "- Completing install -"
     ui_print "   Setting permissions..."
     if [ "$MAGISK" == true ]; then
-      test "$AUDMODLIB" != "$MODID" -a "$MODID" != "audmodlib" && set_perm_recursive $AMLPATH 0 0 0755 0644
+      test "$AUDMODLIB" != "$MODID" && set_perm_recursive $AMLPATH 0 0 0755 0644
       set_permissions
     else
       set_permissions
