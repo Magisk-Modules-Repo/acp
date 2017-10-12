@@ -78,8 +78,7 @@ for TMP in version name author; do
   for i in $(seq $(((41-$CHARS) / 2))); do
     SPACES="${SPACES} "
   done
-  test $(((41-$CHARS) % 2)) == 1 && SPACES2="${SPACES} " || SPACES2=$SPACES
-  sed -i "s/<$TMP>/$SPACES$NEW$SPACES2/" $INSTALLER/config.sh
+  test $(((41-$CHARS) % 2)) == 1 && sed -i "s/<$TMP>/$SPACES$NEW${SPACES} /" $INSTALLER/config.sh || sed -i "s/<$TMP>/$SPACES$NEW$SPACES/" $INSTALLER/config.sh
 done
 
 . $INSTALLER/config.sh
@@ -94,11 +93,11 @@ mount_partitions
 api_level_arch_detect
 
 # REMOVE COMMENTS FROM USER INPUT FILES AND ADD PROPER VARIABLES
-for FIL in $INSTALLER/common/unity-files-wipe.sh $INSTALLER/common/aml-patches.sh $INSTALLER/common/aml-xml-patches.sh $INSTALLER/common/aml-patches-remove.sh $INSTALLER/common/aml-xml-patches-remove.sh $INSTALLER/common/aml-patches-wipe.sh $INSTALLER/common/aml-xml-patches-wipe.sh $INSTALLER/common/unity-props.prop $INSTALLER/common/unity-props-remove.prop $INSTALLER/common/unity-uservariables.sh $INSTALLER/common/unity-customrules $INSTALLER/common/post-fs-data.sh $INSTALLER/common/service.sh; do
-  if [ "$FIL" == "$INSTALLER/common/unity-customrules" ]; then
+for TMP in $INSTALLER/common/unity-files-wipe.sh $INSTALLER/common/aml-patches.sh $INSTALLER/common/aml-xml-patches.sh $INSTALLER/common/aml-patches-remove.sh $INSTALLER/common/aml-xml-patches-remove.sh $INSTALLER/common/aml-patches-wipe.sh $INSTALLER/common/aml-xml-patches-wipe.sh $INSTALLER/common/unity-props.prop $INSTALLER/common/unity-props-remove.prop $INSTALLER/common/unity-uservariables.sh $INSTALLER/common/unity-customrules $INSTALLER/common/post-fs-data.sh $INSTALLER/common/service.sh; do
+  if [ "$TMP" == "$INSTALLER/common/unity-customrules" ]; then
     NUM=1; while true; do
-      if [ -f $FIL$NUM.sh ]; then
-        sed -i -e '/^#/ d' -e 's/$SYS\/$VEN/$VEN/g' $FIL$NUM.sh
+      if [ -f $TMP$NUM.sh ]; then
+        sed -i -e '/^#/ d' -e 's/$SYS\/$VEN/$VEN/g' $TMP$NUM.sh
       else
         NUMOFCUSTRULES=$(($NUM-1))
         break
@@ -106,10 +105,10 @@ for FIL in $INSTALLER/common/unity-files-wipe.sh $INSTALLER/common/aml-patches.s
       NUM=$((NUM+1))
     done
   else
-    if [ -f $FIL ]; then
-      sed -i -e '/^#/ d' -e 's/$SYS\/$VEN/$VEN/g' $FIL
+    if [ -f $TMP ]; then
+      sed -i -e '/^#/ d' -e 's/$SYS\/$VEN/$VEN/g' $TMP
     else
-      ui_print "   !$FIL missing!"
+      ui_print "   !$TMP missing!"
       ui_print "   !Copy it back to above and try again!"
       exit 1
     fi
@@ -199,7 +198,7 @@ magisk_install() {
 # SYSTEM ONLY VARIABLES
 system_install() {
   MAGISK=false
-  CP_PRFX="sys_cpbak_ch"
+  CP_PRFX="sys_cp_ch"
   WPAPP_PRFX="sys_wipe_ch"
   UNITY=""
   AMLPATH=""
@@ -220,31 +219,39 @@ script_install_logic() {
   if [ -d "/data/adb/su/bin" ]; then
     SH=/data/adb/su/su.d
 	SEINJECT=/data/adb/su/bin/supolicy
+	ROOTTYPE="BINDSBIN SuperSU"
   elif [ -d "/data/supersu_install/bin" ]; then
     SH=/data/supersu_install/su.d
 	SEINJECT=/data/supersu_install/bin/supolicy
+	ROOTTYPE="BINDSBIN SuperSU"
   elif [ -d "/cache/supersu_install/bin" ]; then
     SH=/cache/supersu_install/su.d
 	SEINJECT=/cache/supersu_install/bin/supolicy
+	ROOTTYPE="BINDSBIN SuperSU"
   elif [ "$supersuimg" ] || [ -d /su ]; then
     SH=/su/su.d
 	SEINJECT=/su/bin/supolicy
+	ROOTTYPE="systemless SuperSU"
   elif [ -d $SYS/su ] || [ -f $SYS/xbin/daemonsu ] || [ -f $SYS/xbin/sugote ]; then
     SH=$SYS/su.d
 	SEINJECT=$SYS/xbin/supolicy
+	ROOTTYPE="system SuperSU"
   elif [ -f $SYS/xbin/su ]; then
     if [ "$(grep "SuperSU" $SYS/xbin/su)" ]; then
       SH=$SYS/su.d
 	  SEINJECT=$SYS/xbin/supolicy
+	  ROOTTYPE="system SuperSU"
     else
       SH=$SYS/etc/init.d
 	  SEINJECT=/sepolicy
       EXT=""
+	  ROOTTYPE="LineageOS SU"
     fi
   else
     SH=$SYS/etc/init.d
 	SEINJECT=/sepolicy
     EXT=""
+	ROOTTYPE="other root or rootless"
   fi
 }
 
@@ -322,25 +329,7 @@ unity_mod_copy() {
 
   # INSTALL SCRIPTS
   if [ "$MAGISK" == false ]; then												  
-    if [ -d "/data/adb/su/bin" ]; then
-      ui_print "   Installing scripts for BINDSBIN SuperSU..."
-    elif [ -d "/data/supersu_install/bin" ]; then
-      ui_print "   Installing scripts for BINDSBIN SuperSU..."
-    elif [ -d "/cache/supersu_install/bin" ]; then
-      ui_print "   Installing scripts for BINDSBIN SuperSU..."
-    elif [ "$supersuimg" ] || [ -d /su ]; then
-      ui_print "   Installing scripts for systemless SuperSU..."
-    elif [ -d $SYS/su ] || [ -f $SYS/xbin/daemonsu ] || [ -f $SYS/xbin/sugote ]; then
-      ui_print "   Installing scripts for system SuperSU..."
-    elif [ -f $SYS/xbin/su ]; then
-      if [ "$(grep "SuperSU" $SYS/xbin/su)" ]; then
-        ui_print "   Installing scripts for system SuperSU..."
-      else
-        ui_print "   Installing scripts for LineageOS SU..."
-      fi
-    else
-      ui_print "   Installing scripts for other root or rootless..."
-    fi
+    ui_print "   Installing scripts for $ROOTTYPE..."
 
     # CREATE FILE CONTAINING LIST OF ALL INSTALLED MOD FILES
     test ! -f $AMLINFO && touch $AMLINFO
@@ -396,8 +385,10 @@ unity_mod_copy() {
       $CP_NBPRFX $INSTALLER/system/addon.d/audmodlib.sh $SYS/addon.d/audmodlib.sh 0755
 	  patch_script $SYS/addon.d/audmodlib.sh
     else
-      Zui_print "   ! Addon.d not detected. Backup script not installed..."
+      ui_print "   ! Addon.d not detected. Backup script not installed..."
     fi
+  else
+    ui_print "   Installing scripts for MagiskSU..."
   fi
 
   # ADD BUILDPROPS
@@ -408,7 +399,7 @@ unity_mod_copy() {
   
   cat $INSTALLER/tfiles | while read LINE; do
     $OLDAPP && LINE2=$(echo $LINE | sed 's|/app/.*/|/app/|') || LINE2=$(echo $LINE | sed 's|/app/|/priv-app/|')
-    test "$(echo "$LINE" | cut -c 1-6)" == "/data/" && sys_cpbak_ch $INSTALLER$LINE $LINE || $CP_PRFX $INSTALLER$LINE $UNITY$LINE2
+    test "$(echo "$LINE" | cut -c 1-6)" == "/data/" && sys_cp_ch $INSTALLER$LINE $LINE || $CP_PRFX $INSTALLER$LINE $UNITY$LINE2
   done
   cat $INSTALLER/tvfiles | while read LINE; do
     $CP_PRFX $INSTALLER/system/vendor$LINE $UNITY$VEN$LINE
@@ -546,7 +537,7 @@ unity_uninstall() {
   if [ "$MAGISK" == true ]; then
     rm -rf $MODPATH
     rm -rf /magisk/$MODID
-	  test "$AUDMODLIB" != "$MODID" && sed -i "/magisk\/$MODID/,/fi #$MODID/d" $AMLPATH/post-fs-data.sh
+    test "$AUDMODLIB" != "$MODID" && sed -i "/magisk\/$MODID/,/fi #$MODID/d" $AMLPATH/post-fs-data.sh
     # Use magisk_merge for aml during bootmode uninstall
     test "$BOOTMODE" == "true" -a "$AUDMODLIB" != "$MODID" && aml_mod
   fi
@@ -634,6 +625,7 @@ standard_procedure() {
       set_permissions
     else
       set_permissions
+	  ! $BOOTMODE && [ "$supersuimg" -o -d /su ] && umount /su
       action_complete
       exit 0
     fi
@@ -650,7 +642,14 @@ standard_procedure() {
       standard_procedure
     else
       # COMPLETING UNINSTALL
-      test "$MAGISK" == true && { ui_print " "; ui_print "- Completing uninstall -"; } || { action_complete; exit 0; }
+      if [ "$MAGISK" == true ]; then
+        ui_print " "
+		ui_print "- Completing uninstall -"
+	  else
+	    ! $BOOTMODE && [ "$supersuimg" -o -d /su ] && umount /su
+	    action_complete
+		exit 0
+	  fi
     fi
   fi
 }
@@ -727,9 +726,6 @@ if [ $curSizeM -gt $newSizeM ]; then
   ui_print "   Shrinking $IMG to ${newSizeM}M"
   $MAGISKBIN/magisk --resizeimg $IMG $newSizeM
 fi
-
-# UNMOUNT PARTITIONS
-! $BOOTMODE && { test "$supersuimg" -o -d /su && umount /su; }
 
 $BOOTMODE || recovery_cleanup
 rm -rf $TMPDIR
