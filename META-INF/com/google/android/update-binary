@@ -457,7 +457,7 @@ aml_mod() {
     test "$BOOTMODE" == "true" -a "$ACTION" == "Uninstall" && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlibmodule.prop $MOUNTPATH/audmodlib/module.prop; mktouch /magisk/audmodlib/update; mktouch /magisk/audmodlib/auto_mount; }
   else
     patch_script $SH/audmodlib-post-fs-data$EXT
-    $POSTFSDATA && { test "$MODID" != "audmodlib"&& patch_script $SH/$MODID-post-fs-data$EXT; }
+    $POSTFSDATA && { test "$MODID" != "audmodlib" && patch_script $SH/$MODID-post-fs-data$EXT; }
     $LATESTARTSERVICE && patch_script $SH/$MODID-service$EXT
   fi
 

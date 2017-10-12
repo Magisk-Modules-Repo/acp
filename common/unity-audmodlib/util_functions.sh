@@ -433,7 +433,7 @@ patch_script() {
   sed -i "s|<VEN>|$VEN|" $1
   sed -i "s|<SYS>|$REALSYS|" $1
   test ! -z $ROOT && sed -i "s|<ROOT>|$ROOT|" $1 || sed -i "/<ROOT>/d" $1
-  test ! -z $XML_PRFX && sed -i "s|<XML_PRFX>|$XML_PATH|" $1 || sed -i "/<XML_PRFX>/d" $1
+  test ! -z $XML_PATH && sed -i "s|<XML_PRFX>|$XML_PATH|" $1 || sed -i "/<XML_PRFX>/d" $1
   if [ "$MAGISK" == false ]; then
     sed -i "s|<EXT>|$EXT|" $1
 	sed -i "s|<SEINJECT>|$SEINJECT|" $1
