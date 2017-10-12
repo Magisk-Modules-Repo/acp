@@ -2,54 +2,11 @@
 #
 . /tmp/backuptool.functions
 MODID=<MODID>
-AMLID=audmodlib
+XML_PRFX=<XML_PRFX>
+ROOT=<ROOT>
+SYS=<SYS>
+VEN=<VEN>
 
-# DETERMINE IF PIXEL (A/B OTA) DEVICE
-ABDeviceCheck=$(cat /proc/cmdline | grep slot_suffix | wc -l)
-if [ "$ABDeviceCheck" -gt 0 ]; then
-  isABDevice=true
-  if [ -d "/system_root" ]; then
-    ROOT=/system_root
-    SYS=$ROOT/system
-  else
-    ROOT=""
-    SYS=$ROOT/system/system
-  fi
-else
-  isABDevice=false
-  ROOT=""
-  SYS=$ROOT/system
-fi
-test -L /system/vendor && VEN=/vendor || VEN=/system/vendor
-
-# DETERMINE SCRIPTS LOCATIONS
-if [ -d "/data/adb/su/bin" ]; then
-  SH=/data/adb/su/su.d
-elif [ -d "/data/supersu_install/bin" ]; then
-  SH=/data/supersu_install/su.d
-elif [ -d "/cache/supersu_install/bin" ]; then
-  SH=/cache/supersu_install/su.d
-elif [ "$supersuimg" ] || [ -d /su ]; then
-  SH=/su/su.d
-elif [ -d $SYS/su ] || [ -f $SYS/xbin/daemonsu ] || [ -f $SYS/xbin/sugote ]; then
-  SH=$SYS/su.d
-elif [ -f $SYS/xbin/su ]; then
-  if [ "$(grep "SuperSU" $SYS/xbin/su)" ]; then
-    SH=$SYS/su.d
-  else
-    SH=$SYS/etc/init.d
-  fi
-else
-  SH=$SYS/etc/init.d
-fi
-
-### FILE LOCATIONS ###
-# XMLSTARLET
-if [ "${SH%/*}" != "$SYS/etc" ]; then
-  XML_PRFX=$AMLPATH${SH%/*}/xbin/xmlstarlet
-else
-  XML_PRFX=$AMLPATH$SYS/xbin/xmlstarlet
-fi
 # AUDIO EFFECTS
 CONFIG_FILE=$SYS/etc/audio_effects.conf
 HTC_CONFIG_FILE=$SYS/etc/htc_audio_effects.conf

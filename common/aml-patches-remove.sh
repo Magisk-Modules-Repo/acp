@@ -1,9 +1,3 @@
-# v DO NOT MODIFY v
-# See instructions file for predefined variables
-# Add patches (such as audio config) here
-# NOTE: Destination variable must have '$AMLPATH' in front of it
-# Patch Ex: sed -i '/v4a_standard_fx {/,/}/d' $AMLPATH$CONFIG_FILE
-# ^ DO NOT MODIFY ^
 if [ -f $V_AUD_OUT_POL ] && [ -f $AUD_POL_CONF ]; then
   for BUFFER in "Speaker" "Wired Headset" "Wired Headphones"; do
     NUM=$(cat -n $AMLPATH$AUD_POL_CONF | sed -n "/$BUFFER/ {n;n;/deep_buffer,/p}" | sed 's/<!--.*//')

@@ -2,24 +2,10 @@
 #
 . /tmp/backuptool.functions
 MODID=audmodlib
-
-# DETERMINE IF PIXEL (A/B OTA) DEVICE
-ABDeviceCheck=$(cat /proc/cmdline | grep slot_suffix | wc -l)
-if [ "$ABDeviceCheck" -gt 0 ]; then
-  isABDevice=true
-  if [ -d "/system_root" ]; then
-    ROOT=/system_root
-    SYS=$ROOT/system
-  else
-    ROOT=""
-    SYS=$ROOT/system/system
-  fi
-else
-  isABDevice=false
-  ROOT=""
-  SYS=$ROOT/system
-fi
-test -L /system/vendor && VEN=/vendor || VEN=/system/vendor
+XML_PRFX=<XML_PRFX>
+ROOT=<ROOT>
+SYS=<SYS>
+VEN=<VEN>
 
 ### FILE LOCATIONS ###
 # AUDIO EFFECTS
