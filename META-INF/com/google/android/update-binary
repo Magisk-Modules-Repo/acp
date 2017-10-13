@@ -524,7 +524,7 @@ unity_uninstall() {
     done
     rm -f $INFO
   else
-    test "$MAGISK" == false && ui_print "   ! Mod not detected. Removing scripts..."
+    test "$MAGISK" == false && ui_print "   ! Mod not detected. Removing scripts..." || ui_print "   Removing/restoring files..."
   fi
   
   if [ "$AUDMODLIB" != "$MODID" ]; then
