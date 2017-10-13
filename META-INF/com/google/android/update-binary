@@ -409,6 +409,7 @@ unity_mod_copy() {
     test "$(grep "TIMEOFEXEC=2" $INSTALLER/common/unity-customrules$NUM.sh)" && source $INSTALLER/common/unity-customrules$NUM.sh
     NUM=$((NUM+1))
   done
+  test "$MAGISK" == true -a ! -s $INFO && rm -f $INFO
 }
 
 # AUDIO MODIFICATION LIBRARY
@@ -523,7 +524,7 @@ unity_uninstall() {
     done
     rm -f $INFO
   else
-    ui_print "   ! Mod not detected. Removing scripts..."
+    test "$MAGISK" == false && ui_print "   ! Mod not detected. Removing scripts..."
   fi
   
   if [ "$AUDMODLIB" != "$MODID" ]; then
