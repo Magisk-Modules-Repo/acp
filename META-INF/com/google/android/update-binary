@@ -633,6 +633,8 @@ standard_procedure() {
     ui_print "   Setting permissions..."
     if [ "$MAGISK" == true ]; then
       test "$AUDMODLIB" != "$MODID" && set_perm_recursive $AMLPATH 0 0 0755 0644
+	  set_perm $XML_PATH 0 0 0755
+	  set_perm_recursive $MODPATH 0 0 0755 0644
       set_permissions
     else
       set_permissions
