@@ -9,6 +9,7 @@ ROOT=<ROOT>
 SYS=<SYS>
 VEN=<VEN>
 MODIDS=""
+test -d $SYS/priv-app && SOURCE=priv_app || SOURCE=system_app
 
 # AUDIO EFFECTS
 CONFIG_FILE=$SYS/etc/audio_effects.conf
@@ -34,16 +35,26 @@ STRIGG_MIX_PATH=$SYS/sound_trigger_mixer_paths.xml
 STRIGG_MIX_PATH_9330=$SYS/sound_trigger_mixer_paths_wcd9330.xml
 V_MIX_PATH=$VEN/etc/mixer_paths.xml
 
-test -d $SYS/priv-app && SOURCE=priv_app || SOURCE=system_app
+# SEPOLICY SETTING FUNCTION
+set_sepolicy() {
+  if [ $(basename $SEINJECT) == "sepolicy-inject" ]; then
+	test -z $4 && $SEINJECT -Z $1 $2 -l || $SEINJECT -s $1 -t $2 -c $3 -p $4 -l
+  elif [ ! -z $SEINJECT ]; then
+    test -z $3 && $SEINJECT --live "permissive $1 $2" || $SEINJECT --live "allow $1 $2 $3 { $(echo $4 | sed 's/,/ /g') }" 
+  fi
+}
 
-$SEINJECT --live "allow audioserver audioserver_tmpfs file { read write execute }" \
-"allow audioserver system_file file { execmod }" \
-"allow mediaserver mediaserver_tmpfs file { read write execute }" \
-"allow mediaserver system_file file { execmod }" \
-"allow $SOURCE init unix_stream_socket { connectto }" \
-"allow $SOURCE property_socket sock_file { getattr open read write execute }"
-
-$SEINJECT --live "permissive $SOURCE audio_prop"
+if [ -z $SEINJECT ]; then
+  setenforce 0
+else
+  set_sepolicy audioserver audioserver_tmpfs file read,write,execute
+  set_sepolicy audioserver system_file file execmod
+  set_sepolicy mediaserver mediaserver_tmpfs file read,write,execute
+  set_sepolicy mediaserver system_file file execmod
+  set_sepolicy $SOURCE init unix_stream_socket connectto
+  set_sepolicy $SOURCE property_socket sock_file getattr,open,read,write,execute
+  set_sepolicy $SOURCE audio_prop
+fi
 
 # MOD PATCHES
 

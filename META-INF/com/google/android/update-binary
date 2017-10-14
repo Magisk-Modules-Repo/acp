@@ -243,13 +243,13 @@ script_install_logic() {
 	  ROOTTYPE="system SuperSU"
     else
       SH=$SYS/etc/init.d
-	  SEINJECT=/sepolicy
+	  SEINJECT=$SYS/xbin/sepolicy-inject
       EXT=""
 	  ROOTTYPE="LineageOS SU"
     fi
   else
     SH=$SYS/etc/init.d
-	SEINJECT=/sepolicy
+	SEINJECT=$SYS/xbin/sepolicy-inject
     EXT=""
 	ROOTTYPE="other root or rootless"
   fi
@@ -340,10 +340,6 @@ unity_mod_copy() {
     add_to_info $MOD_VER $INFO
     test "$AUDMODLIB" != "$MODID" && add_to_info $SYS/etc/audmodlib-module.prop $AMLINFO
 
-    # INSTALL AML SCRIPT FOR SYSTEM INSTALLS			 
-    test "$AUDMODLIB" != "$MODID" -a ! -f $SH/audmodlib-post-fs-data$EXT && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh $SH/audmodlib-post-fs-data$EXT 0700; add_to_info $SH/audmodlib-post-fs-data$EXT $AMLINFO; }
-    test -f "$SH/$AUDMODLIB-props$EXT" && add_to_info $SH/$AUDMODLIB-props$EXT $AMLINFO
-
     # INSTALL POST-FS-DATA MODE SCRIPTS
     if $POSTFSDATA; then
 	  $CP_NBPRFX $INSTALLER/common/unity-audmodlib/$MODID-post-fs-data.sh $SH/$MODID-post-fs-data$EXT 0700
@@ -393,6 +389,7 @@ unity_mod_copy() {
 
   # ADD BUILDPROPS
   test -s $INSTALLER/common/unity-props.prop && { ui_print "   Adding build.props..."; unity_prop_copy $INSTALLER/common/unity-props.prop; }
+  test -f "$SH/$AUDMODLIB-props$EXT" && add_to_info $SH/$AUDMODLIB-props$EXT $AMLINFO
   
   # INSTALL APPS & LIBRARIES
   ui_print "   Installing files for $ARCH SDK $API device..."
@@ -416,7 +413,7 @@ unity_mod_copy() {
 aml_mod() {
   ### CREATE AUDIO MODIFICATION LIBRARY ###
   ui_print " "
-  test "$ACTION" == "Install" && ui_print "- Installing Audio Modification Library -" || ui_print "- Removing $MODID From Audio Modification Library -"
+  test "$ACTION" == "Install" && ui_print "- Installing Audio Modification Library -" || ui_print "- Removing $MODID from Audio Modification Library -"
 
   for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
     if [ -f $CFG ]; then
@@ -445,13 +442,25 @@ aml_mod() {
     test "$ACTION" == "Install" -a ! -f $MOUNTPATH/audmodlib/post-fs-data.sh && $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh $MOUNTPATH/audmodlib/post-fs-data.sh 0755
     test "$BOOTMODE" == "true" -a "$ACTION" == "Uninstall" && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlibmodule.prop $MOUNTPATH/audmodlib/module.prop; mktouch /magisk/audmodlib/update; mktouch /magisk/audmodlib/auto_mount; }
   else
+    if [ "$EXT" == "" ]; then
+      case $ABILONG in
+	    arm64*) $CP_PRFX $INSTALLER/common/unity-audmodlib/setools-android/arm64-v8a/sepolicy-inject $SEINJECT 0755;;
+	    armeabi-v7a*) $CP_PRFX $INSTALLER/common/unity-audmodlib/setools-android/armeabi-v7a/sepolicy-inject $SEINJECT 0755;;
+	    arm*) $CP_PRFX $INSTALLER/common/unity-audmodlib/setools-android/armeabi/sepolicy-inject $SEINJECT 0755;;
+	    x86_64*) $CP_PRFX $INSTALLER/common/unity-audmodlib/setools-android/x86_64/sepolicy-inject $SEINJECT 0755;;
+	    x86*) $CP_PRFX $INSTALLER/common/unity-audmodlib/setools-android/x86/sepolicy-inject $SEINJECT 0755;;
+	    mips64*) $CP_PRFX $INSTALLER/common/unity-audmodlib/setools-android/mips64/sepolicy-inject $SEINJECT 0755;;
+	    mips*) $CP_PRFX $INSTALLER/common/unity-audmodlib/setools-android/mips/sepolicy-inject $SEINJECT 0755;;
+	    *) ui_print "   ! CPU Type not supported for sepolicy patching! Will set to permissive!"; SEINJECT="";;
+	  esac
+    fi  
+    test ! -f $SH/audmodlib-post-fs-data$EXT && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh $SH/audmodlib-post-fs-data$EXT 0700; add_to_info $SH/audmodlib-post-fs-data$EXT $AMLINFO; }
     patch_script $SH/audmodlib-post-fs-data$EXT
     $POSTFSDATA && patch_script $SH/$MODID-post-fs-data$EXT
     $LATESTARTSERVICE && patch_script $SH/$MODID-service$EXT
   fi
 
   ui_print "   ! AML framework by ahrion & zackptg5 @ XDA !"
-  ui_print " "
 
   test "$ACTION" == "Install" && aml_mod_patch
 }
@@ -459,6 +468,7 @@ aml_mod() {
 # AML FILE PATCHER
 aml_mod_patch() {
   #### PATCHING FILES ####
+  ui_print " "
   ui_print "- Patching necessary files -"
 
   # PATCH AUDMODLIB-SERVICES SCRIPT

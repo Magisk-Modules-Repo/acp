@@ -9,6 +9,7 @@ XML_PRFX=<XML_PRFX>
 ROOT=<ROOT>
 SYS=<SYS>
 VEN=<VEN>
+test -d $SYS/priv-app && SOURCE=priv_app || SOURCE=system_app
 
 # AUDIO EFFECTS
 CONFIG_FILE=$SYS/etc/audio_effects.conf
@@ -33,7 +34,14 @@ MIX_PATH_TASH=$SYS/etc/mixer_paths_tasha.xml
 STRIGG_MIX_PATH=$SYS/sound_trigger_mixer_paths.xml
 STRIGG_MIX_PATH_9330=$SYS/sound_trigger_mixer_paths_wcd9330.xml
 V_MIX_PATH=$VEN/etc/mixer_paths.xml
- 
-test -d $SYS/priv-app && SOURCE=priv_app || SOURCE=system_app
+
+# SEPOLICY SETTING FUNCTION
+set_sepolicy() {
+  if [ $(basename $SEINJECT) == "sepolicy-inject" ]; then
+	test -z $4 && $SEINJECT -Z $1 $2 -l || $SEINJECT -s $1 -t $2 -c $3 -p $4 -l
+  elif [ ! -z $SEINJECT ]; then
+    test -z $3 && $SEINJECT --live "permissive $1 $2" || $SEINJECT --live "allow $1 $2 $3 { $(echo $4 | sed 's/,/ /g') }" 
+  fi
+}
 
 # CUSTOM USER SCRIPT
