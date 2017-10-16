@@ -59,6 +59,7 @@ case "$1" in
     # Stub
   ;;
   post-restore)
-    # Stub
+    test -f $SYS/bin/sysinit && rm -f $SYS/bin/sysinit
+    test -f $SYS/xbin/sysinit && rm -f $SYS/xbin/sysinit
   ;;
 esac

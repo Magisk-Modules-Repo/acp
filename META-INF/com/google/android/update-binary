@@ -451,8 +451,21 @@ aml_mod() {
 	    x86*) $CP_PRFX $INSTALLER/common/unity-audmodlib/setools-android/x86/sepolicy-inject $SEINJECT 0755;;
 	    mips64*) $CP_PRFX $INSTALLER/common/unity-audmodlib/setools-android/mips64/sepolicy-inject $SEINJECT 0755;;
 	    mips*) $CP_PRFX $INSTALLER/common/unity-audmodlib/setools-android/mips/sepolicy-inject $SEINJECT 0755;;
-	    *) ui_print "   ! CPU Type not supported for sepolicy patching! Will set to permissive!"; SEINJECT="";;
+	    *) ui_print "   ! CPU Type not supported for sepolicy patching !"; ui_print "   ! Patch your kernel for init.d support !"; SEINJECT="";;
 	  esac
+	  if [ ! -f $SH/audmodlib-post-fs-data$EXT ] && [ "$SEINJECT" != "" ]; then
+	    # PATCH KERNEL WITH AK2
+		BOOTPATCHED=true
+	    ui_print "   Patching boot image for proper init.d support"
+	    ui_print " "
+	    ui_print "   ! Using AnyKernel2 by osm0sis @ xda-developers !"
+	    ui_print " "
+	    ak2_launch
+	    ui_print "    Patching completed"
+	    ui_print " "
+      else
+	    BOOTPATCHED=false
+	  fi
     fi  
     test ! -f $SH/audmodlib-post-fs-data$EXT && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh $SH/audmodlib-post-fs-data$EXT 0700; add_to_info $SH/audmodlib-post-fs-data$EXT $AMLINFO; }
     patch_script $SH/audmodlib-post-fs-data$EXT
@@ -527,6 +540,19 @@ unity_uninstall() {
   unity_prop_remove $INSTALLER/common/unity-props.prop
 
   # REMOVE FILES
+  if [ "$MAGISK" == false ] && [ "$MODID" == "audmodlib" ]; then
+    if $(grep_prop BOOTPATCHED $SH/audmodlib-post-fs-data$EXT) && [ "$SEINJECT" != "" ]; then
+	  # RESTORE KERNEL WITH AK2
+	  ui_print "   Restoring boot image..."
+	  ui_print " "
+	  ui_print "   ! Using AnyKernel2 by osm0sis @ xda-developers !"
+	  ui_print " "
+	  ak2_launch
+	  ui_print "    Boot image restored"
+	  ui_print " "
+    fi
+  fi
+  
   if [ -f $INFO ]; then
     ui_print "   Removing/restoring files..."
     cat $INFO | while read LINE; do

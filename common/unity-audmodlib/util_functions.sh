@@ -298,11 +298,13 @@ patch_script() {
 	test ! -z $SEINJECT && sed -i "s|<SEINJECT>|$SEINJECT|" $1 || sed -i "/<SEINJECT>/d" $1
 	sed -i "/<AMLPATH>/d" $1
 	sed -i "s|$MOUNTPATH||g" $1
+	sed -i "s|<BOOTPATCHED>|$BOOTPATCHED|" $1
   else
 	sed -i "s|<EXT>|.sh|" $1
 	sed -i "s|<SEINJECT>|magiskpolicy|" $1
 	sed -i "s|<AMLPATH>|$AMLPATH|" $1
 	sed -i "s|$MOUNTPATH|/magisk|g" $1
+	sed -i "/<BOOTPATCHED>/d" $1
   fi
 }
 
@@ -312,4 +314,26 @@ add_to_info() {
 
 custom_app_install() {
   $OLDAPP && $CP_PRFX $INSTALLER/custom/$1/$1.apk $UNITY$SYS/app/$1.apk || $CP_PRFX $INSTALLER/custom/$1/$1.apk $UNITY$SYS/priv-app/$1/$1.apk
+}
+
+ak2_launch() {
+  sed -i -e "s|<INSTALLER>|$INSTALLER|" -e "s|<SEINJECT>|$SEINJECT|" -e "s|<BOOTMODE>|$BOOTMODE|" -e "s|<ACTION>|$ACTION|" $INSTALLER/common/unity-audmodlib/ak2/anykernel.sh
+  sed -i "s|<OUTFD>|$OUTFD|" $INSTALLER/common/unity-audmodlib/ak2/tools/ak2-core.sh
+  test -f $SYS/bin/sysinit && add_to_info $SYS/bin/sysinit~ $AMLINFO
+  test -f $SYS/xbin/sysinit && add_to_info $SYS/xbin/sysinit~ $AMLINFO
+  AK2=$INSTALLER/common/unity-audmodlib/ak2
+  bb=$AK2/tools/busybox
+  mkdir -p $AK2/bin
+  chmod 755 $bb
+  $bb chmod -R 755 $AK2/tools $AK2/bin
+  for i in $($bb --list); do
+    $bb ln -s $bb $AK2/bin/$i
+  done;
+  if [ $? != 0 -o -z "$(ls $AK2/bin)" ]; then
+    abort "! Recovery busybox setup failed. Aborting !"
+  fi;
+  PATH="$AK2/bin:$PATH" $bb ash $AK2/anykernel.sh $2
+  if [ $? != "0" ]; then
+    abort "! Unable to call anykernel script. Aborting !"
+  fi
 }
