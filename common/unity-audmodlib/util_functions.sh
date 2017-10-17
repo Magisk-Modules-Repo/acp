@@ -307,10 +307,9 @@ custom_app_install() {
 }
 
 ak2_launch() {
-  sed -i -e "s|<INSTALLER>|$INSTALLER|" -e "s|<SEINJECT>|$SEINJECT|" -e "s|<BOOTMODE>|$BOOTMODE|" -e "s|<ACTION>|$ACTION|" $INSTALLER/common/unity-audmodlib/ak2/anykernel.sh
+  sed -i -e "s|<INSTALLER>|$INSTALLER|" -e "s|<SEINJECT>|$SEINJECT|" -e "s|<BOOTMODE>|$BOOTMODE|" -e "s|<ACTION>|$ACTION|" -e "s|<ABILONG>|$ABILONG|" $INSTALLER/common/unity-audmodlib/ak2/anykernel.sh
   sed -i "s|<OUTFD>|$OUTFD|" $INSTALLER/common/unity-audmodlib/ak2/tools/ak2-core.sh
-  test -f $SYS/bin/sysinit && add_to_info $SYS/bin/sysinit~ $AMLINFO
-  test -f $SYS/xbin/sysinit && add_to_info $SYS/xbin/sysinit~ $AMLINFO
+  patch_script $INSTALLER/system/addon.d/unity-initd.sh
   AK2=$INSTALLER/common/unity-audmodlib/ak2
   bb=$AK2/tools/busybox
   mkdir -p $AK2/bin
@@ -318,10 +317,10 @@ ak2_launch() {
   $bb chmod -R 755 $AK2/tools $AK2/bin
   for i in $($bb --list); do
     $bb ln -s $bb $AK2/bin/$i
-  done;
+  done
   if [ $? != 0 -o -z "$(ls $AK2/bin)" ]; then
     abort "! Recovery busybox setup failed. Aborting !"
-  fi;
+  fi
   PATH="$AK2/bin:$PATH" $bb ash $AK2/anykernel.sh $2
   if [ $? != "0" ]; then
     abort "! Unable to call anykernel script. Aborting !"

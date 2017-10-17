@@ -245,13 +245,13 @@ script_install_logic() {
 	  ROOTTYPE="system SuperSU"
     else
       SH=$SYS/etc/init.d
-	  SEINJECT=$SYS/xbin/sepolicy-inject
+	  SEINJECT=sbin/sepolicy-inject
       EXT=""
 	  ROOTTYPE="LineageOS SU"
     fi
   else
     SH=$SYS/etc/init.d
-	SEINJECT=$SYS/xbin/sepolicy-inject
+	SEINJECT=sbin/sepolicy-inject
     EXT=""
 	ROOTTYPE="other root or rootless"
   fi
@@ -332,6 +332,18 @@ unity_mod_copy() {
   # INSTALL SCRIPTS
   if [ "$MAGISK" == false ]; then												  
     ui_print "   Installing scripts for $ROOTTYPE..."
+	
+	# PATCH BOOT IMG FOR INIT.D SUPPORT IF NEEDED
+	if [ "$EXT" == "" ] && [ ! -f $SYS/etc/unity-initd ]; then
+	  # PATCH KERNEL WITH AK2
+	  ui_print "   Patching boot image for proper init.d support"
+	  ui_print " "
+	  ui_print "   ! Using AnyKernel2 by osm0sis @ xda-developers !"
+	  ui_print " "
+	  ak2_launch
+	  ui_print "    Patching completed"
+	  ui_print " "
+	fi
 
     # CREATE FILE CONTAINING LIST OF ALL INSTALLED MOD FILES
     test ! -f $AMLINFO && touch $AMLINFO
@@ -444,31 +456,6 @@ aml_mod() {
     test "$ACTION" == "Install" -a ! -f $MOUNTPATH/audmodlib/post-fs-data.sh && $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh $MOUNTPATH/audmodlib/post-fs-data.sh 0755
     test "$BOOTMODE" == "true" -a "$ACTION" == "Uninstall" && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlibmodule.prop $MOUNTPATH/audmodlib/module.prop; mktouch /magisk/audmodlib/update; mktouch /magisk/audmodlib/auto_mount; }
   else
-    if [ "$EXT" == "" ]; then
-      case $ABILONG in
-	    arm64*) $CP_PRFX $INSTALLER/common/unity-audmodlib/setools-android/arm64-v8a/sepolicy-inject $SEINJECT 0755;;
-	    armeabi-v7a*) $CP_PRFX $INSTALLER/common/unity-audmodlib/setools-android/armeabi-v7a/sepolicy-inject $SEINJECT 0755;;
-	    arm*) $CP_PRFX $INSTALLER/common/unity-audmodlib/setools-android/armeabi/sepolicy-inject $SEINJECT 0755;;
-	    x86_64*) $CP_PRFX $INSTALLER/common/unity-audmodlib/setools-android/x86_64/sepolicy-inject $SEINJECT 0755;;
-	    x86*) $CP_PRFX $INSTALLER/common/unity-audmodlib/setools-android/x86/sepolicy-inject $SEINJECT 0755;;
-	    mips64*) $CP_PRFX $INSTALLER/common/unity-audmodlib/setools-android/mips64/sepolicy-inject $SEINJECT 0755;;
-	    mips*) $CP_PRFX $INSTALLER/common/unity-audmodlib/setools-android/mips/sepolicy-inject $SEINJECT 0755;;
-	    *) ui_print "   ! CPU Type not supported for sepolicy patching !"; ui_print "   ! Patch your kernel for init.d support !"; SEINJECT="";;
-	  esac
-	  if [ ! -f $SH/audmodlib-post-fs-data$EXT ] && [ "$SEINJECT" != "" ]; then
-	    # PATCH KERNEL WITH AK2
-		BOOTPATCHED=true
-	    ui_print "   Patching boot image for proper init.d support"
-	    ui_print " "
-	    ui_print "   ! Using AnyKernel2 by osm0sis @ xda-developers !"
-	    ui_print " "
-	    ak2_launch
-	    ui_print "    Patching completed"
-	    ui_print " "
-      else
-	    BOOTPATCHED=false
-	  fi
-    fi  
     test ! -f $SH/audmodlib-post-fs-data$EXT && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh $SH/audmodlib-post-fs-data$EXT 0700; add_to_info $SH/audmodlib-post-fs-data$EXT $AMLINFO; }
     patch_script $SH/audmodlib-post-fs-data$EXT
     $POSTFSDATA && patch_script $SH/$MODID-post-fs-data$EXT
@@ -543,7 +530,7 @@ unity_uninstall() {
 
   # REMOVE FILES
   if [ "$MAGISK" == false ] && [ "$MODID" == "audmodlib" ]; then
-    if $(grep_prop BOOTPATCHED $SH/audmodlib-post-fs-data$EXT) && [ "$SEINJECT" != "" ]; then
+    if [ -f $SYS/etc/unity-initd ] && [ "$EXT" == "" ]; then
 	  # RESTORE KERNEL WITH AK2
 	  ui_print "   Restoring boot image..."
 	  ui_print " "
