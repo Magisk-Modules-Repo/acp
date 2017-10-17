@@ -6,36 +6,17 @@
 #
 ##########################################################################################
 
-get_outfd() {
-  readlink /proc/$$/fd/$OUTFD 2>/dev/null | grep /tmp >/dev/null
-  if [ "$?" -eq "0" ]; then
-    OUTFD=0
-    for FD in `ls /proc/$$/fd`; do
-      readlink /proc/$$/fd/$FD 2>/dev/null | grep pipe >/dev/null
-      if [ "$?" -eq "0" ]; then
-        ps | grep " 3 $FD " | grep -v grep >/dev/null
-        if [ "$?" -eq "0" ]; then
-          OUTFD=$FD
-          break
-        fi
-      fi
-    done
-  fi
-}
-
-ui_print() {
-  $BOOTMODE && echo "$1" || echo -e "ui_print $1\nui_print" >> /proc/self/fd/$OUTFD
-}
-
 mount_partitions() {
+  mount /data 2>/dev/null
+  mount /cache 2>/dev/null
   # Check A/B slot
-  [ -f /data/magisk.img -o -f /cache/magisk.img -o -d /magisk ] && WRITE=ro || WRITE=rw
+  [ -f /data/magisk.img -o -d /magisk ] && WRITE=ro || WRITE=rw
   SYS=/system
   REALSYS=/system
   SLOT=`getprop ro.boot.slot_suffix`
   [ -z $SLOT ] || ui_print "- A/B partition detected, current slot: $SLOT"
   ui_print "- Mounting filesystems -"
-  ui_print "   Mounting /system, /vendor"
+  ui_print "   Mounting /system, /vendor, /data, /cache"
   is_mounted /system || [ -f /system/build.prop ] || mount -o $WRITE /system 2>/dev/null
   if ! is_mounted /system && ! [ -f /system/build.prop ]; then
     SYSTEMBLOCK=`find /dev/block -iname system$SLOT | head -n 1`
@@ -54,7 +35,7 @@ mount_partitions() {
   $SKIP_INITRAMFS && ui_print "   ! Device skip_initramfs detected"
   if [ -L /system/vendor ]; then
     # Seperate /vendor partition
-    [ -f /data/magisk.img -o -f /cache/magisk.img -o -d /magisk ] && VEN=/system/vendor || VEN=/vendor
+    [ -f /data/magisk.img -o -d /magisk ] && VEN=/system/vendor || VEN=/vendor
     is_mounted /vendor || mount -o $WRITE /vendor 2>/dev/null
     if ! is_mounted /vendor; then
       VENDORBLOCK=`find /dev/block -iname vendor$SLOT | head -n 1`
@@ -72,6 +53,15 @@ grep_prop() {
   FILES=$@
   [ -z "$FILES" ] && FILES='/system/build.prop'
   sed -n "$REGEX" $FILES 2>/dev/null | head -n 1
+}
+
+is_mounted() {
+  if [ ! -z "$2" ]; then
+    cat /proc/mounts | grep $1 | grep $2, >/dev/null
+  else
+    cat /proc/mounts | grep $1 >/dev/null
+  fi
+  return $?
 }
 
 api_level_arch_detect() {
