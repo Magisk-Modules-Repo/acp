@@ -112,8 +112,7 @@ for TMP in $INSTALLER/common/unity-files-wipe.sh $INSTALLER/common/aml-patches.s
       sed -i -e '/^#/ d' -e 's/$SYS\/$VEN/$VEN/g' $TMP
     else
       ui_print "   !$TMP missing!"
-      ui_print "   !Copy it back to above and try again!"
-      exit 1
+      abort "   !Copy it back to above and try again!"
     fi
   fi
 done
@@ -711,9 +710,8 @@ elif is_mounted /cache; then
   script_install_logic
   standard_procedure
 else
-  ui_print "! Unable to mount /data and /cache!"
-  ui_print "! Aborting!"
-  exit 1
+  ui_print "! Unable to mount /data and /cache !"
+  abort "! If using magisk, flash in magisk manager !"
 fi
 
 ### MAGISK INSTALL ###
