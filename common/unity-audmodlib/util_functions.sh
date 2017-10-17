@@ -307,11 +307,11 @@ custom_app_install() {
 }
 
 ak2_launch() {
-  sed -i -e "s|<INSTALLER>|$INSTALLER|" -e "s|<SEINJECT>|$SEINJECT|" -e "s|<BOOTMODE>|$BOOTMODE|" -e "s|<ACTION>|$ACTION|" -e "s|<ABILONG>|$ABILONG|" $INSTALLER/common/unity-audmodlib/ak2/anykernel.sh
+  sed -i -e "s|<INSTALLER>|$INSTALLER|" -e "s|<BOOTMODE>|$BOOTMODE|" -e "s|<ACTION>|$ACTION|" -e "s|<ABILONG>|$ABILONG|" $INSTALLER/common/unity-audmodlib/ak2/anykernel.sh
   sed -i "s|<OUTFD>|$OUTFD|" $INSTALLER/common/unity-audmodlib/ak2/tools/ak2-core.sh
-  patch_script $INSTALLER/system/addon.d/unity-initd.sh
   AK2=$INSTALLER/common/unity-audmodlib/ak2
   bb=$AK2/tools/busybox
+  patch_script $AK2/patch/unity-initd.sh
   mkdir -p $AK2/bin
   chmod 755 $bb
   $bb chmod -R 755 $AK2/tools $AK2/bin

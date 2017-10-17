@@ -245,13 +245,13 @@ script_install_logic() {
 	  ROOTTYPE="system SuperSU"
     else
       SH=$SYS/etc/init.d
-	  SEINJECT=sbin/sepolicy-inject
+	  SEINJECT=/sbin/sepolicy-inject
       EXT=""
 	  ROOTTYPE="LineageOS SU"
     fi
   else
     SH=$SYS/etc/init.d
-	SEINJECT=sbin/sepolicy-inject
+	SEINJECT=/sbin/sepolicy-inject
     EXT=""
 	ROOTTYPE="other root or rootless"
   fi
@@ -333,17 +333,8 @@ unity_mod_copy() {
   if [ "$MAGISK" == false ]; then												  
     ui_print "   Installing scripts for $ROOTTYPE..."
 	
-	# PATCH BOOT IMG FOR INIT.D SUPPORT IF NEEDED
-	if [ "$EXT" == "" ] && [ ! -f $SYS/etc/unity-initd ]; then
-	  # PATCH KERNEL WITH AK2
-	  ui_print "   Patching boot image for proper init.d support"
-	  ui_print " "
-	  ui_print "   ! Using AnyKernel2 by osm0sis @ xda-developers !"
-	  ui_print " "
-	  ak2_launch
-	  ui_print "    Patching completed"
-	  ui_print " "
-	fi
+	# PATCH BOOT IMG FOR INIT.D SUPPORT IF NEEDED WITH AK2
+	test "$EXT" == "" && ak2_launch
 
     # CREATE FILE CONTAINING LIST OF ALL INSTALLED MOD FILES
     test ! -f $AMLINFO && touch $AMLINFO
@@ -528,20 +519,9 @@ unity_uninstall() {
   ui_print "   Removing build.props..."
   unity_prop_remove $INSTALLER/common/unity-props.prop
 
+  # RESTORE KERNEL WITH AK2
+  test "$MAGISK" == false -a "$MODID" == "audmodlib" -a "$EXT" == "" && ak2_launch
   # REMOVE FILES
-  if [ "$MAGISK" == false ] && [ "$MODID" == "audmodlib" ]; then
-    if [ -f $SYS/etc/unity-initd ] && [ "$EXT" == "" ]; then
-	  # RESTORE KERNEL WITH AK2
-	  ui_print "   Restoring boot image..."
-	  ui_print " "
-	  ui_print "   ! Using AnyKernel2 by osm0sis @ xda-developers !"
-	  ui_print " "
-	  ak2_launch
-	  ui_print "    Boot image restored"
-	  ui_print " "
-    fi
-  fi
-  
   if [ -f $INFO ]; then
     ui_print "   Removing/restoring files..."
     cat $INFO | while read LINE; do
