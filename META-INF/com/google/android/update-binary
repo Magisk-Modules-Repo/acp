@@ -380,7 +380,7 @@ unity_mod_copy() {
         sed -i 's/^/  /' $INSTALLER/common/aml-patches-wipe.sh; sed -i "\|<PATCHES>| r $INSTALLER/common/aml-patches.sh" $INSTALLER/system/addon.d/$MODID.sh
 		test ! -z $XML_PRFX && { sed -i 's/^/  /' $INSTALLER/common/aml-xml-patches.sh; sed -i "\|<PATCHES>| r $INSTALLER/common/aml-xml-patches.sh" $INSTALLER/system/addon.d/$MODID.sh; }
       fi
-      sed -i '/<PATCHES>/d' $INSTALLER/system/addon.d/$MODID.sh
+      sed -i -e '/<PATCHES>/d' -e '/ui_print/d'$INSTALLER/system/addon.d/$MODID.sh
       $CP_NBPRFX $INSTALLER/system/addon.d/$MODID.sh $SYS/addon.d/$MODID.sh 0755
       patch_script $SYS/addon.d/$MODID.sh
       $CP_NBPRFX $INSTALLER/system/addon.d/audmodlib.sh $SYS/addon.d/audmodlib.sh 0755

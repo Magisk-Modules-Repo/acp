@@ -8,7 +8,6 @@ BLOCK=<BLOCK>
 
 list_files() {
 cat <<EOF
-$SYS/etc/unity-initd
 <FILES>
 EOF
 }

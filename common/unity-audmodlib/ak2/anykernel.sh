@@ -56,11 +56,23 @@ cp_ch() {
 if [ "$ACTION" == "Install" ]; then
   ui_print "    Patching init files..."
   
+  # detect/copy sepolicy-inject (binaries by xmikos@github)
+  case $ABILONG in
+    arm64*) cp_ch $AK2/tools/setools-android/arm64-v8a/sepolicy-inject $SEINJECT;;
+    armeabi-v7a*) cp_ch $AK2/tools/setools-android/armeabi-v7a/sepolicy-inject $SEINJECT;;
+    arm*) cp_ch $AK2/tools/setools-android/armeabi/sepolicy-inject $SEINJECT;;
+    x86_64*) cp_ch $AK2/tools/setools-android/x86_64/sepolicy-inject $SEINJECT;;
+    x86*) cp_ch $AK2/tools/setools-android/x86/sepolicy-inject $SEINJECT;;
+    mips64*) cp_ch $AK2/tools/setools-android/mips64/sepolicy-inject $SEINJECT;;
+    mips*) cp_ch $AK2/tools/setools-android/mips/sepolicy-inject $SEINJECT;;
+    *) ui_print "   ! CPU Type not supported for sepolicy patching!"; ui_print "   ! Add initd support to kernel another way !"; exit 0;;
+  esac
+  
   # remove old broken init.d
-  test -f /system/bin/sysinit && { backup_file /system/bin/sysinit; sed -i -e '\|<FILES>| a\ $SYS/bin/sysinit~' -e '\|<FILES2>| a\ rm -f $SYS/bin/sysinit' $patch/unity-initd.sh; }
-  test -f /system/xbin/sysinit && { backup_file /system/xbin/sysinit; sed -i -e '\|<FILES>| a\ $SYS/xbin/sysinit~' -e '\|<FILES2>| a\ rm -f $SYS/xbin/sysinit' $patch/unity-initd.sh; }
-  test -f /system/bin/sepolicy-inject && { backup_file /system/bin/sepolicy-inject; sed -i -e '\|<FILES>| a\ $SYS/bin/sepolicy-inject~' -e '\|<FILES2>| a\ rm -f $SYS/bin/sepolicy-inject' $patch/unity-initd.sh; }
-  test -f /system/xbin/sepolicy-inject && { backup_file /system/xbin/sepolicy-inject; sed -i -e '\|<FILES>| a\ $SYS/xbin/sepolicy-inject~' -e '\|<FILES2>| a\ rm -f $SYS/xbin/sepolicy-inject' $patch/unity-initd.sh; }
+  test -f /system/bin/sysinit && { backup_file /system/bin/sysinit; sed -i -e '\|<FILES>| a\$SYS/bin/sysinit~' -e '\|<FILES2>| a\  rm -f $SYS/bin/sysinit' $patch/unity-initd.sh; }
+  test -f /system/xbin/sysinit && { backup_file /system/xbin/sysinit; sed -i -e '\|<FILES>| a\$SYS/xbin/sysinit~' -e '\|<FILES2>| a\  rm -f $SYS/xbin/sysinit' $patch/unity-initd.sh; }
+  test -f /system/bin/sepolicy-inject && { backup_file /system/bin/sepolicy-inject; sed -i -e '\|<FILES>| a\$SYS/bin/sepolicy-inject~' -e '\|<FILES2>| a\  rm -f $SYS/bin/sepolicy-inject' $patch/unity-initd.sh; }
+  test -f /system/xbin/sepolicy-inject && { backup_file /system/xbin/sepolicy-inject; sed -i -e '\|<FILES>| a\$SYS/xbin/sepolicy-inject~' -e '\|<FILES2>| a\  rm -f $SYS/xbin/sepolicy-inject' $patch/unity-initd.sh; }
   sed -i -e "s|<BLOCK>|$block|" -e "/<FILES>/d" -e "/<FILES2>/d" $patch/unity-initd.sh
   test -d "/system/addon.d" && cp_ch $patch/unity-initd.sh /system/addon.d/unity-initd.sh
   for FILE in init*.rc; do
@@ -76,17 +88,8 @@ if [ "$ACTION" == "Install" ]; then
   # add new init.d
   append_file init.rc "# init.d" init
   cp_ch $patch/sysinit sbin/sysinit
-  
-  case $ABILONG in
-    arm64*) cp_ch $AK2/tools/setools-android/arm64-v8a/sepolicy-inject $SEINJECT;;
-    armeabi-v7a*) cp_ch $AK2/tools/setools-android/armeabi-v7a/sepolicy-inject $SEINJECT;;
-    arm*) cp_ch $AK2/tools/setools-android/armeabi/sepolicy-inject $SEINJECT;;
-    x86_64*) cp_ch $AK2/tools/setools-android/x86_64/sepolicy-inject $SEINJECT;;
-    x86*) cp_ch $AK2/tools/setools-android/x86/sepolicy-inject $SEINJECT;;
-    mips64*) cp_ch $AK2/tools/setools-android/mips64/sepolicy-inject $SEINJECT;;
-    mips*) cp_ch $AK2/tools/setools-android/mips/sepolicy-inject $SEINJECT;;
-    *) ui_print "   ! CPU Type not supported for sepolicy patching!"; abort "   ! Restore your boot img and add initd support to kernel another way !";;
-  esac
+  # add indicator file
+  cp -f $patch/unity-initd unity-initd
   
   # SEPOLICY PATCHES BY CosmicDan @xda-developers
   ui_print "    Injecting sepolicy with init.d permissions..."
