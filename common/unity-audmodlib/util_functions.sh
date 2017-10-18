@@ -305,24 +305,3 @@ add_to_info() {
 custom_app_install() {
   $OLDAPP && $CP_PRFX $INSTALLER/custom/$1/$1.apk $UNITY$SYS/app/$1.apk || $CP_PRFX $INSTALLER/custom/$1/$1.apk $UNITY$SYS/priv-app/$1/$1.apk
 }
-
-ak2_launch() {
-  sed -i -e "s|<INSTALLER>|$INSTALLER|" -e "s|<BOOTMODE>|$BOOTMODE|" -e "s|<ACTION>|$ACTION|" -e "s|<ABILONG>|$ABILONG|" $INSTALLER/common/unity-audmodlib/ak2/anykernel.sh
-  sed -i "s|<OUTFD>|$OUTFD|" $INSTALLER/common/unity-audmodlib/ak2/tools/ak2-core.sh
-  AK2=$INSTALLER/common/unity-audmodlib/ak2
-  bb=$AK2/tools/busybox
-  patch_script $AK2/patch/unity-initd.sh
-  mkdir -p $AK2/bin
-  chmod 755 $bb
-  $bb chmod -R 755 $AK2/tools $AK2/bin
-  for i in $($bb --list); do
-    $bb ln -s $bb $AK2/bin/$i
-  done
-  if [ $? != 0 -o -z "$(ls $AK2/bin)" ]; then
-    abort "! Recovery busybox setup failed. Aborting !"
-  fi
-  PATH="$AK2/bin:$PATH" $bb ash $AK2/anykernel.sh $2
-  if [ $? != "0" ]; then
-    abort "! Unable to call anykernel script. Aborting !"
-  fi
-}

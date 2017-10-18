@@ -332,9 +332,7 @@ unity_mod_copy() {
   # INSTALL SCRIPTS
   if [ "$MAGISK" == false ]; then												  
     ui_print "   Installing scripts for $ROOTTYPE..."
-	
-	# PATCH BOOT IMG FOR INIT.D SUPPORT IF NEEDED WITH AK2
-	test "$EXT" == "" && ak2_launch
+	test "$ROOTTYPE" == "LineageOS SU" -o "$ROOTTYPE" == "other root or rootless" && { ui_print " "; ui_print "   ! This root method has no boot script support !"; ui_print "   ! You will need to add init.d support !"; ui_print " "; }
 
     # CREATE FILE CONTAINING LIST OF ALL INSTALLED MOD FILES
     test ! -f $AMLINFO && touch $AMLINFO
@@ -380,7 +378,7 @@ unity_mod_copy() {
         sed -i 's/^/  /' $INSTALLER/common/aml-patches-wipe.sh; sed -i "\|<PATCHES>| r $INSTALLER/common/aml-patches.sh" $INSTALLER/system/addon.d/$MODID.sh
 		test ! -z $XML_PRFX && { sed -i 's/^/  /' $INSTALLER/common/aml-xml-patches.sh; sed -i "\|<PATCHES>| r $INSTALLER/common/aml-xml-patches.sh" $INSTALLER/system/addon.d/$MODID.sh; }
       fi
-      sed -i -e '/<PATCHES>/d' -e '/ui_print/d'$INSTALLER/system/addon.d/$MODID.sh
+      sed -i -e '/<PATCHES>/d' -e '/ui_print/d' $INSTALLER/system/addon.d/$MODID.sh
       $CP_NBPRFX $INSTALLER/system/addon.d/$MODID.sh $SYS/addon.d/$MODID.sh 0755
       patch_script $SYS/addon.d/$MODID.sh
       $CP_NBPRFX $INSTALLER/system/addon.d/audmodlib.sh $SYS/addon.d/audmodlib.sh 0755
@@ -432,11 +430,11 @@ aml_mod() {
   
   if [ ! -z $XML_PRFX ]; then
     if [ "$MAGISK" == true ]; then
-	  test ! -f $AMLPATH/system/xbin/xmlstarlet && { XML_PATH=$AMLPATH/system/xbin/xmlstarlet; $CP_PRFX "$XML_PRFX" "$XML_PATH" 0755; }
+	  test ! -f $AMLPATH/system/xbin/xmlstarlet && { XML_PATH=$AMLPATH/system/xbin/xmlstarlet; $CP_NBPRFX "$XML_PRFX" "$XML_PATH" 0755; add_to_info $XML_PATH $AMLINFO; }
 	elif [ "${SH%/*}" != "$SYS/etc" ]; then
-      test ! -f $AMLPATH${SH%/*}/xbin/xmlstarlet && { XML_PATH=$AMLPATH${SH%/*}/xbin/xmlstarlet; $CP_PRFX "$XML_PRFX" "$XML_PATH" 0755; }
+      test ! -f $AMLPATH${SH%/*}/xbin/xmlstarlet && { XML_PATH=$AMLPATH${SH%/*}/xbin/xmlstarlet; $CP_NBPRFX "$XML_PRFX" "$XML_PATH" 0755; add_to_info $XML_PATH $AMLINFO; }
 	else
-	  test ! -f $AMLPATH$SYS/xbin/xmlstarlet && { XML_PATH=$AMLPATH$SYS/xbin/xmlstarlet; $CP_PRFX "$XML_PRFX" "$XML_PATH" 0755; }
+	  test ! -f $AMLPATH$SYS/xbin/xmlstarlet && { XML_PATH=$AMLPATH$SYS/xbin/xmlstarlet; $CP_NBPRFX "$XML_PRFX" "$XML_PATH" 0755; add_to_info $XML_PATH $AMLINFO; }
 	fi
   fi
   
@@ -519,8 +517,6 @@ unity_uninstall() {
   ui_print "   Removing build.props..."
   unity_prop_remove $INSTALLER/common/unity-props.prop
 
-  # RESTORE KERNEL WITH AK2
-  test "$MAGISK" == false -a "$MODID" == "audmodlib" -a "$EXT" == "" && ak2_launch
   # REMOVE FILES
   if [ -f $INFO ]; then
     ui_print "   Removing/restoring files..."
