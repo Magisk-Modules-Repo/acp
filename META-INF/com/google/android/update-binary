@@ -154,7 +154,7 @@ sed -i -e "s/<MODID>/$MODID/" -e "/# CUSTOM USER SCRIPT/ r $INSTALLER/common/ser
 case $ABILONG in
   arm64*) XML_PRFX=$INSTALLER/common/unity-audmodlib/xmlstarlet/arm64/xmlstarlet; chmod 777 $XML_PRFX;; 
   arm*) XML_PRFX=$INSTALLER/common/unity-audmodlib/xmlstarlet/arm/xmlstarlet; chmod 777 $XML_PRFX;;
-  x86*) XML_PRFX=$INSTALLER/common/unity-audmodlib/xmlstarlet/x86/xmlstarlet; chmod 777 $XML_PRFX;;				 
+  x86*) XML_PRFX=$INSTALLER/common/unity-audmodlib/xmlstarlet/x86/xmlstarlet; chmod 777 $XML_PRFX;;              
   *) ui_print "   ! Only arm, arm64, and x86 devices are compatible for xml patching"; ui_print "   ! XML Patching will be skipped";;
 esac
 
@@ -220,40 +220,40 @@ script_install_logic() {
   EXT=".sh"
   if [ -d "/data/adb/su/bin" ]; then
     SH=/data/adb/su/su.d
-	SEINJECT=/data/adb/su/bin/supolicy
-	ROOTTYPE="BINDSBIN SuperSU"
+    SEINJECT=/data/adb/su/bin/supolicy
+    ROOTTYPE="BINDSBIN SuperSU"
   elif [ -d "/data/supersu_install/bin" ]; then
     SH=/data/supersu_install/su.d
-	SEINJECT=/data/supersu_install/bin/supolicy
-	ROOTTYPE="BINDSBIN SuperSU"
+    SEINJECT=/data/supersu_install/bin/supolicy
+    ROOTTYPE="BINDSBIN SuperSU"
   elif [ -d "/cache/supersu_install/bin" ]; then
     SH=/cache/supersu_install/su.d
-	SEINJECT=/cache/supersu_install/bin/supolicy
-	ROOTTYPE="BINDSBIN SuperSU"
+    SEINJECT=/cache/supersu_install/bin/supolicy
+    ROOTTYPE="BINDSBIN SuperSU"
   elif [ "$supersuimg" ] || [ -d /su ]; then
     SH=/su/su.d
-	SEINJECT=/su/bin/supolicy
-	ROOTTYPE="systemless SuperSU"
+    SEINJECT=/su/bin/supolicy
+    ROOTTYPE="systemless SuperSU"
   elif [ -d $SYS/su ] || [ -f $SYS/xbin/daemonsu ] || [ -f $SYS/xbin/sugote ]; then
     SH=$SYS/su.d
-	SEINJECT=$SYS/xbin/supolicy
-	ROOTTYPE="system SuperSU"
+    SEINJECT=$SYS/xbin/supolicy
+    ROOTTYPE="system SuperSU"
   elif [ -f $SYS/xbin/su ]; then
     if [ "$(grep "SuperSU" $SYS/xbin/su)" ]; then
       SH=$SYS/su.d
-	  SEINJECT=$SYS/xbin/supolicy
-	  ROOTTYPE="system SuperSU"
+      SEINJECT=$SYS/xbin/supolicy
+      ROOTTYPE="system SuperSU"
     else
       SH=$SYS/etc/init.d
-	  SEINJECT=/sbin/sepolicy-inject
+      SEINJECT=/sbin/sepolicy-inject
       EXT=""
-	  ROOTTYPE="LineageOS SU"
+      ROOTTYPE="LineageOS SU"
     fi
   else
     SH=$SYS/etc/init.d
-	SEINJECT=/sbin/sepolicy-inject
+    SEINJECT=/sbin/sepolicy-inject
     EXT=""
-	ROOTTYPE="other root or rootless"
+    ROOTTYPE="other root or rootless"
   fi
 }
 
@@ -269,9 +269,9 @@ unity_prop_remove() {
     if [ "$(cat $1)" ]; then
       cat $1 | while read PROP; do
         test "$(grep "#$PROP" $AMLPROP)" && sed -i "\|#$PROP|d" $AMLPROP || { test "$(grep "$PROP" $AMLPROP)" && sed -i "\|$PROP|d" $AMLPROP; }
-	  done
+      done
     fi
-	test ! -s $AMLPROP && rm -f $AMLPROP
+    test ! -s $AMLPROP && rm -f $AMLPROP
   fi
 }
 
@@ -286,15 +286,15 @@ unity_prop_copy() {
   fi
   if [ "$(cat $1)" ]; then
     test ! -f $AMLPROP && { test "$MAGISK" == true && mktouch $AMLPROP || mktouch $AMLPROP "#!/system/bin/sh"; }
-	cat $1 | while read PROP; do
-	  PRESENT=false
-	  cat $AMLPROP | { 
-	  while read OLDPROP; do
-	    test "$PROP" == "$OLDPROP" && PRESENT=true
-	  done 
-	  test "$PRESENT" == false && echo "$PROP" >> $AMLPROP || echo "#$PROP" >> $AMLPROP
-	  }
-	done
+    cat $1 | while read PROP; do
+      PRESENT=false
+      cat $AMLPROP | { 
+      while read OLDPROP; do
+        test "$PROP" == "$OLDPROP" && PRESENT=true
+      done 
+      test "$PRESENT" == false && echo "$PROP" >> $AMLPROP || echo "#$PROP" >> $AMLPROP
+      }
+    done
     test "$MAGISK" == false && { chmod 0700 $AMLPROP; restorecon $AMLPROP; }
   fi
 }
@@ -330,9 +330,9 @@ unity_mod_copy() {
   ui_print "- Installing modification -"
 
   # INSTALL SCRIPTS
-  if [ "$MAGISK" == false ]; then												  
+  if [ "$MAGISK" == false ]; then                                                 
     ui_print "   Installing scripts for $ROOTTYPE..."
-	test "$ROOTTYPE" == "LineageOS SU" -o "$ROOTTYPE" == "other root or rootless" && { ui_print " "; ui_print "   ! This root method has no boot script support !"; ui_print "   ! You will need to add init.d support !"; ui_print " "; }
+    test "$ROOTTYPE" == "LineageOS SU" -o "$ROOTTYPE" == "other root or rootless" && { ui_print " "; ui_print "   ! This root method has no boot script support !"; ui_print "   ! You will need to add init.d support !"; ui_print " "; }
 
     # CREATE FILE CONTAINING LIST OF ALL INSTALLED MOD FILES
     test ! -f $AMLINFO && touch $AMLINFO
@@ -345,23 +345,23 @@ unity_mod_copy() {
 
     # INSTALL POST-FS-DATA MODE SCRIPTS
     if $POSTFSDATA; then
-	  $CP_NBPRFX $INSTALLER/common/unity-audmodlib/$MODID-post-fs-data.sh $SH/$MODID-post-fs-data$EXT 0700
-	  add_to_info $SH/$MODID-post-fs-data$EXT $INFO
-	  test "$AUDMODLIB" == "$MODID" && patch_script $SH/$MODID-post-fs-data$EXT
-	fi
-	
-	# INSTALL SERVICE MODE SCRIPTS
+      $CP_NBPRFX $INSTALLER/common/unity-audmodlib/$MODID-post-fs-data.sh $SH/$MODID-post-fs-data$EXT 0700
+      add_to_info $SH/$MODID-post-fs-data$EXT $INFO
+      test "$AUDMODLIB" == "$MODID" && patch_script $SH/$MODID-post-fs-data$EXT
+    fi
+    
+    # INSTALL SERVICE MODE SCRIPTS
     if $LATESTARTSERVICE; then
-	  $CP_NBPRFX $INSTALLER/common/unity-audmodlib/$MODID-service.sh $SH/$MODID-service$EXT 0700
-	  add_to_info $SH/$MODID-service$EXT $INFO
-	  test "$AUDMODLIB" == "$MODID" && patch_script $SH/$MODID-service$EXT
-	fi
+      $CP_NBPRFX $INSTALLER/common/unity-audmodlib/$MODID-service.sh $SH/$MODID-service$EXT 0700
+      add_to_info $SH/$MODID-service$EXT $INFO
+      test "$AUDMODLIB" == "$MODID" && patch_script $SH/$MODID-service$EXT
+    fi
 
     # INSTALL ROM BACKUP SCRIPT
     if [ -d $SYS/addon.d ]; then
       ui_print "   Installing addon.d backup script..."
-	  
-	  # INSERT MODID INTO ADDON.D SCRIPT
+      
+      # INSERT MODID INTO ADDON.D SCRIPT
       sed -i "s/<MODID>/$MODID/" $INSTALLER/system/addon.d/modid.sh
 
       $CP_NBPRFX $INSTALLER/system/addon.d/modid.sh $SYS/addon.d/$MODID.sh 0755
@@ -415,12 +415,12 @@ aml_mod() {
   
   if [ ! -z $XML_PRFX ]; then
     if [ "$MAGISK" == true ]; then
-	  test ! -f $AMLPATH/system/xbin/xmlstarlet && { XML_PATH=$AMLPATH/system/xbin/xmlstarlet; $CP_NBPRFX "$XML_PRFX" "$XML_PATH" 0755; add_to_info $XML_PATH $AMLINFO; }
-	elif [ "${SH%/*}" != "$SYS/etc" ]; then
+      test ! -f $AMLPATH/system/xbin/xmlstarlet && { XML_PATH=$AMLPATH/system/xbin/xmlstarlet; $CP_NBPRFX "$XML_PRFX" "$XML_PATH" 0755; }
+    elif [ "${SH%/*}" != "$SYS/etc" ]; then
       test ! -f $AMLPATH${SH%/*}/xbin/xmlstarlet && { XML_PATH=$AMLPATH${SH%/*}/xbin/xmlstarlet; $CP_NBPRFX "$XML_PRFX" "$XML_PATH" 0755; add_to_info $XML_PATH $AMLINFO; }
-	else
-	  test ! -f $AMLPATH$SYS/xbin/xmlstarlet && { XML_PATH=$AMLPATH$SYS/xbin/xmlstarlet; $CP_NBPRFX "$XML_PRFX" "$XML_PATH" 0755; add_to_info $XML_PATH $AMLINFO; }
-	fi
+    else
+      test ! -f $AMLPATH$SYS/xbin/xmlstarlet && { XML_PATH=$AMLPATH$SYS/xbin/xmlstarlet; $CP_NBPRFX "$XML_PRFX" "$XML_PATH" 0755; add_to_info $XML_PATH $AMLINFO; }
+    fi
   fi
   
   if [ "$MAGISK" == true ]; then
@@ -516,9 +516,9 @@ unity_uninstall() {
   if [ "$AUDMODLIB" != "$MODID" ]; then
     # RESTORE CONFIGS, LIBRARIES, & EFFECTS
     source $INSTALLER/common/aml-patches-remove.sh
-	test ! -z $XML_PRFX && source $INSTALLER/common/aml-xml-patches-remove.sh
+    test ! -z $XML_PRFX && source $INSTALLER/common/aml-xml-patches-remove.sh
   fi
-	
+    
   test "$MAGISK" == false && rm -f $SYS/addon.d/$MODID.sh
   
   if [ "$MAGISK" == true ]; then
@@ -610,10 +610,10 @@ standard_procedure() {
     if [ "$MAGISK" == true ]; then
       test "$AUDMODLIB" != "$MODID" && set_perm_recursive $AMLPATH 0 0 0755 0644
       set_permissions
-	  set_perm_recursive $AMLPATH/system/xbin 0 0 0755 0755
+      set_perm_recursive $AMLPATH/system/xbin 0 0 0755 0755
     else
       set_permissions
-	  ! $BOOTMODE && [ "$supersuimg" -o -d /su ] && umount /su
+      ! $BOOTMODE && [ "$supersuimg" -o -d /su ] && umount /su
       action_complete
       exit 0
     fi
@@ -632,12 +632,12 @@ standard_procedure() {
       # COMPLETING UNINSTALL
       if [ "$MAGISK" == true ]; then
         ui_print " "
-		ui_print "- Completing uninstall -"
-	  else
-	    ! $BOOTMODE && [ "$supersuimg" -o -d /su ] && umount /su
-	    action_complete
-		exit 0
-	  fi
+        ui_print "- Completing uninstall -"
+      else
+        ! $BOOTMODE && [ "$supersuimg" -o -d /su ] && umount /su
+        action_complete
+        exit 0
+      fi
     fi
   fi
 }
