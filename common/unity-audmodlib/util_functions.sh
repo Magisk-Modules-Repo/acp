@@ -288,13 +288,11 @@ patch_script() {
 	test ! -z $SEINJECT && sed -i "s|<SEINJECT>|$SEINJECT|" $1 || sed -i "/<SEINJECT>/d" $1
 	sed -i "/<AMLPATH>/d" $1
 	sed -i "s|$MOUNTPATH||g" $1
-	sed -i "s|<BOOTPATCHED>|$BOOTPATCHED|" $1
   else
 	sed -i "s|<EXT>|.sh|" $1
 	sed -i "s|<SEINJECT>|magiskpolicy|" $1
 	sed -i "s|<AMLPATH>|$AMLPATH|" $1
 	sed -i "s|$MOUNTPATH|/magisk|g" $1
-	sed -i "/<BOOTPATCHED>/d" $1
   fi
 }
 

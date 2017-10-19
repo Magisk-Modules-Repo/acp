@@ -360,29 +360,12 @@ unity_mod_copy() {
     # INSTALL ROM BACKUP SCRIPT
     if [ -d $SYS/addon.d ]; then
       ui_print "   Installing addon.d backup script..."
+	  
+	  # INSERT MODID INTO ADDON.D SCRIPT
+      sed -i "s/<MODID>/$MODID/" $INSTALLER/system/addon.d/modid.sh
 
-      # RENAME AML ADDON.D SCRIPT
-      mv -f $INSTALLER/system/addon.d/amlid.sh $INSTALLER/system/addon.d/audmodlib.sh
-
-      # RENAME ADDON.D SCRIPT
-      mv -f $INSTALLER/system/addon.d/modid.sh $INSTALLER/system/addon.d/$MODID.sh
-
-      # INSERT MODID INTO ADDON.D SCRIPT
-      sed -i "s/<MODID>/$MODID/" $INSTALLER/system/addon.d/$MODID.sh
-      if [ "$AUDMODLIB" != "$MODID" ]; then
-        # INSERT AML REMOVE, WIPE, AND REGULAR PATCHES INTO ADDON.D SCRIPT
-        sed -i 's/^/  /' $INSTALLER/common/aml-patches.sh; sed -i "/<PATCHES>/ r $INSTALLER/common/aml-patches-wipe.sh" $INSTALLER/system/addon.d/$MODID.sh
-		test ! -z $XML_PRFX && { sed -i 's/^/  /' $INSTALLER/common/aml-xml-patches-wipe.sh; sed -i "\|<PATCHES>| r $INSTALLER/common/aml-xml-patches-wipe.sh" $INSTALLER/system/addon.d/$MODID.sh; }
-        test "$MAGISK" == false && sed -i 's/^/  /' $INSTALLER/common/aml-patches-remove.sh; sed -i "\|<PATCHES>| r $INSTALLER/common/aml-patches-remove.sh" $INSTALLER/system/addon.d/$MODID.sh
-		test "$MAGISK" == false -a ! -z $XML_PRFX && { sed -i 's/^/  /' $INSTALLER/common/aml-xml-patches-remove.sh; sed -i "\|<PATCHES>| r $INSTALLER/common/aml-xml-patches-remove.sh" $INSTALLER/system/addon.d/$MODID.sh; }
-        sed -i 's/^/  /' $INSTALLER/common/aml-patches-wipe.sh; sed -i "\|<PATCHES>| r $INSTALLER/common/aml-patches.sh" $INSTALLER/system/addon.d/$MODID.sh
-		test ! -z $XML_PRFX && { sed -i 's/^/  /' $INSTALLER/common/aml-xml-patches.sh; sed -i "\|<PATCHES>| r $INSTALLER/common/aml-xml-patches.sh" $INSTALLER/system/addon.d/$MODID.sh; }
-      fi
-      sed -i -e '/<PATCHES>/d' -e '/ui_print/d' $INSTALLER/system/addon.d/$MODID.sh
-      $CP_NBPRFX $INSTALLER/system/addon.d/$MODID.sh $SYS/addon.d/$MODID.sh 0755
-      patch_script $SYS/addon.d/$MODID.sh
+      $CP_NBPRFX $INSTALLER/system/addon.d/modid.sh $SYS/addon.d/$MODID.sh 0755
       $CP_NBPRFX $INSTALLER/system/addon.d/audmodlib.sh $SYS/addon.d/audmodlib.sh 0755
-	  patch_script $SYS/addon.d/audmodlib.sh
     else
       ui_print "   ! Addon.d not detected. Backup script not installed..."
     fi
@@ -409,6 +392,8 @@ unity_mod_copy() {
     test "$(grep "TIMEOFEXEC=2" $INSTALLER/common/unity-customrules$NUM.sh)" && source $INSTALLER/common/unity-customrules$NUM.sh
     NUM=$((NUM+1))
   done
+  
+  # REMOVE INFO FILE IF NOT NEEDED
   test "$MAGISK" == true -a ! -s $INFO && rm -f $INFO
 }
 
