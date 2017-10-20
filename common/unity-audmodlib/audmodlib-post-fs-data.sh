@@ -44,17 +44,13 @@ set_sepolicy() {
   fi
 }
 
-if [ -z $SEINJECT ]; then
-  setenforce 0
-else
-  set_sepolicy audioserver audioserver_tmpfs file read,write,execute
-  set_sepolicy audioserver system_file file execmod
-  set_sepolicy mediaserver mediaserver_tmpfs file read,write,execute
-  set_sepolicy mediaserver system_file file execmod
-  set_sepolicy $SOURCE init unix_stream_socket connectto
-  set_sepolicy $SOURCE property_socket sock_file getattr,open,read,write,execute
-  set_sepolicy $SOURCE audio_prop
-fi
+set_sepolicy audioserver audioserver_tmpfs file read,write,execute
+set_sepolicy audioserver system_file file execmod
+set_sepolicy mediaserver mediaserver_tmpfs file read,write,execute
+set_sepolicy mediaserver system_file file execmod
+set_sepolicy $SOURCE init unix_stream_socket connectto
+set_sepolicy $SOURCE property_socket sock_file getattr,open,read,write,execute
+set_sepolicy $SOURCE audio_prop
 
 # MOD PATCHES
 
@@ -62,6 +58,4 @@ for MOD in ${MODIDS}; do
   sed -i "/magisk\/${MOD}/,/fi #${MOD}/d" $SH/post-fs-data.sh
 done
 
-test -f /cache/audmodlib.log && rm -f /cache/audmodlib.log
-
-echo "Audmodlib script has run successfully $(date +"%m-%d-%Y %H:%M:%S")" | tee -a /cache/audmodlib.log
+echo "Audmodlib script has run successfully $(date +"%m-%d-%Y %H:%M:%S")" > /cache/audmodlib.log

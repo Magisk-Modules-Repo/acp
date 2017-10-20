@@ -130,9 +130,6 @@ MODPATH=$MOUNTPATH/$MODID
 AMLPATH=$MOUNTPATH/audmodlib
 test -z $AUDMODLIB && AUDMODLIB=$MODID || AUDMODLIB=unity
 
-# ALWAYS UNINSTALL IF ZIP IS AUDIO MODIFICATION LIBRARY
-test "$MODID" == "audmodlib" && ACTION=Uninstall
-
 # PROCESS FOLDERS AND FILES
 find $INSTALLER/system -type f -print > $INSTALLER/tfiles
 test "$(find $INSTALLER/data -type f -print)" != "$INSTALLER/data/placeholder" && find $INSTALLER/data -type f -print >> $INSTALLER/tfiles
@@ -400,8 +397,7 @@ unity_mod_copy() {
 # AUDIO MODIFICATION LIBRARY
 aml_mod() {
   ### CREATE AUDIO MODIFICATION LIBRARY ###
-  ui_print " "
-  test "$ACTION" == "Install" && ui_print "- Installing Audio Modification Library -" || ui_print "- Removing $MODID from Audio Modification Library -"
+  test "$ACTION" == "Install" && { ui_print " "; ui_print "- Installing Audio Modification Library -"; } || ui_print "   Removing $MODID from Audio Modification Library"
 
   for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
     if [ -f $CFG ]; then
@@ -454,6 +450,8 @@ aml_mod_patch() {
     test ! -z $XML_PRFX && sed -i 's/^/  /' $INSTALLER/common/aml-xml-patches-remove.sh;
     sed -i -e "/# MOD PATCHES/ a\if [ ! -d \"/magisk/$MODID\" ]; then" -e "/# MOD PATCHES/ a\  MODIDS=\"\${MODIDS} $MODID\"" -e "/# MOD PATCHES/ r $INSTALLER/common/aml-patches-remove.sh" -e "/# MOD PATCHES/ a\TEMP$MODID" $AMLPATH/post-fs-data.sh
     test ! -z $XML_PRFX && sed -i -e "/TEMP$MODID/ r $INSTALLER/common/aml-xml-patches-remove.sh" -e "/TEMP$MODID/ a\fi #$MODID" -e "/TEMP$MODID/d" $AMLPATH/post-fs-data.sh || sed -i -e "/TEMP$MODID/ a\fi #$MODID" -e "/TEMP$MODID/d" $AMLPATH/post-fs-data.sh
+  else
+    sed -i "/# MOD PATCHES/ a\#$MODID" $SH/audmodlib-post-fs-data$EXT
   fi
 
   # REMOVE LIBRARIES & EFFECTS
@@ -503,30 +501,27 @@ unity_uninstall() {
   unity_prop_remove $INSTALLER/common/unity-props.prop
 
   # REMOVE FILES
-  if [ -f $INFO ]; then
-    ui_print "   Removing/restoring files..."
-    cat $INFO | while read LINE; do
-      sys_rm_ch $LINE
-    done
-    rm -f $INFO
-  else
-    test "$MAGISK" == false && ui_print "   ! Mod not detected. Removing scripts..." || ui_print "   Removing/restoring files..."
-  fi
+  info_uninstall $INFO
   
   if [ "$AUDMODLIB" != "$MODID" ]; then
     # RESTORE CONFIGS, LIBRARIES, & EFFECTS
     source $INSTALLER/common/aml-patches-remove.sh
     test ! -z $XML_PRFX && source $INSTALLER/common/aml-xml-patches-remove.sh
   fi
-    
-  test "$MAGISK" == false && rm -f $SYS/addon.d/$MODID.sh
   
   if [ "$MAGISK" == true ]; then
     rm -rf $MODPATH
     rm -rf /magisk/$MODID
     test "$AUDMODLIB" != "$MODID" && sed -i "/magisk\/$MODID/,/fi #$MODID/d" $AMLPATH/post-fs-data.sh
     # Use magisk_merge for aml during bootmode uninstall
-    test "$BOOTMODE" == "true" -a "$AUDMODLIB" != "$MODID" && aml_mod
+    test "$BOOTMODE" == "true" -a "$AUDMODLIB" != "$MODID" && aml_mod || ui_print "   Removing $MODID from Audio Modification Library"
+	# Remove AML if no modules are installed
+	test ! "$(sed -n '/# MOD PATCHES/{n;p}' $AMLPATH/post-fs-data.sh)" && remove_aml
+  else
+    test "$AUDMODLIB" != "$MODID" && sed -i "/#$MODID/d" $SH/audmodlib-post-fs-data$EXT
+    rm -f $SYS/addon.d/$MODID.sh
+	# Remove AML if no modules are installed
+	test ! "$(sed -n '/# MOD PATCHES/{n;p}' $SH/audmodlib-post-fs-data$EXT)" && remove_aml
   fi
 
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do

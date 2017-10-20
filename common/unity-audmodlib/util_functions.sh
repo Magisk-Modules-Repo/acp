@@ -285,7 +285,7 @@ patch_script() {
   test ! -z $XML_PATH && sed -i "s|<XML_PRFX>|$XML_PATH|" $1 || sed -i "/<XML_PRFX>/d" $1
   if [ "$MAGISK" == false ]; then
     test ! -z $EXT && sed -i "s|<EXT>|$EXT|" $1 || sed -i "/<EXT>/d" $1
-	test ! -z $SEINJECT && sed -i "s|<SEINJECT>|$SEINJECT|" $1 || sed -i "/<SEINJECT>/d" $1
+	sed -i "s|<SEINJECT>|$SEINJECT|" $1
 	sed -i "/<AMLPATH>/d" $1
 	sed -i "s|$MOUNTPATH||g" $1
   else
@@ -302,4 +302,24 @@ add_to_info() {
 
 custom_app_install() {
   $OLDAPP && $CP_PRFX $INSTALLER/custom/$1/$1.apk $UNITY$SYS/app/$1.apk || $CP_PRFX $INSTALLER/custom/$1/$1.apk $UNITY$SYS/priv-app/$1/$1.apk
+}
+
+info_uninstall() {
+  if [ -f $1 ]; then
+    ui_print "   Removing/restoring files..."
+    cat $1 | while read LINE; do
+      sys_rm_ch $LINE
+    done
+    rm -f $1
+  else
+    test "$MAGISK" == false && ui_print "   ! Mod not detected. Removing scripts..." || ui_print "   Removing/restoring files..."
+  fi
+}
+
+remove_aml() {
+  ui_print " "
+  ui_print "   ! No more audmodlib modules detected !"
+  ui_print "   ! Removing Audio Modification Library !"
+  info_uninstall $AMLINFO
+  test "$MAGISK" == true && { rm -rf $AMLPATH; rm -rf /magisk/audmodlib; } || rm -f $SYS/addon.d/audmodlib.sh
 }
