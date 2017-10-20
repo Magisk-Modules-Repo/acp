@@ -58,6 +58,6 @@ for MOD in ${MODIDS}; do
   sed -i "/magisk\/${MOD}/,/fi #${MOD}/d" $SH/post-fs-data.sh
 done
 
-test ! "$(sed -n '/# MOD PATCHES/{n;p}' $AMLPATH/post-fs-data.sh)" && rm -rf $AMLPATH
+test "$MAGISK" == true -a ! "$(sed -n '/# MOD PATCHES/{n;p}' $AMLPATH/post-fs-data.sh)" && rm -rf $AMLPATH
 
 echo "Audmodlib script has run successfully $(date +"%m-%d-%Y %H:%M:%S")" > /cache/audmodlib.log
