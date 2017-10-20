@@ -497,8 +497,7 @@ unity_uninstall() {
   ui_print "- Cleaning up previous installations -"
 
   # REMOVE PROPS
-  ui_print "   Removing build.props..."
-  unity_prop_remove $INSTALLER/common/unity-props.prop
+  test -s $INSTALLER/common/unity-props.prop && { ui_print "   Removing build.props..."; unity_prop_remove $INSTALLER/common/unity-props.prop; }
 
   # REMOVE FILES
   info_uninstall $INFO
