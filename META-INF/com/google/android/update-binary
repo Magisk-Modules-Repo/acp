@@ -513,7 +513,7 @@ unity_uninstall() {
     rm -rf /magisk/$MODID
     test "$AUDMODLIB" != "$MODID" && sed -i "/magisk\/$MODID/,/fi #$MODID/d" $AMLPATH/post-fs-data.sh
     # Use magisk_merge for aml during bootmode uninstall
-    test "$BOOTMODE" == "true" -a "$AUDMODLIB" != "$MODID" && aml_mod || ui_print "   Removing $MODID from Audio Modification Library"
+    test "$BOOTMODE" == "true" -a "$AUDMODLIB" != "$MODID" && aml_mod || { test "$AUDMODLIB" != "$MODID" && ui_print "   Removing $MODID from Audio Modification Library"; }
 	# Remove AML if no modules are installed
 	test ! "$(sed -n '/# MOD PATCHES/{n;p}' $AMLPATH/post-fs-data.sh)" && remove_aml
   else
