@@ -448,10 +448,10 @@ aml_mod_patch() {
     sed -i "/magisk\/$MODID/,/fi #$MODID/d" $AMLPATH/post-fs-data.sh
     sed -i 's/^/  /' $INSTALLER/common/aml-patches-remove.sh
     test ! -z $XML_PRFX && sed -i 's/^/  /' $INSTALLER/common/aml-xml-patches-remove.sh;
-    sed -i -e "/# MOD PATCHES/ a\if [ ! -d \"/magisk/$MODID\" ]; then" -e "/# MOD PATCHES/ a\  MODIDS=\"\${MODIDS} $MODID\"" -e "/# MOD PATCHES/ r $INSTALLER/common/aml-patches-remove.sh" -e "/# MOD PATCHES/ a\TEMP$MODID" $AMLPATH/post-fs-data.sh
+    sed -i -e "/^# MOD PATCHES/ a\if [ ! -d \"/magisk/$MODID\" ]; then" -e "/^# MOD PATCHES/ a\  MODIDS=\"\${MODIDS} $MODID\"" -e "/^# MOD PATCHES/ r $INSTALLER/common/aml-patches-remove.sh" -e "/^# MOD PATCHES/ a\TEMP$MODID" $AMLPATH/post-fs-data.sh
     test ! -z $XML_PRFX && sed -i -e "/TEMP$MODID/ r $INSTALLER/common/aml-xml-patches-remove.sh" -e "/TEMP$MODID/ a\fi #$MODID" -e "/TEMP$MODID/d" $AMLPATH/post-fs-data.sh || sed -i -e "/TEMP$MODID/ a\fi #$MODID" -e "/TEMP$MODID/d" $AMLPATH/post-fs-data.sh
   else
-    sed -i "/# MOD PATCHES/ a\#$MODID" $SH/audmodlib-post-fs-data$EXT
+    sed -i "/^# MOD PATCHES/ a\#$MODID" $SH/audmodlib-post-fs-data$EXT
   fi
 
   # REMOVE LIBRARIES & EFFECTS
@@ -515,12 +515,12 @@ unity_uninstall() {
     # Use magisk_merge for aml during bootmode uninstall
     test "$AUDMODLIB" != "$MODID" && { test "$BOOTMODE" == "true" && aml_mod || ui_print "   Removing $MODID from Audio Modification Library"; }
 	# Remove AML if no modules are installed
-	test ! "$(sed -n '/# MOD PATCHES/{n;p}' $AMLPATH/post-fs-data.sh)" && remove_aml
+	test ! "$(sed -n '/^# MOD PATCHES/{n;p}' $AMLPATH/post-fs-data.sh)" && remove_aml
   else
     test "$AUDMODLIB" != "$MODID" && sed -i "/#$MODID/d" $SH/audmodlib-post-fs-data$EXT
     rm -f $SYS/addon.d/$MODID.sh
 	# Remove AML if no modules are installed
-	test ! "$(sed -n '/# MOD PATCHES/{n;p}' $SH/audmodlib-post-fs-data$EXT)" && remove_aml
+	test ! "$(sed -n '/^# MOD PATCHES/{n;p}' $SH/audmodlib-post-fs-data$EXT)" && remove_aml
   fi
 
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
