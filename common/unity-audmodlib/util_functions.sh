@@ -88,6 +88,10 @@ boot_actions() {
 }
 
 recovery_actions() {
+  # Magisk clean flash support
+  if [ -e /data/magisk -a ! -e /data/magisk.img ]; then
+    /system/bin/make_ext4fs -l 64M /data/magisk.img
+  fi
   # TWRP bug fix
   mount -o bind /dev/urandom /dev/random
   # Preserve environment varibles
