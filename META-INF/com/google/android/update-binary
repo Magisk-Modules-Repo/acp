@@ -215,22 +215,14 @@ system_install() {
 script_install_logic() {
   supersuimg_mount
   EXT=".sh"
-  if [ -d "/data/adb/su/bin" ]; then
-    SH=/data/adb/su/su.d
-    SEINJECT=/data/adb/su/bin/supolicy
-    ROOTTYPE="BINDSBIN SuperSU"
-  elif [ -d "/data/supersu_install/bin" ]; then
-    SH=/data/supersu_install/su.d
-    SEINJECT=/data/supersu_install/bin/supolicy
-    ROOTTYPE="BINDSBIN SuperSU"
-  elif [ -d "/cache/supersu_install/bin" ]; then
-    SH=/cache/supersu_install/su.d
-    SEINJECT=/cache/supersu_install/bin/supolicy
-    ROOTTYPE="BINDSBIN SuperSU"
-  elif [ "$supersuimg" ] || [ -d /su ]; then
+  if [ "$supersuimg" ] || [ -d /su ]; then
     SH=/su/su.d
     SEINJECT=/su/bin/supolicy
     ROOTTYPE="systemless SuperSU"
+  elif [ -e "$(dirname `find /data -name supersu_is_here | head -n1`)" ]; then
+    SH=$(dirname `find /data -name supersu_is_here | head -n1`)/su.d
+	SEINJECT=$(dirname `find /data -name supersu_is_here | head -n1`)/bin/supolicy
+	ROOTTYPE="bindsbin SuperSU"
   elif [ -d $SYS/su ] || [ -f $SYS/xbin/daemonsu ] || [ -f $SYS/xbin/sugote ]; then
     SH=$SYS/su.d
     SEINJECT=$SYS/xbin/supolicy
