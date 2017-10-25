@@ -219,9 +219,9 @@ script_install_logic() {
     SH=/su/su.d
     SEINJECT=/su/bin/supolicy
     ROOTTYPE="systemless SuperSU"
-  elif [ -e "$(dirname `find /data -name supersu_is_here | head -n1`)" ]; then
-    SH=$(dirname `find /data -name supersu_is_here | head -n1`)/su.d
-	SEINJECT=$(dirname `find /data -name supersu_is_here | head -n1`)/bin/supolicy
+  elif [ -e "$(dirname `find /data /cache -name supersu_is_here | head -n1`)" ]; then
+    SH=$(dirname `find /data /cache -name supersu_is_here | head -n1`)/su.d
+	SEINJECT=$(dirname `find /data /cache -name supersu_is_here | head -n1`)/bin/supolicy
 	ROOTTYPE="bindsbin SuperSU"
   elif [ -d $SYS/su ] || [ -f $SYS/xbin/daemonsu ] || [ -f $SYS/xbin/sugote ]; then
     SH=$SYS/su.d
