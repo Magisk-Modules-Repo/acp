@@ -10,7 +10,7 @@ This hack fixes when streaming apps (Spotify, Pandora, etc) do not process audio
 * MagiskSU & SuperSU
 * Magisk & System install
 * Nexus/Pixel support (A/B OTA)
-* SELinix enforcing
+* SELinux enforcing
 * Works with nearly every device, kernel, and rom
 
 ## Change Log
