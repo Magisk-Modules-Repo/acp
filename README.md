@@ -6,11 +6,11 @@ This hack fixes when streaming apps (Spotify, Pandora, etc) do not process audio
 
 ## Compatibility
 * Android Jellybean+
-* init.d (LineageOS SU, phh's SU, & rootless)
+* init.d (other root & rootless)
 * MagiskSU & SuperSU
 * Magisk & System install
 * Nexus/Pixel support (A/B OTA)
-* SELinix enforcing (LOS SU & rootless need permissive)
+* SELinix enforcing
 * Works with nearly every device, kernel, and rom
 
 ## Change Log
