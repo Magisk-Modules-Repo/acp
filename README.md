@@ -6,7 +6,7 @@ This hack fixes when streaming apps (Spotify, Pandora, etc) do not process audio
 
 ## Compatibility
 * Android Jellybean+
-* init.d (other root & rootless)
+* init.d (other root & rootless) - requires init.d support. If you don't have init.d support, try this: https://forum.xda-developers.com/android/software-hacking/mod-universal-init-d-injector-wip-t3692105
 * MagiskSU & SuperSU
 * Magisk & System install
 * Nexus/Pixel support (A/B OTA)
