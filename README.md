@@ -14,7 +14,7 @@ This hack fixes when streaming apps (Spotify, Pandora, etc) do not process audio
 * Works with nearly every device, kernel, and rom
 
 ## Change Log
-### v3.1 - 10.20.2017
+### v3.1 - 10.26.2017
 * Unity/AML v2.1: Updated for Magisk v14.3
 * Unity/AML v2.1: Updated to Magisk module template 1410
 * Unity/AML v2.1: Massive script reduction & efficiency enhancements
@@ -38,7 +38,7 @@ This hack fixes when streaming apps (Spotify, Pandora, etc) do not process audio
 * Unity/AML v2.1: Addon.d script fixes/improvements
 * Unity/AML v2.1: Various miscellaneous script fixes and improvements
 	
-### v3.0
+### v3.0 - 09.25.2017
 * Reworked the way deep_buffer removals function when a user uninstalls
 * Unity/AML v2.0: Massive installer and script overhaul
 * Unity v2.0: Added autouninstall (if mod is already installed and you flash same version zip again, it'll uninstall), thus removing the need for an uninstall zip
@@ -63,32 +63,6 @@ This hack fixes when streaming apps (Spotify, Pandora, etc) do not process audio
 * Unity v2.0: Reworked script permissions
 * Unity/AML v2.0: Update sepolicy for Magisk 13+
 * Unity/AML v2.0: Updated to Magisk module template 1400
-
-### v2.4
-* AudModLib v1.4 update which changes SELinux live patching to allow better compatibility between different devices, kernels, and roms; while also keeping the amount of "allowances" to a minumum
-* AudModLib v1.4: changed post-fs-data(.d)/service(.d) shell script names for cosmetic recognition
-* AudModLib v1.4: merge SuperSU shell script with MagiskSU post-fs-data(.d) script for less fragmentation
-* AudModLib v1.4: added /cache/audmodlib.log to determine if script has run successfully
-* AudModLib v1.4: more audio policy files and various mixer_paths files are now included in the framework
-* Install script changes that include: major update to Pixel (A/B OTA) support, mounting changes, improved script efficiency, fixes & consolidation, and cosmetic fixes
-* Add/fix proper addon.d support
-* Add more deep_buffer remover compatibility between differing devices and ROMs
-
-### v2.3
-* AudModLib v1.3 update push which includes the script addition to allow various audio mods working with SELinux Enforcing
-* Remove (audmodlib)service.sh and replace with post-fs-data(.d) audmodlib.sh, which should fix when root may be lost upon installing certain mods
-
-### v2.2
-* Added audmodlib.sh post-fs-data.d script
-* Install script fixes
-* post-fs-data.d script fixes
-* Push AudModLib v1.2 hotfixes
-    
-### v2.1
-* AudModLib v1.1 hotfix for bootloops issues on some devices
-    
-### v2.0
-* Initial Magisk release
 
 ## Source Code
 * Module [GitHub](https://github.com/therealahrion/Universal-deep_buffer-Remover)
