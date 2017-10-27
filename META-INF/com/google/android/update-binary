@@ -426,7 +426,8 @@ aml_mod() {
 
   ui_print "   ! AML framework by ahrion & zackptg5 @ XDA !"
 
-  test "$ACTION" != "Install" && aml_mod_patch
+  test "$ACTION" == "Install" && aml_mod_patch
+  return 0
 }
 
 # AML FILE PATCHER
