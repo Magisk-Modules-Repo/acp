@@ -96,7 +96,7 @@ mount_partitions
 api_level_arch_detect
 
 # REMOVE COMMENTS FROM USER INPUT FILES AND ADD PROPER VARIABLES
-for TMP in $INSTALLER/common/unity-files-wipe.sh $INSTALLER/common/aml-patches.sh $INSTALLER/common/aml-xml-patches.sh $INSTALLER/common/aml-patches-remove.sh $INSTALLER/common/aml-xml-patches-remove.sh $INSTALLER/common/aml-patches-wipe.sh $INSTALLER/common/aml-xml-patches-wipe.sh $INSTALLER/common/unity-props.prop $INSTALLER/common/unity-props-remove.prop $INSTALLER/common/unity-uservariables.sh $INSTALLER/common/unity-customrules $INSTALLER/common/post-fs-data.sh $INSTALLER/common/service.sh; do
+for TMP in $INSTALLER/common/unity-files-wipe.sh $INSTALLER/common/aml-patches.sh $INSTALLER/common/aml-xml-patches.sh $INSTALLER/common/aml-patches-remove.sh $INSTALLER/common/aml-xml-patches-remove.sh $INSTALLER/common/aml-patches-wipe.sh $INSTALLER/common/aml-xml-patches-wipe.sh $INSTALLER/common/unity-uservariables.sh $INSTALLER/common/unity-customrules $INSTALLER/common/post-fs-data.sh $INSTALLER/common/service.sh $INSTALLER/common/*.prop; do
   if [ "$TMP" == "$INSTALLER/common/unity-customrules" ]; then
     NUM=1; while true; do
       if [ -f $TMP$NUM.sh ]; then
@@ -190,6 +190,7 @@ magisk_install() {
   CP_PRFX="cp_ch"
   WPAPP_PRFX="mktouch"
   UNITY="$MODPATH"
+  PROPFILE="$MODPATH/system.prop"
   $BOOTMODE && MOD_VER="/magisk/$MODID/module.prop" || MOD_VER="$MODPATH/module.prop"
   $BOOTMODE && INFO="/magisk/$MODID/$MODID-files" || INFO="$MODPATH/$MODID-files"
 }
@@ -201,6 +202,7 @@ system_install() {
   WPAPP_PRFX="sys_wipe_ch"
   UNITY=""
   AMLPATH=""
+  PROPFILE="$SH/$MODID-props"
   MOD_VER="$SYS/etc/$MODID-module.prop"
   if [ -d $SYS/addon.d ]; then
     INFO=$SYS/addon.d/$MODID-files
@@ -214,13 +216,15 @@ system_install() {
 # DETERMINE SYSTEM BOOT SCRIPT TYPE
 script_install_logic() {
   supersuimg_mount
-  EXT=".sh"
+  SHEBANG="#!/system/bin/sh"
   if [ "$supersuimg" ] || [ -d /su ]; then
-    SH=/su/su.d
+    SHEBANG="#!/su/bin/sush"
+	SH=/su/su.d
     SEINJECT=/su/bin/supolicy
     ROOTTYPE="systemless SuperSU"
   elif [ -e "$(dirname `find /data /cache -name supersu_is_here | head -n1`)" ]; then
-    SH=$(dirname `find /data /cache -name supersu_is_here | head -n1`)/su.d
+    SHEBANG="#!/su/bin/sush"
+	SH=$(dirname `find /data /cache -name supersu_is_here | head -n1`)/su.d
     SEINJECT=$(dirname `find /data /cache -name supersu_is_here | head -n1`)/bin/supolicy
     ROOTTYPE="bindsbin SuperSU"
   elif [ -d $SYS/su ] || [ -f $SYS/xbin/daemonsu ] || [ -f $SYS/xbin/sugote ]; then
@@ -235,67 +239,44 @@ script_install_logic() {
     else
       SH=$SYS/etc/init.d
       SEINJECT=/sbin/sepolicy-inject
-      EXT=""
       ROOTTYPE="LineageOS SU"
     fi
   else
     SH=$SYS/etc/init.d
     SEINJECT=/sbin/sepolicy-inject
-    EXT=""
     ROOTTYPE="other root or rootless"
   fi
 }
 
 # UNITY PROP REMOVAL
 unity_prop_remove() {
-  if [ "$MAGISK" == true ]; then
-    test "$AUDMODLIB" != "$MODID" && AMLPROP="$AMLPATH/system.prop" || AMLPROP="$MODPATH/system.prop"
-    if [ "$AUDMODLIB" != "$MODID" ]; then
-      test "$BOOTMODE" == "true" -a ! -f $AMLPATH/system.prop && AMLPROP="/magisk/audmodlib/system.prop" || AMLPROP="$AMLPATH/system.prop"
-    else
-      AMLPROP="$MODPATH/system.prop"
-    fi
-    sed -i -e "s/setprop //g" -e "s/ /=/g" $1
-  else
-    AMLPROP="$SH/$AUDMODLIB-props$EXT"
-  fi
-  if [ -f $AMLPROP ]; then
+  test "$MAGISK" == true && sed -i -e "s/setprop //g" -e "s/ /=/g" $1
+  if [ -f $PROPFILE ]; then
     if [ "$(cat $1)" ]; then
       cat $1 | while read PROP; do
-        test "$(grep "#$PROP" $AMLPROP)" && sed -i "\|#$PROP|d" $AMLPROP || { test "$(grep "$PROP" $AMLPROP)" && sed -i "\|$PROP|d" $AMLPROP; }
+        test "$(grep "$PROP" $PROPFILE)" && sed -i "\|$PROP|d" $PROPFILE
       done
     fi
-    test ! -s $AMLPROP && rm -f $AMLPROP
+    test ! -s $PROPFILE -o "$(cat $PROPFILE)" == "$SHEBANG" && rm -f $PROPFILE
   fi
-  test -f $(dirname $AMLPROP)/$MODID-$(basename $1) && rm -f $(dirname $AMLPROP)/$MODID-$(basename $1)
 }
 
 # UNITY PROP INSTALL
 unity_prop_copy() {
   sed -i "/#/d" $1
-  if [ "$MAGISK" == true ]; then
-    $CP_NBPRFX $1 $AMLPATH/$MODID-$(basename $1)
-    if [ "$AUDMODLIB" != "$MODID" ]; then
-      test "$BOOTMODE" == "true" -a ! -f $AMLPATH/system.prop && AMLPROP="/magisk/audmodlib/system.prop" || AMLPROP="$AMLPATH/system.prop"
-    else
-      AMLPROP="$MODPATH/system.prop"
-    fi
-    sed -i -e "s/setprop //g" -e "s/ /=/g" $1
-  else
-    AMLPROP="$SH/$AUDMODLIB-props$EXT"
-  fi
+  test "$MAGISK" == true && sed -i -e "s/setprop //g" -e "s/ /=/g" $1
   if [ "$(cat $1)" ]; then
-    test ! -f $AMLPROP && { test "$MAGISK" == true && mktouch $AMLPROP || mktouch $AMLPROP "#!/system/bin/sh"; }
-    cat $1 | while read PROP; do
+    test ! -f $PROPFILE && { test "$MAGISK" == true && mktouch $PROPFILE || mktouch $PROPFILE "$SHEBANG"; }
+	cat $1 | while read PROP; do
       PRESENT=false
-      cat $AMLPROP | { 
+      cat $PROPFILE | { 
       while read OLDPROP; do
         test "$PROP" == "$OLDPROP" && PRESENT=true
       done 
-      test "$PRESENT" == false && echo "$PROP" >> $AMLPROP || echo "#$PROP" >> $AMLPROP
+      test "$PRESENT" == false && echo "$PROP" >> $PROPFILE
       }
     done
-    test "$MAGISK" == false && { chmod 0700 $AMLPROP; restorecon $AMLPROP; }
+    test "$MAGISK" == false && { chmod 0700 $PROPFILE; restorecon $PROPFILE; }
   fi
 }
 
@@ -345,16 +326,16 @@ unity_mod_copy() {
 
     # INSTALL POST-FS-DATA MODE SCRIPTS
     if $POSTFSDATA; then
-      $CP_NBPRFX $INSTALLER/common/unity-audmodlib/$MODID-post-fs-data.sh $SH/$MODID-post-fs-data$EXT 0700
-      add_to_info $SH/$MODID-post-fs-data$EXT $INFO
-      test "$AUDMODLIB" == "$MODID" && patch_script $SH/$MODID-post-fs-data$EXT
+      $CP_NBPRFX $INSTALLER/common/unity-audmodlib/$MODID-post-fs-data.sh $SH/$MODID-post-fs-data 0700
+      add_to_info $SH/$MODID-post-fs-data $INFO
+      test "$AUDMODLIB" == "$MODID" && patch_script $SH/$MODID-post-fs-data
     fi
     
     # INSTALL SERVICE MODE SCRIPTS
     if $LATESTARTSERVICE; then
-      $CP_NBPRFX $INSTALLER/common/unity-audmodlib/$MODID-service.sh $SH/$MODID-service$EXT 0700
-      add_to_info $SH/$MODID-service$EXT $INFO
-      test "$AUDMODLIB" == "$MODID" && patch_script $SH/$MODID-service$EXT
+      $CP_NBPRFX $INSTALLER/common/unity-audmodlib/$MODID-service.sh $SH/$MODID-service 0700
+      add_to_info $SH/$MODID-service $INFO
+      test "$AUDMODLIB" == "$MODID" && patch_script $SH/$MODID-service
     fi
 
     # INSTALL ROM BACKUP SCRIPT
@@ -375,7 +356,7 @@ unity_mod_copy() {
 
   # ADD BUILDPROPS
   test -s $INSTALLER/common/unity-props.prop && { ui_print "   Adding build.props..."; unity_prop_copy $INSTALLER/common/unity-props.prop; }
-  test -f "$SH/$AUDMODLIB-props$EXT" && add_to_info $SH/$AUDMODLIB-props$EXT $AMLINFO
+  test -f "$SH/$AUDMODLIB-props" && add_to_info $SH/$AUDMODLIB-props $AMLINFO
   
   # INSTALL APPS & LIBRARIES
   ui_print "   Installing files for $ARCH SDK $API device..."
@@ -424,21 +405,14 @@ aml_mod() {
   
   if [ "$MAGISK" == true ]; then
     test ! -f $AMLPATH/post-fs-data.sh && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh $AMLPATH/post-fs-data.sh 0755; patch_script $AMLPATH/post-fs-data.sh; }    
-    if [ "$BOOTMODE" == "true" ]; then
-      test -f /magisk/audmodlib/post-fs-data.sh && $CP_NBPRFX /magisk/audmodlib/post-fs-data.sh $AMLPATH/post-fs-data.sh 0755
-      if [ "$(ls /magisk/audmodlib/*.prop)" ]; then
-        for PROP in /magisk/audmodlib/*.prop; do
-          test $PROP != "/magisk/audmodlib/module.prop" && $CP_NBPRFX $PROP $AMLPATH/$(basename $PROP)
-        done
-      fi
-      test "$ACTION" == "Uninstall" && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlibmodule.prop $AMLPATH/module.prop; mktouch /magisk/audmodlib/update; mktouch $AMLPATH/auto_mount; }
-    fi
+    test "$BOOTMODE" == "true" -a -f /magisk/audmodlib/post-fs-data.sh && $CP_NBPRFX /magisk/audmodlib/post-fs-data.sh $AMLPATH/post-fs-data.sh 0755
+    test "$BOOTMODE" == "true" -a "$ACTION" == "Uninstall" && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlibmodule.prop $AMLPATH/module.prop; mktouch /magisk/audmodlib/update; mktouch $AMLPATH/auto_mount; }
     test "$ACTION" == "Install" -a ! -f $AMLPATH/post-fs-data.sh && $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh $AMLPATH/post-fs-data.sh 0755
   else
-    test ! -f $SH/audmodlib-post-fs-data$EXT && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh $SH/audmodlib-post-fs-data$EXT 0700; add_to_info $SH/audmodlib-post-fs-data$EXT $AMLINFO; }
-    patch_script $SH/audmodlib-post-fs-data$EXT
-    $POSTFSDATA && patch_script $SH/$MODID-post-fs-data$EXT
-    $LATESTARTSERVICE && patch_script $SH/$MODID-service$EXT
+    test ! -f $SH/audmodlib-post-fs-data && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh $SH/audmodlib-post-fs-data 0700; add_to_info $SH/audmodlib-post-fs-data $AMLINFO; }
+    patch_script $SH/audmodlib-post-fs-data
+    $POSTFSDATA && patch_script $SH/$MODID-post-fs-data
+    $LATESTARTSERVICE && patch_script $SH/$MODID-service
   fi
 
   ui_print "   ! AML framework by ahrion & zackptg5 @ XDA !"
@@ -461,14 +435,9 @@ aml_mod_patch() {
     test ! -z $XML_PRFX && sed -i 's/^/  /' $INSTALLER/common/aml-xml-patches-remove.sh;
     sed -i -e "/^# MOD PATCHES/ a\  MODIDS=\"\${MODIDS} $MODID\"" -e "/^# MOD PATCHES/ r $INSTALLER/common/aml-patches-remove.sh" -e "/^# MOD PATCHES/ a\TEMP$MODID" $AMLPATH/post-fs-data.sh
     test ! -z $XML_PRFX && sed -i -e "/TEMP$MODID/ r $INSTALLER/common/aml-xml-patches-remove.sh" -e "/TEMP$MODID/ a\fi #$MODID" -e "/TEMP$MODID/d" $AMLPATH/post-fs-data.sh || sed -i -e "/TEMP$MODID/ a\fi #$MODID" -e "/TEMP$MODID/d" $AMLPATH/post-fs-data.sh
-    if [ "$(ls $AMLPATH/$MODID-*.prop)" ]; then
-      for PROP in $AMLPATH/$MODID-*.prop; do
-        sed -i "/MODIDS=\"\${MODIDS} $MODID\"/ a\  remove_prop \$AMLPATH/$(basename $PROP)" $AMLPATH/post-fs-data.sh
-      done
-    fi
     sed -i "/^# MOD PATCHES/ a\if [ ! -d \"/magisk/$MODID\" ]; then" $AMLPATH/post-fs-data.sh
   else
-    sed -i "/^# MOD PATCHES/ a\#$MODID" $SH/audmodlib-post-fs-data$EXT
+    sed -i "/^# MOD PATCHES/ a\#$MODID" $SH/audmodlib-post-fs-data
   fi
 
   # REMOVE LIBRARIES & EFFECTS
@@ -534,10 +503,10 @@ unity_uninstall() {
     # Remove AML if no modules are installed
     test "$AUDMODLIB" != "$MODID" && { test ! "$(sed -n '/^# MOD PATCHES/{n;p}' $AMLPATH/post-fs-data.sh)" && remove_aml; }
   else
-    test "$AUDMODLIB" != "$MODID" && sed -i "/#$MODID/d" $SH/audmodlib-post-fs-data$EXT
+    test "$AUDMODLIB" != "$MODID" && sed -i "/#$MODID/d" $SH/audmodlib-post-fs-data
     rm -f $SYS/addon.d/$MODID.sh
     # Remove AML if no modules are installed
-    test "$AUDMODLIB" != "$MODID" -a ! "$(sed -n '/^# MOD PATCHES/{n;p}' $SH/audmodlib-post-fs-data$EXT)" && remove_aml
+    test "$AUDMODLIB" != "$MODID" -a ! "$(sed -n '/^# MOD PATCHES/{n;p}' $SH/audmodlib-post-fs-data)" && remove_aml
   fi
 
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
@@ -660,13 +629,13 @@ standard_procedure() {
 ### SYSTEM INSTALL (IF APPLICABLE) ###
 if is_mounted /data; then
   if [ ! -f "/data/magisk.img" ]; then
-    system_install
     script_install_logic
+	system_install
     standard_procedure
   fi
 elif is_mounted /cache; then
-  system_install
   script_install_logic
+  system_install
   standard_procedure
 else
   ui_print "! Unable to mount /data and /cache !"

@@ -1,7 +1,6 @@
-#!/system/bin/sh
+<SHEBANG>
 SH=${0%/*}
 MODID=<MODID>
-EXT=<EXT>
 SEINJECT=<SEINJECT>
 AMLPATH=<AMLPATH>
 MAGISK=<MAGISK>
@@ -38,9 +37,9 @@ V_MIX_PATH=$VEN/etc/mixer_paths.xml
 # SEPOLICY SETTING FUNCTION
 set_sepolicy() {
   if [ $(basename $SEINJECT) == "sepolicy-inject" ]; then
-	test -z $4 && $SEINJECT -Z $1 -l || $SEINJECT -s $1 -t $2 -c $3 -p $4 -l
-  elif [ ! -z $SEINJECT ]; then
-    test -z $3 && $SEINJECT --live "permissive $(echo $1 | sed 's/,/ /g')" || $SEINJECT --live "allow $1 $2 $3 { $(echo $4 | sed 's/,/ /g') }" 
+	test -z $2 && $SEINJECT -Z $1 -l || $SEINJECT -s $1 -t $2 -c $3 -p $4 -l
+  else
+    test -z $2 && $SEINJECT --live "permissive $(echo $1 | sed 's/,/ /g')" || $SEINJECT --live "allow $1 $2 $3 { $(echo $4 | sed 's/,/ /g') }" 
   fi
 }
 

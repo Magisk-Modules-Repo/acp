@@ -1,6 +1,5 @@
-#!/system/bin/sh
+<SHEBANG>
 SH=${0%/*}
-EXT=<EXT>
 SEINJECT=<SEINJECT>
 AMLPATH=<AMLPATH>
 MAGISK=<MAGISK>
@@ -38,9 +37,9 @@ V_MIX_PATH=$VEN/etc/mixer_paths.xml
 # SEPOLICY SETTING FUNCTION
 set_sepolicy() {
   if [ $(basename $SEINJECT) == "sepolicy-inject" ]; then
-	test -z $4 && $SEINJECT -Z $1 -l || $SEINJECT -s $1 -t $2 -c $3 -p $4 -l
-  elif [ ! -z $SEINJECT ]; then
-    test -z $3 && $SEINJECT --live "permissive $(echo $1 | sed 's/,/ /g')" || $SEINJECT --live "allow $1 $2 $3 { $(echo $4 | sed 's/,/ /g') }" 
+	test -z $2 && $SEINJECT -Z $1 -l || $SEINJECT -s $1 -t $2 -c $3 -p $4 -l
+  else
+    test -z $2 && $SEINJECT --live "permissive $(echo $1 | sed 's/,/ /g')" || $SEINJECT --live "allow $1 $2 $3 { $(echo $4 | sed 's/,/ /g') }" 
   fi
 }
 
@@ -50,17 +49,15 @@ set_sepolicy mediaserver mediaserver_tmpfs file read,write,execute
 set_sepolicy mediaserver system_file file execmod
 set_sepolicy $SOURCE init unix_stream_socket connectto
 set_sepolicy $SOURCE property_socket sock_file getattr,open,read,write,execute
-set_sepolicy $SOURCE audio_prop
-
-# MAGISK PROP REMOVAL FUNCTION
-<PROPREMOVE>
+set_sepolicy $SOURCE,audio_prop
 
 # MOD PATCHES
 
-for MOD in ${MODIDS}; do
-  sed -i "/magisk\/${MOD}/,/fi #${MOD}/d" $SH/post-fs-data.sh
-done
-
-test "$MAGISK" == true -a ! "$(sed -n '/# MOD PATCHES/{n;p}' $AMLPATH/post-fs-data.sh)" && rm -rf $AMLPATH
+if [ "$MAGISK" == true ]; then
+  for MOD in ${MODIDS}; do
+    sed -i "/magisk\/${MOD}/,/fi #${MOD}/d" $SH/post-fs-data.sh
+  done
+  test ! "$(sed -n '/# MOD PATCHES/{n;p}' $AMLPATH/post-fs-data.sh)" && rm -rf $AMLPATH
+fi
 
 echo "Audmodlib script has run successfully $(date +"%m-%d-%Y %H:%M:%S")" > /cache/audmodlib.log

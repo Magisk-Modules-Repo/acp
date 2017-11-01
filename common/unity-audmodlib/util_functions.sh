@@ -288,12 +288,12 @@ patch_script() {
   test ! -z $ROOT && sed -i "s|<ROOT>|$ROOT|" $1 || sed -i "/<ROOT>/d" $1
   test ! -z $XML_PATH && sed -i "s|<XML_PRFX>|$XML_PATH|" $1 || sed -i "/<XML_PRFX>/d" $1
   if [ "$MAGISK" == false ]; then
-    test ! -z $EXT && sed -i "s|<EXT>|$EXT|" $1 || sed -i "/<EXT>/d" $1
+    sed -i "s|<SHEBANG>|$SHEBANG|" $1
 	sed -i "s|<SEINJECT>|$SEINJECT|" $1
 	sed -i "/<AMLPATH>/d" $1
 	sed -i "s|$MOUNTPATH||g" $1
   else
-	sed -i "s|<EXT>|.sh|" $1
+    sed -i "s|<SHEBANG>|#!/system/bin/sh|" $1
 	sed -i "s|<SEINJECT>|magiskpolicy|" $1
 	sed -i "s|<AMLPATH>|$AMLPATH|" $1
 	sed -i "s|$MOUNTPATH|/magisk|g" $1
