@@ -183,6 +183,7 @@ V_MIX_PATH=$VEN/etc/mixer_paths.xml
 # UNIVERSAL VARIABLES
 CP_NBPRFX="cp_ch"
 WP_PRFX="wipe_ch"
+CONFPROPS="$(dirname $ZIP)/$MODID-conflictingprops.txt"
 
 # MAGISK ONLY VARIABLES
 magisk_install() {
@@ -258,25 +259,36 @@ unity_prop_remove() {
       done
     fi
     test ! -s $PROPFILE -o "$(cat $PROPFILE)" == "$SHEBANG" && rm -f $PROPFILE
+	test -f $CONFPROPS && rm -f $CONFPROPS
   fi
 }
 
 # UNITY PROP INSTALL
 unity_prop_copy() {
   sed -i "/#/d" $1
-  test "$MAGISK" == true && sed -i -e "s/setprop //g" -e "s/ /=/g" $1
+  test "$MAGISK" == true && { sed -i -e "s/setprop //g" -e "s/ /=/g" $1; SH=/magisk; FILE=system.prop; } || FILE="*props"
   if [ "$(cat $1)" ]; then
     test ! -f $PROPFILE && { test "$MAGISK" == true && mktouch $PROPFILE || mktouch $PROPFILE "$SHEBANG"; }
-	cat $1 | while read PROP; do
-      PRESENT=false
-      cat $PROPFILE | { 
-      while read OLDPROP; do
-        test "$PROP" == "$OLDPROP" && PRESENT=true
-      done 
-      test "$PRESENT" == false && echo "$PROP" >> $PROPFILE
-      }
-    done
+	for TMP in $(find $SH -type f -name $FILE); do
+	  cat $1 | while read PROP; do
+        PRESENT=false
+        cat $TMP | { 
+        while read OLDPROP; do
+          test "$PROP" == "$OLDPROP" && PRESENT=true
+        done
+        if [ "$PRESENT" == false ]; then
+		  test ! "$(grep '$PROP' $PROPFILE)" && echo "$PROP" >> $PROPFILE
+		elif [ "$TMP" != "$PROPFILE" ]; then
+		  test ! -f $CONFPROPS && mktouch $CONFPROPS
+		  echo "FOUND IN: $TMP" >> $CONFPROPS
+		  echo "- VALUE: $OLDPROP" >> $CONFPROPS
+		  echo "- NEW VALUE: $PROP" >> $CONFPROPS
+		fi
+        }
+      done
+	done
     test "$MAGISK" == false && { chmod 0700 $PROPFILE; restorecon $PROPFILE; }
+	test -f $CONFPROPS && { ui_print "   ! Conflicting props found!"; ui_print "   ! Check the conflicting props file at"; ui_print "   ! location of installer zip for list of them !"; }
   fi
 }
 
