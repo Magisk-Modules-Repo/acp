@@ -449,6 +449,7 @@ aml_mod() {
 	echo "$(sed -n -r '/^# MOD PATCHES/,/^\s*$/p' $AMLSCRIPT)" > $INSTALLER/tamlscript
 	sed -i '/^# MOD PATCHES/d' $INSTALLER/tamlscript
 	sed -i "/^# MOD PATCHES/ r $INSTALLER/tamlscript" $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh
+	patch_script $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh
 	$CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh $AMLSCRIPT
   fi
 
