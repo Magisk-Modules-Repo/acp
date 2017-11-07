@@ -10,7 +10,7 @@ mount_partitions() {
   mount /data 2>/dev/null
   mount /cache 2>/dev/null
   # Check A/B slot
-  [ -f /data/magisk.img -o -d /magisk ] && WRITE=ro || WRITE=rw
+  [ -d /data/magisk -o -d /magisk ] && WRITE=ro || WRITE=rw
   SYS=/system
   REALSYS=/system
   SLOT=`getprop ro.boot.slot_suffix`
@@ -35,7 +35,7 @@ mount_partitions() {
   $SKIP_INITRAMFS && ui_print "   ! Device skip_initramfs detected"
   if [ -L /system/vendor ]; then
     # Seperate /vendor partition
-    [ -f /data/magisk.img -o -d /magisk ] && VEN=/system/vendor || VEN=/vendor
+    [ -d /data/magisk -o -d /magisk ] && VEN=/system/vendor || VEN=/vendor
     is_mounted /vendor || mount -o $WRITE /vendor 2>/dev/null
     if ! is_mounted /vendor; then
       VENDORBLOCK=`find /dev/block -iname vendor$SLOT | head -n 1`
@@ -89,7 +89,7 @@ boot_actions() {
 
 recovery_actions() {
   # Magisk clean flash support
-  if [ -e /data/magisk -a ! -e /data/magisk.img ]; then
+  if [ -d /data/magisk -a ! -f /data/magisk.img ]; then
     /system/bin/make_ext4fs -l 64M /data/magisk.img
   fi
   # TWRP bug fix

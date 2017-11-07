@@ -537,7 +537,7 @@ magisk_procedure_extras() {
 
   # AUTO MOUNT
   $AUTOMOUNT && touch $MODPATH/auto_mount
-  test "$AUDMODLIB" != "$MODID" && { $AUTOMOUNT && touch $AMLPATH/auto_mount; }
+  test "$AUDMODLIB" != "$MODID" && touch $AMLPATH/auto_mount
 
   # REMOVE OLD AML FILES IF IN BOOTMODE
   test "$BOOTMODE" == "true" -a "$AUDMODLIB" != "$MODID" && { rm -rf /magisk/audmodlib; mkdir -p /magisk/audmodlib; }
@@ -640,7 +640,7 @@ standard_procedure() {
 
 ### SYSTEM INSTALL (IF APPLICABLE) ###
 if is_mounted /data; then
-  if [ ! -f "/data/magisk.img" ]; then
+  if [ ! -d "/data/magisk" ]; then
     script_install_logic
 	system_install
     standard_procedure
