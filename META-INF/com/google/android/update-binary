@@ -192,8 +192,16 @@ magisk_install() {
   WPAPP_PRFX="mktouch"
   UNITY="$MODPATH"
   PROPFILE="$MODPATH/system.prop"
-  $BOOTMODE && MOD_VER="/magisk/$MODID/module.prop" || MOD_VER="$MODPATH/module.prop"
-  $BOOTMODE && INFO="/magisk/$MODID/$MODID-files" || INFO="$MODPATH/$MODID-files"
+  AMLSCRIPT="$AMLPATH/post-fs-data.sh"
+  if $BOOTMODE; then
+    INFO="/magisk/$MODID/$MODID-files"
+    MOD_VER="/magisk/$MODID/module.prop"
+	AML_VER="/magisk/audmodlib/module.prop"
+  else
+    INFO="$MODPATH/$MODID-files"
+    MOD_VER="$MODPATH/module.prop"
+	AML_VER="$AMLPATH/module.prop"
+  fi
 }
 
 # SYSTEM ONLY VARIABLES
@@ -204,7 +212,9 @@ system_install() {
   UNITY=""
   AMLPATH=""
   PROPFILE="$SH/$MODID-props"
+  AMLSCRIPT="$SH/post-fs-data"
   MOD_VER="$SYS/etc/$MODID-module.prop"
+  AML_VER="$SYS/etc/audmodlib-module.prop"
   if [ -d $SYS/addon.d ]; then
     INFO=$SYS/addon.d/$MODID-files
     AMLINFO=$SYS/addon.d/audmodlib-files
@@ -266,7 +276,13 @@ unity_prop_remove() {
 # UNITY PROP INSTALL
 unity_prop_copy() {
   sed -i "/#/d" $1
-  test "$MAGISK" == true && { sed -i -e "s/setprop //g" -e "s/ /=/g" $1; SH=/magisk; FILE=system.prop; } || FILE="*props"
+  if [ "$MAGISK" == true ]; then
+    sed -i -e "s/setprop //g" -e "s/ /=/g" $1
+	$BOOTMODE && SH=/magisk || SH=$MOUNTPATH
+	FILE=system.prop
+  else
+    FILE="*props"
+  fi
   if [ "$(cat $1)" ]; then
     test ! -f $PROPFILE && { test "$MAGISK" == true && mktouch $PROPFILE || mktouch $PROPFILE "$SHEBANG"; }
 	for TMP in $(find $SH -type f -name $FILE); do
@@ -415,16 +431,25 @@ aml_mod() {
     fi
   fi
   
+  test "$ACTION" == "Install" -a ! -f $AMLSCRIPT && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh $AMLSCRIPT 0755; patch_script $AMLSCRIPT; }    
   if [ "$MAGISK" == true ]; then
-    test ! -f $AMLPATH/post-fs-data.sh && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh $AMLPATH/post-fs-data.sh 0755; patch_script $AMLPATH/post-fs-data.sh; }    
-    test "$BOOTMODE" == "true" -a -f /magisk/audmodlib/post-fs-data.sh && $CP_NBPRFX /magisk/audmodlib/post-fs-data.sh $AMLPATH/post-fs-data.sh 0755
+    test "$BOOTMODE" == "true" -a -f /magisk/audmodlib/post-fs-data.sh && $CP_NBPRFX /magisk/audmodlib/post-fs-data.sh $AMLSCRIPT 0755
     test "$BOOTMODE" == "true" -a "$ACTION" == "Uninstall" && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlibmodule.prop $AMLPATH/module.prop; mktouch /magisk/audmodlib/update; mktouch $AMLPATH/auto_mount; }
-    test "$ACTION" == "Install" -a ! -f $AMLPATH/post-fs-data.sh && $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh $AMLPATH/post-fs-data.sh 0755
-  else
-    test ! -f $SH/audmodlib-post-fs-data && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh $SH/audmodlib-post-fs-data 0700; add_to_info $SH/audmodlib-post-fs-data $AMLINFO; }
-    patch_script $SH/audmodlib-post-fs-data
+  elif [ "$MAGISK" == false ] && [ "$ACTION" == "Install" ]; then
+    add_to_info $AMLSCRIPT $AMLINFO
+	patch_script $AMLSCRIPT
     $POSTFSDATA && patch_script $SH/$MODID-post-fs-data
     $LATESTARTSERVICE && patch_script $SH/$MODID-service
+  fi
+  
+  if [ $(grep_prop versionCode $INSTALLER/common/unity-audmodlib/audmodlibmodule.prop) -gt $(grep_prop versionCode $AML_VER) ]; then
+    ui_print "   ! Old version of AML detected !"
+	ui_print "     Upgrading AML..."
+	ui_print " "
+	echo "$(sed -n -r '/^# MOD PATCHES/,/^\s*$/p' $AMLSCRIPT)" > $INSTALLER/tamlscript
+	sed -i '/^# MOD PATCHES/d' $INSTALLER/tamlscript
+	sed -i "/^# MOD PATCHES/ r $INSTALLER/tamlscript" $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh
+	$CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh $AMLSCRIPT
   fi
 
   ui_print "   ! AML framework by ahrion & zackptg5 @ XDA !"
