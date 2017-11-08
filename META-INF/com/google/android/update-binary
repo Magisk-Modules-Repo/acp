@@ -445,9 +445,8 @@ aml_mod() {
 	  ui_print "   ! Old version of AML detected !"
 	  ui_print "     Upgrading AML..."
 	  ui_print " "
-	  echo "$(sed -n -r '/^# MOD PATCHES/,/^\s*$/p' $AMLSCRIPT)" > $INSTALLER/tamlscript
-	  sed -i '/^# MOD PATCHES/d' $INSTALLER/tamlscript
-	  sed -i "/^# MOD PATCHES/ r $INSTALLER/tamlscript" $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh
+	  sed -i -e '/^# MOD PATCHES/,/^$/!d' -e '/^# MOD PATCHES/d' -e '/^$/d' $AMLSCRIPT
+	  sed -i "/^# MOD PATCHES/ r $AMLSCRIPT" $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh
 	  patch_script $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh
 	  $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh $AMLSCRIPT
     fi
