@@ -14,8 +14,8 @@ This hack fixes when streaming apps (Spotify, Pandora, etc) do not process audio
 * Works with nearly every device, kernel, and rom
 
 ## Change Log
-### v3.2 - 11.8.2017
-* Updated to AML v2.2
+### v3.2 - 11.08.2017
+* Updated to Unity/AML v2.2 - Please clean install Audio Modification Library and all modules (this will be the last version you'll have to clean install so in the future the auto clean install/upgrade script will take effect)
 
 ### v3.1 - 10.26.2017
 * Unity/AML v2.1: Updated for Magisk v14.3
