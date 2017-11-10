@@ -324,6 +324,5 @@ remove_aml() {
   ui_print " "
   ui_print "   ! No more audmodlib modules detected !"
   ui_print "   ! Removing Audio Modification Library !"
-  info_uninstall $AMLINFO
-  test "$MAGISK" == true && { rm -rf $AMLPATH; rm -rf /magisk/audmodlib; } || rm -f $SYS/addon.d/audmodlib.sh
+  test "$MAGISK" == true && { rm -rf $AMLPATH; rm -rf /magisk/audmodlib; } || { info_uninstall $AMLINFO; rm -f $SYS/addon.d/audmodlib.sh; }
 }
