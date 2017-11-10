@@ -183,7 +183,7 @@ V_MIX_PATH=$VEN/etc/mixer_paths.xml
 # UNIVERSAL VARIABLES
 CP_NBPRFX="cp_ch"
 WP_PRFX="wipe_ch"
-CONFPROPS="$(dirname $ZIP)/$MODID-conflictingprops.txt"
+CONFPROPS="$(dirname `readlink -f $ZIP`)/$MODID-conflictingprops.txt"
 
 # MAGISK ONLY VARIABLES
 magisk_install() {
