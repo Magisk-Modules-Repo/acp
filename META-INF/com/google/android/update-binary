@@ -295,7 +295,7 @@ unity_prop_copy() {
         if [ "$PRESENT" == false ]; then
 		  test ! "$(grep '$PROP' $PROPFILE)" && echo "$PROP" >> $PROPFILE
 		elif [ "$TMP" != "$PROPFILE" ]; then
-		  test ! -f $CONFPROPS && mktouch $CONFPROPS
+		  test ! -f $CONFPROPS && { mktouch $CONFPROPS; NEW=true; }
 		  echo "FOUND IN: $TMP" >> $CONFPROPS
 		  echo "- VALUE: $OLDPROP" >> $CONFPROPS
 		  echo "- NEW VALUE: $PROP" >> $CONFPROPS
@@ -304,7 +304,7 @@ unity_prop_copy() {
       done
 	done
     test "$MAGISK" == false && { chmod 0700 $PROPFILE; restorecon $PROPFILE; }
-	test -f $CONFPROPS && { ui_print "   ! Conflicting props found!"; ui_print "   ! Check the conflicting props file at"; ui_print "   ! location of installer zip for list of them !"; }
+	test "$NEW" == "true" && { ui_print "   ! Conflicting props found!"; ui_print "   ! Check the conflicting props file at"; ui_print "   ! location of installer zip for list of them !"; }
   fi
 }
 
