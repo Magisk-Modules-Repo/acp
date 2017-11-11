@@ -190,17 +190,18 @@ magisk_install() {
   CP_PRFX="cp_ch"
   WPAPP_PRFX="mktouch"
   UNITY="$MODPATH"
-  PROPFILE="$MODPATH/system.prop"
   AMLSCRIPT="$AMLPATH/post-fs-data.sh"
   if $BOOTMODE; then
     INFO="/magisk/$MODID/$MODID-files"
     MOD_VER="/magisk/$MODID/module.prop"
 	AML_VER="/magisk/audmodlib/module.prop"
+	PROPFILE="/magisk/$MODID/system.prop"
 	CONFPROPS="/magisk/$MODID/$MODID-conflictingprops.txt"
   else
     INFO="$MODPATH/$MODID-files"
     MOD_VER="$MODPATH/module.prop"
 	AML_VER="$AMLPATH/module.prop"
+	PROPFILE="$MODPATH/system.prop"
 	CONFPROPS="$MODPATH/$MODID-conflictingprops.txt"
   fi
 }
@@ -280,7 +281,7 @@ unity_prop_copy() {
   sed -i "/#/d" $1
   if [ "$MAGISK" == true ]; then
     sed -i -e "s/setprop //g" -e "s/ /=/g" $1
-	$BOOTMODE && SH=/magisk || SH=$MOUNTPATH
+	$BOOTMODE && SH="/magisk $MOUNTPATH" || SH=$MOUNTPATH
 	FILE=system.prop
   else
     FILE="*props"
@@ -302,7 +303,7 @@ unity_prop_copy() {
 		  test ! -f $CONFPROPS && { mktouch $CONFPROPS; ui_print " "; ui_print "   ! Conflicting props found !"; 
 		  ui_print "   ! Conflicting props will be commented out !"; ui_print "   ! Check the conflicting props file at"; 
 		  ui_print "   ! $(echo $CONFPROPS | sed "s|$MODPATH|/magisk/$MODID|") !"; ui_print " "; }
-		  echo "FOUND IN: $TMP" >> $CONFPROPS
+		  echo "FOUND IN: $(echo $TMP | sed "s|$MODPATH|/magisk/$MODID|")" >> $CONFPROPS
 		  echo "- VALUE: $OLDPROP" >> $CONFPROPS
 		  echo "- NEW VALUE: $PROP" >> $CONFPROPS
 		fi
@@ -560,6 +561,9 @@ unity_uninstall() {
 
 # EXTRA MAGISK STUFF
 magisk_procedure_extras() {
+  # COPY PROP FILE TO MAGISK_MERGE FOR BOOTMODE
+  $BOOTMODE && { $CP_NBPRFX $PROPFILE $MODPATH/system.prop; $CP_NBPRFX $CONFPROPS $MODPATH/$MODID-conflictingprops.txt; }
+  
   # HANDLE REPLACE FOLDERS
   for TARGET in $REPLACE; do
     mktouch $MODPATH$TARGET/.replace
