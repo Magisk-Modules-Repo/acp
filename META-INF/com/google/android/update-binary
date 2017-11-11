@@ -280,10 +280,12 @@ unity_prop_remove() {
 unity_prop_copy() {
   sed -i "/#/d" $1
   if [ "$MAGISK" == true ]; then
+    REGEX="s/(.*)=(.*)/\1/"
     sed -i -e "s/setprop //g" -e "s/ /=/g" $1
 	$BOOTMODE && SH="/magisk $MOUNTPATH" || SH=$MOUNTPATH
 	FILE=system.prop
   else
+    REGEX="s/setprop (.*) (.*)/\1/"
     FILE="*props"
   fi
   if [ "$(cat $1)" ]; then
@@ -291,9 +293,11 @@ unity_prop_copy() {
 	for TMP in $(find $SH -type f -name $FILE); do
 	  test "$TMP" == "$PROPFILE" && continue
 	  cat $1 | while read PROP; do
-        PRESENT=false
+        PROP=$(echo $PROP | sed -r "$REGEX")
+		PRESENT=false
         cat $TMP | { 
         while read OLDPROP; do
+		  OLDPROP=$(echo $OLDPROP | sed -r "$REGEX")
           test "$PROP" == "$OLDPROP" && PRESENT=true
         done
         if [ "$PRESENT" == false ]; then
