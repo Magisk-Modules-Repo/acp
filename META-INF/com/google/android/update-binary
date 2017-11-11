@@ -183,7 +183,6 @@ V_MIX_PATH=$VEN/etc/mixer_paths.xml
 # UNIVERSAL VARIABLES
 CP_NBPRFX="cp_ch"
 WP_PRFX="wipe_ch"
-CONFPROPS="$(dirname `readlink -f $ZIP`)/$MODID-conflictingprops.txt"
 
 # MAGISK ONLY VARIABLES
 magisk_install() {
@@ -197,10 +196,12 @@ magisk_install() {
     INFO="/magisk/$MODID/$MODID-files"
     MOD_VER="/magisk/$MODID/module.prop"
 	AML_VER="/magisk/audmodlib/module.prop"
+	CONFPROPS="/magisk/$MODID/$MODID-conflictingprops.txt"
   else
     INFO="$MODPATH/$MODID-files"
     MOD_VER="$MODPATH/module.prop"
 	AML_VER="$AMLPATH/module.prop"
+	CONFPROPS="$MODPATH/$MODID-conflictingprops.txt"
   fi
 }
 
@@ -222,6 +223,7 @@ system_install() {
     INFO=$SYS/etc/$MODID-files
     AMLINFO=$SYS/etc/audmodlib-files
   fi
+  CONFPROPS="$(dirname `readlink -f $ZIP`)/$MODID-conflictingprops.txt"
 }
 
 # DETERMINE SYSTEM BOOT SCRIPT TYPE
@@ -304,7 +306,7 @@ unity_prop_copy() {
       done
 	done
     test "$MAGISK" == false && { chmod 0700 $PROPFILE; restorecon $PROPFILE; }
-	test "$NEW" == "true" && { ui_print "   ! Conflicting props found!"; ui_print "   ! Check the conflicting props file at"; ui_print "   ! location of installer zip for list of them !"; }
+	test "$NEW" == "true" && { ui_print "   ! Conflicting props found!"; ui_print "   ! Check the conflicting props file at"; ui_print "   ! $CONFPROPS !"; }
   fi
 }
 
