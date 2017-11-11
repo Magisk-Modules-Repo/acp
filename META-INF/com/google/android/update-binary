@@ -308,8 +308,7 @@ unity_prop_copy() {
 		  ui_print "   ! Conflicting props will be commented out !"; ui_print "   ! Check the conflicting props file at"; 
 		  ui_print "   ! $(echo $CONFPROPS | sed "s|$MODPATH|/magisk/$MODID|") !"; ui_print " "; }
 		  echo "FOUND IN: $(echo $TMP | sed "s|$MODPATH|/magisk/$MODID|")" >> $CONFPROPS
-		  echo "- VALUE: $OLDPROP" >> $CONFPROPS
-		  echo "- NEW VALUE: $PROP" >> $CONFPROPS
+		  echo "- PROP: $PROP" >> $CONFPROPS
 		fi
         }
       done
