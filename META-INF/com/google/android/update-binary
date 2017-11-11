@@ -288,6 +288,7 @@ unity_prop_copy() {
   if [ "$(cat $1)" ]; then
     test ! -f $PROPFILE && { test "$MAGISK" == true && mktouch $PROPFILE || mktouch $PROPFILE "$SHEBANG"; }
 	for TMP in $(find $SH -type f -name $FILE); do
+	  test "$TMP" == "$PROPFILE" && continue
 	  cat $1 | while read PROP; do
         PRESENT=false
         cat $TMP | { 
@@ -295,9 +296,12 @@ unity_prop_copy() {
           test "$PROP" == "$OLDPROP" && PRESENT=true
         done
         if [ "$PRESENT" == false ]; then
-		  test ! "$(grep '$PROP' $PROPFILE)" && echo "$PROP" >> $PROPFILE
-		elif [ "$TMP" != "$PROPFILE" ]; then
-		  test ! -f $CONFPROPS && { mktouch $CONFPROPS; NEW=true; }
+		  test ! "$(grep "$PROP" $PROPFILE)" && echo "$PROP" >> $PROPFILE
+		else
+		  test ! "$(grep "$PROP" $PROPFILE)" && echo "#$PROP" >> $PROPFILE
+		  test ! -f $CONFPROPS && { mktouch $CONFPROPS; ui_print " "; ui_print "   ! Conflicting props found !"; 
+		  ui_print "   ! Conflicting props will be commented out !"; ui_print "   ! Check the conflicting props file at"; 
+		  ui_print "   ! $(echo $CONFPROPS | sed "s|$MODPATH|/magisk/$MODID|") !"; ui_print " "; }
 		  echo "FOUND IN: $TMP" >> $CONFPROPS
 		  echo "- VALUE: $OLDPROP" >> $CONFPROPS
 		  echo "- NEW VALUE: $PROP" >> $CONFPROPS
@@ -306,7 +310,6 @@ unity_prop_copy() {
       done
 	done
     test "$MAGISK" == false && { chmod 0700 $PROPFILE; restorecon $PROPFILE; }
-	test "$NEW" == "true" && { ui_print "   ! Conflicting props found!"; ui_print "   ! Check the conflicting props file at"; ui_print "   ! $CONFPROPS !"; }
   fi
 }
 
