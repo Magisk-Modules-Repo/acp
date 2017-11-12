@@ -306,7 +306,7 @@ unity_prop_copy() {
 		  test ! -f $CONFPROPS && { mktouch $CONFPROPS; ui_print " "; ui_print "   ! Conflicting props found !"; 
 		  ui_print "   ! Conflicting props will be commented out !"; ui_print "   ! Check the conflicting props file at"; 
 		  ui_print "   ! $(echo $CONFPROPS | sed "s|$MODPATH|/magisk/$MODID|") !"; ui_print " "; }
-		  echo "FOUND IN: $(echo $TMP | sed "s|$MODPATH|/magisk/$MODID|")" >> $CONFPROPS
+		  echo "FOUND IN: $(echo $TMP | sed "s|$MOUNTPATH|/magisk|")" >> $CONFPROPS
 		  echo "- PROP: $TPROP" >> $CONFPROPS
 		fi
         }
