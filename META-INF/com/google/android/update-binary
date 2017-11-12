@@ -292,12 +292,12 @@ unity_prop_copy() {
     test ! -f $PROPFILE && { test "$MAGISK" == true && mktouch $PROPFILE || mktouch $PROPFILE "$SHEBANG"; }
 	for TMP in $(find $SH -type f -name $FILE); do
 	  cat $1 | while read PROP; do
-        PROP=$(echo $PROP | sed -r "$REGEX")
+        TPROP=$(echo $PROP | sed -r "$REGEX")
 		PRESENT=false
         cat $TMP | { 
         while read OLDPROP; do
-		  OLDPROP=$(echo $OLDPROP | sed -r "$REGEX")
-          test "$PROP" == "$OLDPROP" && PRESENT=true
+		  TOLDPROP=$(echo $OLDPROP | sed -r "$REGEX")
+          test "$TPROP" == "$TOLDPROP" && PRESENT=true
         done
         if [ "$PRESENT" == false ]; then
 		  test ! "$(grep "$PROP" $PROPFILE)" && echo "$PROP" >> $PROPFILE
@@ -307,7 +307,7 @@ unity_prop_copy() {
 		  ui_print "   ! Conflicting props will be commented out !"; ui_print "   ! Check the conflicting props file at"; 
 		  ui_print "   ! $(echo $CONFPROPS | sed "s|$MODPATH|/magisk/$MODID|") !"; ui_print " "; }
 		  echo "FOUND IN: $(echo $TMP | sed "s|$MODPATH|/magisk/$MODID|")" >> $CONFPROPS
-		  echo "- PROP: $PROP" >> $CONFPROPS
+		  echo "- PROP: $TPROP" >> $CONFPROPS
 		fi
         }
       done
