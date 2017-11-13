@@ -443,7 +443,6 @@ aml_mod() {
     test "$BOOTMODE" == "true" -a "$ACTION" == "Uninstall" && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlibmodule.prop $AMLPATH/module.prop; mktouch /magisk/audmodlib/update; mktouch $AMLPATH/auto_mount; }
   elif [ "$MAGISK" == false ] && [ "$ACTION" == "Install" ]; then
     add_to_info $AMLSCRIPT $AMLINFO
-	patch_script $AMLSCRIPT
     $POSTFSDATA && patch_script $SH/$MODID-post-fs-data
     $LATESTARTSERVICE && patch_script $SH/$MODID-service
   fi
