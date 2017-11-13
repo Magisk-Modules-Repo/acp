@@ -415,7 +415,7 @@ unity_mod_copy() {
 # AUDIO MODIFICATION LIBRARY
 aml_mod() {
   ### CREATE AUDIO MODIFICATION LIBRARY ###
-  test "$ACTION" == "Install" && { ui_print " "; ui_print "- Installing Audio Modification Library -"; } || ui_print "   Removing $MODID from Audio Modification Library"
+  test "$ACTION" == "Install" && { ui_print " "; ui_print "- Installing Audio Modification Library -"; } || ui_print "   Removing $MODID from AML framework"
 
   for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
     if [ -f $CFG ]; then
@@ -545,7 +545,7 @@ unity_uninstall() {
     rm -rf /magisk/$MODID
     test "$AUDMODLIB" != "$MODID" && { test -f /magisk/audmodlib/post-fs-data.sh && sed -i "/magisk\/$MODID/,/fi #$MODID/d" /magisk/audmodlib/post-fs-data.sh || sed -i "/magisk\/$MODID/,/fi #$MODID/d" $AMLSCRIPT; }
     # Use magisk_merge for aml during bootmode uninstall
-    test "$AUDMODLIB" != "$MODID" && { test "$BOOTMODE" == "true" && aml_mod || ui_print "   Removing $MODID from Audio Modification Library"; }
+    test "$AUDMODLIB" != "$MODID" && { test "$BOOTMODE" == "true" && aml_mod || ui_print "   Removing $MODID from AML framework"; }
     # Remove AML if no modules are installed
     test "$AUDMODLIB" != "$MODID" && { test ! "$(sed -n '/^# MOD PATCHES/{n;p}' $AMLPATH/post-fs-data.sh)" && remove_aml; }
   else
