@@ -201,6 +201,13 @@ require_new_api() {
 }
 
 action_complete() {
+  if [ "$MAGISK" == false ]; then
+    ui_print "   Unmounting partitions..."
+    test "$supersuimg" -o -d /su && umount /su
+	umount -l /system_root 2>/dev/null
+    umount -l /system 2>/dev/null
+    umount -l /vendor 2>/dev/null
+  fi
   ui_print " "
   test "$ACTION" == "Install" && ui_print "    --------- INSTALLATION SUCCESSFUL ---------" || ui_print "    --------- RESTORATION SUCCESSFUL ---------"
   ui_print " "
@@ -310,7 +317,7 @@ custom_app_install() {
 
 info_uninstall() {
   if [ -f $1 ]; then
-    ui_print "   Removing/restoring files..."
+    test "$1" != "$AMLINFO" && ui_print "   Removing/restoring files..."
     cat $1 | while read LINE; do
       sys_rm_ch $LINE
     done
