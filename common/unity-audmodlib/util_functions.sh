@@ -263,7 +263,6 @@ cp_ch() {
   chmod 0755 "${2%/*}"
   cp -af "$1" "$2"
   test -z $3 && chmod 0644 "$2" || chmod "$3" "$2"
-  restorecon "$2"
 }
 
 sys_cp_ch() {
