@@ -285,10 +285,11 @@ unity_prop_copy() {
 		  TOLDPROP=$(echo $OLDPROP | sed -r "$REGEX")
           test "$TPROP" == "$TOLDPROP" && PRESENT=true
         done
-        if [ "$PRESENT" == false ]; then
+        if [ "$PRESENT" == "false" ]; then
 		  test ! "$(grep "$PROP" $PROPFILE)" && echo "$PROP" >> $PROPFILE
 		elif [ "$TMP" != "$PROPFILE" ]; then
-		  test ! "$(grep "$PROP" $PROPFILE)" && echo "#$PROP" >> $PROPFILE
+		  test "$(grep "^$PROP" $PROPFILE)" && sed -i "/$PROP/d" $PROPFILE
+		  test ! "$(grep "#$PROP" $PROPFILE)" && echo "#$PROP" >> $PROPFILE
 		  test ! -f $CONFPROPS && { mktouch $CONFPROPS; ui_print " "; ui_print "   ! Conflicting props found !"; 
 		  ui_print "   ! Conflicting props will be commented out !"; ui_print "   ! Check the conflicting props file at"; 
 		  ui_print "   ! $(echo $CONFPROPS | sed "s|$MODPATH|/magisk/$MODID|") !"; ui_print " "; }
