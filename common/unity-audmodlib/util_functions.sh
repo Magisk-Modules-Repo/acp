@@ -14,6 +14,10 @@ mount_partitions() {
   SYS=/system
   REALSYS=/system
   SLOT=`getprop ro.boot.slot_suffix`
+  if [ -z $SLOT ]; then
+    SLOT=_`getprop ro.boot.slot`
+    [ $SLOT = "_" ] && SLOT=
+  fi
   [ -z $SLOT ] || ui_print "- A/B partition detected, current slot: $SLOT"
   ui_print "- Mounting filesystems -"
   ui_print "   Mounting /system, /vendor, /data, /cache"
