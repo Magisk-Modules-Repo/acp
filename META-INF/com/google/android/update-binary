@@ -136,7 +136,7 @@ test "$(find $INSTALLER/data -type f -print)" != "$INSTALLER/data/placeholder" &
 sed -i -e '/addon.d/ d' -e 's/&/\\&/g' -e "s|$INSTALLER||g" $INSTALLER/tfiles
 $IS64BIT || sed -i '/lib64/ d' $INSTALLER/tfiles
 cp $INSTALLER/tfiles $INSTALLER/tvfiles
-sed -i -e '\|/vendor/|d' $INSTALLER/tfiles 
+sed -i '\|/vendor/|d' $INSTALLER/tfiles 
 sed -i -e '\|/vendor/|!d' -e "s|/system/vendor||g" $INSTALLER/tvfiles
 
 # MAKE MODID SERVICE AND POST-FS-DATA SCRIPTS
