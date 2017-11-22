@@ -9,7 +9,11 @@ ROOT=<ROOT>
 SYS=<SYS>
 VEN=<VEN>
 test -d $SYS/priv-app && SOURCE=priv_app || SOURCE=system_app
-<AMLFILES>
+
+### FILE LOCATIONS ###
+CFGS="${CFGS} $(find -L $SYS -type f -name "*audio_effects*.conf")"
+POLS="${POLS} $(find -L $SYS -type f -name "*audio*policy*.conf" -o -name "*audio_policy*.xml")"
+MIXS="${MIXS} $(find -L $SYS -type f -name "*mixer_paths*.xml")"
 
 # SEPOLICY SETTING FUNCTION
 set_sepolicy() {

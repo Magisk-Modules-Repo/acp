@@ -131,13 +131,10 @@ AMLPATH=$MOUNTPATH/audmodlib
 test -z $AUDMODLIB && AUDMODLIB=false || AUDMODLIB=true
 
 # PROCESS FOLDERS AND FILES
-find $INSTALLER/system -type f -print > $INSTALLER/tfiles
+find -L $INSTALLER/system -type f -print > $INSTALLER/tfiles
 test "$(find $INSTALLER/data -type f -print)" != "$INSTALLER/data/placeholder" && find $INSTALLER/data -type f -print >> $INSTALLER/tfiles
 sed -i -e '/addon.d/ d' -e 's/&/\\&/g' -e "s|$INSTALLER||g" $INSTALLER/tfiles
 $IS64BIT || sed -i '/lib64/ d' $INSTALLER/tfiles
-cp $INSTALLER/tfiles $INSTALLER/tvfiles
-sed -i '\|/vendor/|d' $INSTALLER/tfiles 
-sed -i -e '\|/vendor/|!d' -e "s|/system/vendor||g" $INSTALLER/tvfiles
 
 # MAKE MODID SERVICE AND POST-FS-DATA SCRIPTS
 cp -f $INSTALLER/common/unity-audmodlib/modid.sh $INSTALLER/common/unity-audmodlib/$MODID-post-fs-data.sh
@@ -156,12 +153,9 @@ case $ABILONG in
 esac
 
 ### FILE LOCATIONS ###
-CFGS="${CFGS} $(find $SYS -type f -name "*audio_effects*.conf")"
-POLS="${POLS} $(find $SYS -type f -name "*audio*policy*.conf" -o -name "*audio_policy*.xml")"
-MIXS="${MIXS} $(find $SYS -type f -name "*mixer_paths*.xml")"
-test -d /vendor && { CFGS="${CFGS} $(find /vendor -type f -name "*audio_effects*.conf" | sed "s|^/vendor|/system/vendor|")"; 
-POLS="${POLS} $(find /vendor -type f -name "*audio*policy*.conf" -o -name "*audio_policy*.xml" | sed "s|^/vendor|/system/vendor|")"; 
-MIXS="${MIXS} $(find /vendor -type f -name "*mixer_paths*.xml" | sed "s|^/vendor|/system/vendor|")"; }
+CFGS="${CFGS} $(find -L $SYS -type f -name "*audio_effects*.conf")"
+POLS="${POLS} $(find -L $SYS -type f -name "*audio*policy*.conf" -o -name "*audio_policy*.xml")"
+MIXS="${MIXS} $(find -L $SYS -type f -name "*mixer_paths*.xml")"
 
 # UNIVERSAL VARIABLES
 CP_NBPRFX="cp_ch"
@@ -365,9 +359,6 @@ unity_mod_copy() {
   cat $INSTALLER/tfiles | while read LINE; do
     $OLDAPP && LINE2=$(echo $LINE | sed 's|/app/.*/|/app/|') || LINE2=$(echo $LINE | sed 's|/app/|/priv-app/|')
     test "$(echo "$LINE" | cut -c 1-6)" == "/data/" && sys_cp_ch $INSTALLER$LINE $LINE || $CP_PRFX $INSTALLER$LINE $UNITY$LINE2
-  done
-  cat $INSTALLER/tvfiles | while read LINE; do
-    $CP_PRFX $INSTALLER/system/vendor$LINE $UNITY$VEN$LINE
   done
 
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do

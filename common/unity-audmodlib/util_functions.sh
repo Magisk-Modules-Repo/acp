@@ -39,7 +39,7 @@ mount_partitions() {
   $SKIP_INITRAMFS && ui_print "   ! Device skip_initramfs detected"
   if [ -L /system/vendor ]; then
     # Seperate /vendor partition
-    [ -d /data/magisk -o -d /magisk ] && VEN=/system/vendor || VEN=/vendor
+    [ -d /data/magisk ] && VEN=/system/vendor || VEN=/vendor
     is_mounted /vendor || mount -o $WRITE /vendor 2>/dev/null
     if ! is_mounted /vendor; then
       VENDORBLOCK=`find /dev/block -iname vendor$SLOT | head -n 1`
@@ -59,12 +59,17 @@ grep_prop() {
   sed -n "$REGEX" $FILES 2>/dev/null | head -n 1
 }
 
-is_mounted() {
-  if [ ! -z "$2" ]; then
-    cat /proc/mounts | grep $1 | grep $2, >/dev/null
-  else
-    cat /proc/mounts | grep $1 >/dev/null
-  fi
+resolve_link() {
+  RESOLVED="$1"
+  while RESOLVE=`readlink $RESOLVED`; do
+    RESOLVED=$RESOLVE
+  done
+  echo $RESOLVED
+}
+ 
+ is_mounted() {
+  TARGET="`resolve_link $1`"
+  cat /proc/mounts | grep " $TARGET " >/dev/null
   return $?
 }
 
@@ -84,11 +89,11 @@ api_level_arch_detect() {
 }
 
 boot_actions() {
-  if [ ! -d /dev/magisk/mirror/bin ]; then
-    mkdir -p /dev/magisk/mirror/bin
-    mount -o bind $MAGISKBIN /dev/magisk/mirror/bin
+  if [ ! -d /sbin/.core/mirror/bin ]; then
+    mkdir -p /sbin/.core/mirror/bin
+    mount -o bind $MAGISKBIN /sbin/.core/mirror/bin
   fi
-  MAGISKBIN=/dev/magisk/mirror/bin
+  MAGISKBIN=/sbin/.core/mirror/bin
 }
 
 recovery_actions() {
@@ -292,11 +297,6 @@ sys_rm_ch() {
 }
 
 patch_script() {
-  for i in ${CFGS} ${POLS} ${MIXS}; do
-    i="$(echo $i | sed -e "s|$VEN|\$VEN|" -e "s|$SYS|\$SYS|")"
-	sed -i "/<AMLFILES>/ a\\$i" $1
-  done
-  sed -i "/<AMLFILES>/d" $1
   sed -i "s|<MAGISK>|$MAGISK|" $1
   sed -i "s|<VEN>|$VEN|" $1
   sed -i "s|<SYS>|$REALSYS|" $1
