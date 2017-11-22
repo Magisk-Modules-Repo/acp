@@ -9,7 +9,6 @@ ROOT=<ROOT>
 SYS=<SYS>
 VEN=<VEN>
 test -d $SYS/priv-app && SOURCE=priv_app || SOURCE=system_app
-
 <AMLFILES>
 
 # SEPOLICY SETTING FUNCTION
