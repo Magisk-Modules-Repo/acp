@@ -156,29 +156,12 @@ case $ABILONG in
 esac
 
 ### FILE LOCATIONS ###
-# AUDIO EFFECTS
-CONFIG_FILE=$SYS/etc/audio_effects.conf
-HTC_CONFIG_FILE=$SYS/etc/htc_audio_effects.conf
-OTHER_V_FILE=$SYS/etc/audio_effects_vendor.conf
-OFFLOAD_CONFIG=$SYS/etc/audio_effects_offload.conf
-V_CONFIG_FILE=$VEN/etc/audio_effects.conf
-# AUDIO POLICY
-A2DP_AUD_POL=$SYS/etc/a2dp_audio_policy_configuration.xml
-AUD_POL=$SYS/etc/audio_policy.conf
-AUD_POL_CONF=$SYS/etc/audio_policy_configuration.xml
-AUD_POL_VOL=$SYS/etc/audio_policy_volumes.xml
-SUB_AUD_POL=$SYS/etc/r_submix_audio_policy_configuration.xml
-USB_AUD_POL=$SYS/etc/usb_audio_policy_configuration.xml
-V_AUD_OUT_POL=$VEN/etc/audio_output_policy.conf
-V_AUD_POL=$VEN/etc/audio_policy.conf
-# MIXER PATHS
-MIX_PATH=$SYS/etc/mixer_paths.xml
-MIX_PATH_DTP=$SYS/etc/mixer_paths_dtp.xml
-MIX_PATH_i2s=$SYS/etc/mixer_paths_i2s.xml
-MIX_PATH_TASH=$SYS/etc/mixer_paths_tasha.xml
-STRIGG_MIX_PATH=$SYS/sound_trigger_mixer_paths.xml
-STRIGG_MIX_PATH_9330=$SYS/sound_trigger_mixer_paths_wcd9330.xml
-V_MIX_PATH=$VEN/etc/mixer_paths.xml
+CFGS="${CFGS} $(find $SYS -type f -name "*audio_effects*.conf")"
+POLS="${POLS} $(find $SYS -type f -name "*audio*policy*.conf" -o -name "*audio_policy*.xml")"
+MIXS="${MIXS} $(find $SYS -type f -name "*mixer_paths*.xml")"
+test $VEN == "/vendor" && { CFGS="${CFGS} $(find $VEN -type f -name "*audio_effects*.conf")"; 
+POLS="${POLS} $(find $VEN -type f -name "*audio*policy*.conf" -o -name "*audio_policy*.xml")"; 
+MIXS="${MIXS} $(find $VEN -type f -name "*mixer_paths*.xml")"; }
 
 # UNIVERSAL VARIABLES
 CP_NBPRFX="cp_ch"
@@ -401,14 +384,12 @@ aml_mod() {
   ### CREATE AUDIO MODIFICATION LIBRARY ###
   test "$ACTION" == "Install" && { ui_print " "; ui_print "- Installing Audio Modification Library -"; } || ui_print "   Removing $MODID from Audio Modification Library"
 
-  for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
-    if [ -f $CFG ]; then
-      test "$MAGISK" == false && { add_to_info $CFG $AMLINFO; add_to_info $CFG.bak $AMLINFO; }
-      if [ ! -f $AMLPATH$CFG.bak ]; then
-        test -f $CFG.bak && $CP_NBPRFX $CFG.bak $AMLPATH$CFG.bak || $CP_NBPRFX $CFG $AMLPATH$CFG.bak
-      fi
-      test ! -f $AMLPATH$CFG && $CP_NBPRFX $CFG $AMLPATH$CFG
+  for FILE in ${CFGS} ${POLS} ${MIXS}; do
+	test "$MAGISK" == false && { add_to_info $FILE $AMLINFO; add_to_info $FILE.bak $AMLINFO; }
+    if [ ! -f $AMLPATH$FILE.bak ]; then
+      test -f $FILE.bak && $CP_NBPRFX $FILE.bak $AMLPATH$FILE.bak || $CP_NBPRFX $FILE $AMLPATH$FILE.bak
     fi
+    test ! -f $AMLPATH$FILE && $CP_NBPRFX $FILE $AMLPATH$FILE
   done
   
   if [ ! -z $XML_PRFX ]; then
@@ -477,22 +458,20 @@ aml_mod_patch() {
   source $INSTALLER/common/aml-patches-remove.sh
   test ! -z $XML_PRFX && source $INSTALLER/common/aml-xml-patches-remove.sh
 
-  for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
-    if [ -f $CFG ]; then
-      if [ ! "$(grep ' proxy {' $AMLPATH$CFG)" ]; then
-        # ADD LIBRARIES
-        sed -i 's/^libraries {/libraries {\n  proxy {\n    path \/system\/lib\/soundfx\/libeffectproxy.so\n  }/g' $AMLPATH$CFG
-      fi
+  for FILE in ${CFGS}; do
+    if [ ! "$(grep ' proxy {' $AMLPATH$FILE)" ]; then
+      # ADD LIBRARIES
+      sed -i 's/^libraries {/libraries {\n  proxy {\n    path \/system\/lib\/soundfx\/libeffectproxy.so\n  }/g' $AMLPATH$FILE
     fi
   done
 
-  for CFG in $CONFIG_FILE $V_CONFIG_FILE; do
-    if [ -f $CFG ] && [ ! "$(grep '# *output_session_processing' $AMLPATH$CFG)" ] && [ "$(grep '^.*output_session_processing' $AMLPATH$CFG)" ]; then
-      sed -i ':a;N;$!ba;s/}\n/}@/g' $AMLPATH$CFG
-      sed -i '/^\( *\)output_session_processing {/,/}.*}.*}/ s/^/#/' $AMLPATH$CFG
-      sed -i '/^#\( *\)output_session_processing {/,/}.*}.*}/ s/\( *\)}@/#\1}@/2' $AMLPATH$CFG
-      sed -i '/^#\( *\)output_session_processing {/,/}.*}.*}/ s/#\( *\)}@#\( *\)}@\(.*\)/#\1}@#\2}@#\3/g' $AMLPATH$CFG
-      sed -i ':a;N;$!ba;s/}@/}\n/g' $AMLPATH$CFG
+  for FILE in $SYS/etc/audio_effects.conf $VEN/etc/audio_effects.conf; do
+    if [ -f $FILE ] && [ ! "$(grep '# *output_session_processing' $AMLPATH$FILE)" ] && [ "$(grep '^.*output_session_processing' $AMLPATH$FILE)" ]; then
+      sed -i ':a;N;$!ba;s/}\n/}@/g' $AMLPATH$FILE
+      sed -i '/^\( *\)output_session_processing {/,/}.*}.*}/ s/^/#/' $AMLPATH$FILE
+      sed -i '/^#\( *\)output_session_processing {/,/}.*}.*}/ s/\( *\)}@/#\1}@/2' $AMLPATH$FILE
+      sed -i '/^#\( *\)output_session_processing {/,/}.*}.*}/ s/#\( *\)}@#\( *\)}@\(.*\)/#\1}@#\2}@#\3/g' $AMLPATH$FILE
+      sed -i ':a;N;$!ba;s/}@/}\n/g' $AMLPATH$FILE
     fi
   done
 

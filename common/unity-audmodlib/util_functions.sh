@@ -292,6 +292,11 @@ sys_rm_ch() {
 }
 
 patch_script() {
+  for i in ${CFGS} ${POLS} ${MIXS}; do
+    i="$(echo $i | sed -e "s|$VEN|\$VEN|" -e "s|$SYS|\$SYS|")"
+	sed -i "/<AMLFILES>/ a\\$i" $1
+  done
+  sed -i "/<AMLFILES>/d" $1
   sed -i "s|<MAGISK>|$MAGISK|" $1
   sed -i "s|<VEN>|$VEN|" $1
   sed -i "s|<SYS>|$REALSYS|" $1
