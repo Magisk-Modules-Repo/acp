@@ -448,22 +448,11 @@ aml_mod_patch() {
   test ! -z $XML_PRFX && source $INSTALLER/common/aml-xml-patches-wipe.sh
   source $INSTALLER/common/aml-patches-remove.sh
   test ! -z $XML_PRFX && source $INSTALLER/common/aml-xml-patches-remove.sh
-
-  for FILE in ${CFGS}; do
-    if [ ! "$(grep ' proxy {' $AMLPATH$FILE)" ]; then
-      # ADD LIBRARIES
-      sed -i 's/^libraries {/libraries {\n  proxy {\n    path \/system\/lib\/soundfx\/libeffectproxy.so\n  }/g' $AMLPATH$FILE
-    fi
-  done
-
+  
   for FILE in $SYS/etc/audio_effects.conf $VEN/etc/audio_effects.conf; do
-    if [ -f $FILE ] && [ ! "$(grep '# *output_session_processing' $AMLPATH$FILE)" ] && [ "$(grep '^.*output_session_processing' $AMLPATH$FILE)" ]; then
-      sed -i ':a;N;$!ba;s/}\n/}@/g' $AMLPATH$FILE
-      sed -i '/^\( *\)output_session_processing {/,/}.*}.*}/ s/^/#/' $AMLPATH$FILE
-      sed -i '/^#\( *\)output_session_processing {/,/}.*}.*}/ s/\( *\)}@/#\1}@/2' $AMLPATH$FILE
-      sed -i '/^#\( *\)output_session_processing {/,/}.*}.*}/ s/#\( *\)}@#\( *\)}@\(.*\)/#\1}@#\2}@#\3/g' $AMLPATH$FILE
-      sed -i ':a;N;$!ba;s/}@/}\n/g' $AMLPATH$FILE
-    fi
+    if [ -f $FILE ] && [ ! "$(grep '#volume_listener {' $AMLPATH$FILE)" ] && [ "$(grep 'volume_listener {' $AMLPATH$FILE)" ]; then
+      '/volume_listener {/,/}/ s/^/#/' $AMLPATH$FILE
+	fi
   done
 
   source $INSTALLER/common/aml-patches.sh
