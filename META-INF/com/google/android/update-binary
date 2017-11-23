@@ -288,7 +288,7 @@ unity_mod_wipe() {
 
   # REMOVE FILES
   ui_print "   Removing files..."
-  test "$MAGISK" == true && rm -rf $MODPATH 2>/dev/null
+  test "$MAGISK" == true && rm -rf $MODPATH 2>/dev/null || rm -f $CONFPROPS
   test ! -f "$INFO" && mktouch $INFO
 
   cat $INSTALLER/common/unity-files-wipe.sh | while read LINE; do
