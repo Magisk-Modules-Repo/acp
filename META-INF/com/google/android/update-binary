@@ -450,7 +450,7 @@ aml_mod_patch() {
   test ! -z $XML_PRFX && source $INSTALLER/common/aml-xml-patches-remove.sh
   
   for FILE in $SYS/etc/audio_effects.conf $VEN/etc/audio_effects.conf; do
-    if [ -f $FILE ] && [ ! "$(grep '#volume_listener {' $AMLPATH$FILE)" ] && [ "$(grep 'volume_listener {' $AMLPATH$FILE)" ]; then
+    if [ -f $FILE ] && [ ! "$(grep '^# *volume_listener {' $AMLPATH$FILE)" ] && [ "$(grep '^ *volume_listener {' $AMLPATH$FILE)" ]; then
       sed -i '/volume_listener {/,/}/ s/^/#/' $AMLPATH$FILE
 	fi
   done
