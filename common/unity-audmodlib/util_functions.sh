@@ -1,31 +1,40 @@
 ##########################################################################################
 #
 # General Utility Functions
-# Based on util_functions script v1420 by topjohnwu
+# Based on util_functions script v1456 by topjohnwu
 # Modified by ahrion and zackptg5
 #
 ##########################################################################################
 
-mount_partitions() {
-  ui_print "- Mounting filesystems -"
-  ui_print "   Mounting /system, /vendor, /data, /cache"
-  mount /data 2>/dev/null
-  mount /cache 2>/dev/null
+api_level_arch_detect_mod() {
+  API=`grep_prop ro.build.version.sdk`
+  ABI=`grep_prop ro.product.cpu.abi | cut -c-3`
+  ABI2=`grep_prop ro.product.cpu.abi2 | cut -c-3`
+  ABILONG=`grep_prop ro.product.cpu.abi`
+  MIUIVER=`grep_prop ro.miui.ui.version.name`
+  ARCH=arm
+  DRVARCH=NEON
+  IS64BIT=false
+  if [ "$ABI" = "x86" ]; then ARCH=x86; DRVARCH=X86; fi;
+  if [ "$ABI2" = "x86" ]; then ARCH=x86; DRVARCH=X86; fi;
+  if [ "$ABILONG" = "arm64-v8a" ]; then ARCH=arm64; IS64BIT=true; fi;
+  if [ "$ABILONG" = "x86_64" ]; then ARCH=x64; IS64BIT=true; DRVARCH=X86; fi;
+}
+
+mount_partitions_system() {
   # Check A/B slot
-  [ -d /data/magisk -o -d /magisk ] && WRITE=ro || WRITE=rw
-  SYS=/system
-  REALSYS=/system
   SLOT=`getprop ro.boot.slot_suffix`
   if [ -z $SLOT ]; then
     SLOT=_`getprop ro.boot.slot`
     [ $SLOT = "_" ] && SLOT=
   fi
-  [ -z $SLOT ] || ui_print "   A/B partition detected, current slot: $SLOT"
-  is_mounted /system || [ -f /system/build.prop ] || mount -o $WRITE /system 2>/dev/null
+  [ -z $SLOT ] || ui_print "- A/B partition detected, current slot: $SLOT"
+  ui_print "- Mounting /system, /vendor"
+  is_mounted /system || [ -f /system/build.prop ] || mount -o rw /system 2>/dev/null
   if ! is_mounted /system && ! [ -f /system/build.prop ]; then
     SYSTEMBLOCK=`find /dev/block -iname system$SLOT | head -n 1`
-    mount -t ext4 -o $WRITE $SYSTEMBLOCK /system
-	test "$WRITE" == "rw" && REALSYS=/system/system
+    mount -t ext4 -o rw $SYSTEMBLOCK /system
+	REALSYS=/system/system
   fi
   is_mounted /system || [ -f /system/build.prop ] || abort "! Cannot mount /system"
   cat /proc/mounts | grep -E '/dev/root|/system_root' >/dev/null && SKIP_INITRAMFS=true || SKIP_INITRAMFS=false
@@ -34,21 +43,24 @@ mount_partitions() {
     mkdir /system_root 2>/dev/null
     mount --move /system /system_root
     mount -o bind /system_root/system /system
-	test "$WRITE" == "rw" && { ROOT=/system_root; REALSYS=/system_root/system; }
+	ROOT=/system_root
+	REALSYS=/system_root/system
   fi
-  $SKIP_INITRAMFS && ui_print "   ! Device skip_initramfs detected"
+  $SKIP_INITRAMFS && ui_print "- Device skip_initramfs detected"
   if [ -L /system/vendor ]; then
     # Seperate /vendor partition
-    [ -d /data/magisk ] && VEN=/system/vendor || VEN=/vendor
-    is_mounted /vendor || mount -o $WRITE /vendor 2>/dev/null
+    VEN=/vendor
+    is_mounted /vendor || mount -o rw /vendor 2>/dev/null
     if ! is_mounted /vendor; then
       VENDORBLOCK=`find /dev/block -iname vendor$SLOT | head -n 1`
-      mount -t ext4 -o $WRITE $VENDORBLOCK /vendor
+      mount -t ext4 -o rw $VENDORBLOCK /vendor
     fi
     is_mounted /vendor || abort "! Cannot mount /vendor"
   else
     VEN=/system/vendor
   fi
+  # Detect version and architecture
+  api_level_arch_detect_mod
 }
 
 grep_prop() {
@@ -67,73 +79,10 @@ resolve_link() {
   echo $RESOLVED
 }
  
- is_mounted() {
+is_mounted() {
   TARGET="`resolve_link $1`"
   cat /proc/mounts | grep " $TARGET " >/dev/null
   return $?
-}
-
-api_level_arch_detect() {
-  API=`grep_prop ro.build.version.sdk`
-  ABI=`grep_prop ro.product.cpu.abi | cut -c-3`
-  ABI2=`grep_prop ro.product.cpu.abi2 | cut -c-3`
-  ABILONG=`grep_prop ro.product.cpu.abi`
-  MIUIVER=`grep_prop ro.miui.ui.version.name`
-  ARCH=arm
-  DRVARCH=NEON
-  IS64BIT=false
-  if [ "$ABI" = "x86" ]; then ARCH=x86; DRVARCH=X86; fi;
-  if [ "$ABI2" = "x86" ]; then ARCH=x86; DRVARCH=X86; fi;
-  if [ "$ABILONG" = "arm64-v8a" ]; then ARCH=arm64; IS64BIT=true; fi;
-  if [ "$ABILONG" = "x86_64" ]; then ARCH=x64; IS64BIT=true; DRVARCH=X86; fi;
-}
-
-boot_actions() {
-  if [ ! -d /sbin/.core/mirror/bin ]; then
-    mkdir -p /sbin/.core/mirror/bin
-    mount -o bind $MAGISKBIN /sbin/.core/mirror/bin
-  fi
-  MAGISKBIN=/sbin/.core/mirror/bin
-}
-
-recovery_actions() {
-  # Magisk clean flash support
-  if [ -d /data/magisk -a ! -f /data/magisk.img ]; then
-    /system/bin/make_ext4fs -l 64M /data/magisk.img
-  fi
-  # TWRP bug fix
-  mount -o bind /dev/urandom /dev/random
-  # Preserve environment varibles
-  OLD_PATH=$PATH
-  OLD_LD_PATH=$LD_LIBRARY_PATH
-  if [ ! -d $TMPDIR/bin ]; then
-    # Add busybox to PATH
-    mkdir -p $TMPDIR/bin
-    ln -s $MAGISKBIN/busybox $TMPDIR/bin/busybox
-    $MAGISKBIN/busybox --install -s $TMPDIR/bin
-    export PATH=$TMPDIR/bin:$PATH
-  fi
-  # Temporarily block out all custom recovery binaries/libs
-  mv /sbin /sbin_tmp
-  # Add all possible library paths
-  $IS64BIT && export LD_LIBRARY_PATH=/system/lib64:/system/vendor/lib64 || export LD_LIBRARY_PATH=/system/lib:/system/vendor/lib
-}
-
-recovery_cleanup() {
-  mv /sbin_tmp /sbin 2>/dev/null
-  export LD_LIBRARY_PATH=$OLD_LD_PATH
-  [ -z $OLD_PATH ] || export PATH=$OLD_PATH
-  ui_print "   Unmounting partitions..."
-  umount -l /system_root 2>/dev/null
-  umount -l /system 2>/dev/null
-  umount -l /vendor 2>/dev/null
-  umount -l /dev/random 2>/dev/null
-}
-
-abort() {
-  ui_print "$1"
-  $BOOTMODE || recovery_cleanup
-  exit 1
 }
 
 set_perm() {
@@ -155,17 +104,6 @@ mktouch() {
   mkdir -p ${1%/*} 2>/dev/null
   [ -z $2 ] && touch $1 || echo $2 > $1
   chmod 644 $1
-}
-
-request_zip_size_check() {
-  reqSizeM=`unzip -l "$1" | tail -n 1 | awk '{ print int($1 / 1048567 + 1) }'`
-}
-
-image_size_check() {
-  SIZE="`$MAGISKBIN/magisk --imgsize $IMG`"
-  curUsedM=`echo "$SIZE" | cut -d" " -f1`
-  curSizeM=`echo "$SIZE" | cut -d" " -f2`
-  curFreeM=$((curSizeM - curUsedM))
 }
 
 supersuimg_mount() {
