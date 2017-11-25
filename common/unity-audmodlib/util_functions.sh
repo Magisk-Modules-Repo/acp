@@ -6,19 +6,18 @@
 #
 ##########################################################################################
 
-api_level_arch_detect_mod() {
-  API=`grep_prop ro.build.version.sdk`
-  ABI=`grep_prop ro.product.cpu.abi | cut -c-3`
-  ABI2=`grep_prop ro.product.cpu.abi2 | cut -c-3`
-  ABILONG=`grep_prop ro.product.cpu.abi`
-  MIUIVER=`grep_prop ro.miui.ui.version.name`
-  ARCH=arm
-  DRVARCH=NEON
-  IS64BIT=false
-  if [ "$ABI" = "x86" ]; then ARCH=x86; DRVARCH=X86; fi;
-  if [ "$ABI2" = "x86" ]; then ARCH=x86; DRVARCH=X86; fi;
-  if [ "$ABILONG" = "arm64-v8a" ]; then ARCH=arm64; IS64BIT=true; fi;
-  if [ "$ABILONG" = "x86_64" ]; then ARCH=x64; IS64BIT=true; DRVARCH=X86; fi;
+resolve_link() {
+  RESOLVED="$1"
+  while RESOLVE=`readlink $RESOLVED`; do
+    RESOLVED=$RESOLVE
+  done
+  echo $RESOLVED
+}
+ 
+is_mounted() {
+  TARGET="`resolve_link $1`"
+  cat /proc/mounts | grep " $TARGET " >/dev/null
+  return $?
 }
 
 mount_partitions_system() {
@@ -30,6 +29,7 @@ mount_partitions_system() {
   fi
   [ -z $SLOT ] || ui_print "- A/B partition detected, current slot: $SLOT"
   ui_print "- Mounting /system, /vendor"
+  REALSYS=/system
   is_mounted /system || [ -f /system/build.prop ] || mount -o rw /system 2>/dev/null
   if ! is_mounted /system && ! [ -f /system/build.prop ]; then
     SYSTEMBLOCK=`find /dev/block -iname system$SLOT | head -n 1`
@@ -59,8 +59,6 @@ mount_partitions_system() {
   else
     VEN=/system/vendor
   fi
-  # Detect version and architecture
-  api_level_arch_detect_mod
 }
 
 grep_prop() {
@@ -71,18 +69,19 @@ grep_prop() {
   sed -n "$REGEX" $FILES 2>/dev/null | head -n 1
 }
 
-resolve_link() {
-  RESOLVED="$1"
-  while RESOLVE=`readlink $RESOLVED`; do
-    RESOLVED=$RESOLVE
-  done
-  echo $RESOLVED
-}
- 
-is_mounted() {
-  TARGET="`resolve_link $1`"
-  cat /proc/mounts | grep " $TARGET " >/dev/null
-  return $?
+api_level_arch_detect_mod() {
+  API=`grep_prop ro.build.version.sdk`
+  ABI=`grep_prop ro.product.cpu.abi | cut -c-3`
+  ABI2=`grep_prop ro.product.cpu.abi2 | cut -c-3`
+  ABILONG=`grep_prop ro.product.cpu.abi`
+  MIUIVER=`grep_prop ro.miui.ui.version.name`
+  ARCH=arm
+  DRVARCH=NEON
+  IS64BIT=false
+  if [ "$ABI" = "x86" ]; then ARCH=x86; DRVARCH=X86; fi;
+  if [ "$ABI2" = "x86" ]; then ARCH=x86; DRVARCH=X86; fi;
+  if [ "$ABILONG" = "arm64-v8a" ]; then ARCH=arm64; IS64BIT=true; fi;
+  if [ "$ABILONG" = "x86_64" ]; then ARCH=x64; IS64BIT=true; DRVARCH=X86; fi;
 }
 
 set_perm() {
@@ -197,9 +196,9 @@ wipe_ch() {
     "fol") test "$MAGISK" == true && mktouch $FILE/.replace || sys_wipefol_ch $FILE;;
     "data") sys_wipe_ch $FILE;;
     "app") if $OLDAPP; then
-             test -f "$SYS/app/$FILE.apk" && $WPAPP_PRFX $UNITY$SYS/app/$FILE.apk || { test -f "$SYS/app/$FILE/$FILE.apk" && $WPAPP_PRFX $UNITY$SYS/app/$FILE/$FILE.apk; }
+             test -f "/system/app/$FILE.apk" && $WPAPP_PRFX $UNITY/system/app/$FILE.apk || { test -f "/system/app/$FILE/$FILE.apk" && $WPAPP_PRFX $UNITY/system/app/$FILE/$FILE.apk; }
            else
-             test -f "SYS/priv-app/$FILE/$FILE.apk" && $WPAPP_PRFX $UNITY$SYS/priv-app/$FILE/$FILE.apk
+             test -f "/system/priv-app/$FILE/$FILE.apk" && $WPAPP_PRFX $UNITY/system/priv-app/$FILE/$FILE.apk
            fi;;
     "file") test "$MAGISK" == true && mktouch $FILE || sys_wipe_ch $FILE;;
   esac
@@ -249,7 +248,7 @@ patch_script() {
     sed -i "s|<SHEBANG>|#!/system/bin/sh|" $1
 	sed -i "s|<SEINJECT>|magiskpolicy|" $1
 	sed -i "s|<AMLPATH>|$AMLPATH|" $1
-	sed -i "s|$MOUNTPATH|/magisk|g" $1
+	sed -i "s|$MOUNTPATH|$BOOTPATH|g" $1
   fi
 }
 
@@ -258,7 +257,7 @@ add_to_info() {
 }
 
 custom_app_install() {
-  $OLDAPP && $CP_PRFX $INSTALLER/custom/$1/$1.apk $UNITY$SYS/app/$1.apk || $CP_PRFX $INSTALLER/custom/$1/$1.apk $UNITY$SYS/priv-app/$1/$1.apk
+  $OLDAPP && $CP_PRFX $INSTALLER/custom/$1/$1.apk $UNITY/system/app/$1.apk || $CP_PRFX $INSTALLER/custom/$1/$1.apk $UNITY/system/priv-app/$1/$1.apk
 }
 
 info_uninstall() {
@@ -277,5 +276,5 @@ remove_aml() {
   ui_print " "
   ui_print "   ! No more audmodlib modules detected !"
   ui_print "   ! Removing Audio Modification Library !"
-  test "$MAGISK" == true && { rm -rf $AMLPATH; rm -rf /magisk/audmodlib; } || { info_uninstall $AMLINFO; rm -f $SYS/addon.d/audmodlib.sh; }
+  test "$MAGISK" == true && { rm -rf $AMLPATH; rm -rf $BOOTPATH/audmodlib; } || { info_uninstall $AMLINFO; rm -f /system/addon.d/audmodlib.sh; }
 }

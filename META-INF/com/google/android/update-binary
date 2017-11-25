@@ -137,6 +137,7 @@ sed -i -e "s/<MODID>/$MODID/" -e "/# CUSTOM USER SCRIPT/ r $INSTALLER/common/ser
 # UNIVERSAL VARIABLES
 CP_NBPRFX="cp_ch"
 WP_PRFX="wipe_ch"
+SYS=/system
 
 common_install() {
   # XMLSTARLET - THANKS TO @JAMES34602 and @LAZERL0RD @XDADEVELOPERS FOR PORTING IT
@@ -147,14 +148,12 @@ common_install() {
     *) ui_print "   ! Only arm, arm64, and x86 devices are compatible for xml patching"; ui_print "   ! XML Patching will be skipped";;
   esac
   # FILE LOCATIONS
-  CFGS="${CFGS} $(find -L $SYS -type f -name "*audio_effects*.conf")"
-  POLS="${POLS} $(find -L $SYS -type f -name "*audio*policy*.conf" -o -name "*audio_policy*.xml")"
-  MIXS="${MIXS} $(find -L $SYS -type f -name "*mixer_paths*.xml")"
+  CFGS="${CFGS} $(find -L /system -type f -name "*audio_effects*.conf")"
+  POLS="${POLS} $(find -L /system -type f -name "*audio*policy*.conf" -o -name "*audio_policy*.xml")"
+  MIXS="${MIXS} $(find -L /system -type f -name "*mixer_paths*.xml")"
 }
 
 magisk_install() {
-  SYS=/system
-  REALSYS=/system
   VEN=/system/vendor
   test $MAGISK_VER_CODE -lt 1450 && BOOTPATH="/magisk" || BOOTPATH="/sbin/.core/img"
   MAGISK=true
@@ -179,8 +178,11 @@ magisk_install() {
 }
 
 system_install() {
-  # MOUNT PARTITIONS AND GET API LEVEL INFO
+  # MOUNT PARTITIONS
   mount_partitions_system
+  ui_print "- System install detected"
+  # DETECT VERSION AND ARCHITECTURE
+  api_level_arch_detect_mod
   # DETERMINE SYSTEM BOOT SCRIPT TYPE
   supersuimg_mount
   SHEBANG="#!/system/bin/sh"
@@ -189,27 +191,27 @@ system_install() {
 	SH=/su/su.d
     SEINJECT=/su/bin/supolicy
     ROOTTYPE="systemless SuperSU"
-  elif [ -e "$(dirname `find /data /cache -name supersu_is_here | head -n1`)" ]; then
+  elif [ -e "$(find /data /cache -name supersu_is_here | head -n1)" ]; then
     SHEBANG="#!/su/bin/sush"
 	SH=$(dirname `find /data /cache -name supersu_is_here | head -n1`)/su.d
     SEINJECT=$(dirname `find /data /cache -name supersu_is_here | head -n1`)/bin/supolicy
     ROOTTYPE="bindsbin SuperSU"
-  elif [ -d $SYS/su ] || [ -f $SYS/xbin/daemonsu ] || [ -f $SYS/xbin/sugote ]; then
-    SH=$SYS/su.d
-    SEINJECT=$SYS/xbin/supolicy
+  elif [ -d /system/su ] || [ -f /system/xbin/daemonsu ] || [ -f /system/xbin/sugote ]; then
+    SH=/system/su.d
+    SEINJECT=/system/xbin/supolicy
     ROOTTYPE="system SuperSU"
-  elif [ -f $SYS/xbin/su ]; then
-    if [ "$(grep "SuperSU" $SYS/xbin/su)" ]; then
-      SH=$SYS/su.d
-      SEINJECT=$SYS/xbin/supolicy
+  elif [ -f /system/xbin/su ]; then
+    if [ "$(grep "SuperSU" /system/xbin/su)" ]; then
+      SH=/system/su.d
+      SEINJECT=/system/xbin/supolicy
       ROOTTYPE="system SuperSU"
     else
-      SH=$SYS/etc/init.d
+      SH=/system/etc/init.d
       SEINJECT=/sbin/sepolicy-inject
       ROOTTYPE="LineageOS SU"
     fi
   else
-    SH=$SYS/etc/init.d
+    SH=/system/etc/init.d
     SEINJECT=/sbin/sepolicy-inject
     ROOTTYPE="other root or rootless"
   fi
@@ -221,14 +223,14 @@ system_install() {
   AMLPATH=""
   PROPFILE="$SH/$MODID-props"
   AMLSCRIPT="$SH/audmodlib-post-fs-data"
-  MOD_VER="$SYS/etc/$MODID-module.prop"
-  AML_VER="$SYS/etc/audmodlib-module.prop"
-  if [ -d $SYS/addon.d ]; then
-    INFO=$SYS/addon.d/$MODID-files
-    AMLINFO=$SYS/addon.d/audmodlib-files
+  MOD_VER="/system/etc/$MODID-module.prop"
+  AML_VER="/system/etc/audmodlib-module.prop"
+  if [ -d /system/addon.d ]; then
+    INFO=/system/addon.d/$MODID-files
+    AMLINFO=/system/addon.d/audmodlib-files
   else
-    INFO=$SYS/etc/$MODID-files
-    AMLINFO=$SYS/etc/audmodlib-files
+    INFO=/system/etc/$MODID-files
+    AMLINFO=/system/etc/audmodlib-files
   fi
   CONFPROPS="$(dirname `readlink -f $ZIP`)/$MODID-conflictingprops.txt"
   common_install
@@ -327,14 +329,14 @@ unity_mod_copy() {
     fi
 
     # INSTALL ROM BACKUP SCRIPT
-    if [ -d $SYS/addon.d ]; then
+    if [ -d /system/addon.d ]; then
       ui_print "   Installing addon.d backup script..."
       
       # INSERT MODID INTO ADDON.D SCRIPT
       sed -i "s/<MODID>/$MODID/" $INSTALLER/system/addon.d/modid.sh
 
-      $CP_NBPRFX $INSTALLER/system/addon.d/modid.sh $SYS/addon.d/$MODID.sh 0755
-      $AUDMODLIB && $CP_NBPRFX $INSTALLER/system/addon.d/audmodlib.sh $SYS/addon.d/audmodlib.sh 0755
+      $CP_NBPRFX $INSTALLER/system/addon.d/modid.sh /system/addon.d/$MODID.sh 0755
+      $AUDMODLIB && $CP_NBPRFX $INSTALLER/system/addon.d/audmodlib.sh /system/addon.d/audmodlib.sh 0755
     else
       ui_print "   ! Addon.d not detected. Backup script not installed..."
     fi
@@ -385,10 +387,10 @@ aml_mod() {
   if [ ! -z $XML_PRFX ]; then
     if [ "$MAGISK" == true ]; then
       test ! -f $AMLPATH/system/xbin/xmlstarlet && { XML_PATH=$AMLPATH/system/xbin/xmlstarlet; $CP_NBPRFX "$XML_PRFX" "$XML_PATH" 0755; }
-    elif [ "${SH%/*}" != "$SYS/etc" ]; then
+    elif [ "${SH%/*}" != "/system/etc" ]; then
       test ! -f $AMLPATH${SH%/*}/xbin/xmlstarlet && { XML_PATH=$AMLPATH${SH%/*}/xbin/xmlstarlet; $CP_NBPRFX "$XML_PRFX" "$XML_PATH" 0755; add_to_info $XML_PATH $AMLINFO; }
     else
-      test ! -f $AMLPATH$SYS/xbin/xmlstarlet && { XML_PATH=$AMLPATH$SYS/xbin/xmlstarlet; $CP_NBPRFX "$XML_PRFX" "$XML_PATH" 0755; add_to_info $XML_PATH $AMLINFO; }
+      test ! -f $AMLPATH/system/xbin/xmlstarlet && { XML_PATH=$AMLPATH/system/xbin/xmlstarlet; $CP_NBPRFX "$XML_PRFX" "$XML_PATH" 0755; add_to_info $XML_PATH $AMLINFO; }
     fi
   fi
   
@@ -448,7 +450,7 @@ aml_mod_patch() {
   source $INSTALLER/common/aml-patches-remove.sh
   test ! -z $XML_PRFX && source $INSTALLER/common/aml-xml-patches-remove.sh
   
-  for FILE in $SYS/etc/audio_effects.conf $VEN/etc/audio_effects.conf; do
+  for FILE in /system/etc/audio_effects.conf $VEN/etc/audio_effects.conf; do
     if [ -f $FILE ] && [ ! "$(grep '^# *volume_listener {' $AMLPATH$FILE)" ] && [ "$(grep '^ *volume_listener {' $AMLPATH$FILE)" ]; then
       sed -i '/volume_listener {/,/}/ s/^/#/' $AMLPATH$FILE
 	fi
@@ -492,7 +494,7 @@ unity_uninstall() {
 	fi; }
   else
     $AUDMODLIB && sed -i "/#$MODID/d" $AMLSCRIPT
-    rm -f $SYS/addon.d/$MODID.sh
+    rm -f /system/addon.d/$MODID.sh
     # Remove AML if no modules are installed
     $AUDMODLIB && { test ! "$(sed -n '/^# MOD PATCHES/{n;p}' $AMLSCRIPT)" && remove_aml; }
   fi
@@ -546,7 +548,7 @@ standard_procedure() {
   test -z $MAXAPI || { test $API -le $MAXAPI || require_new_api 'maximum'; }
   
   # PREPARE (UN)INSTALL
-  test -d $SYS/priv-app && OLDAPP=false || OLDAPP=true
+  test -d /system/priv-app && OLDAPP=false || OLDAPP=true
 
   # DETERMINE IF MOD IS ALREADY INSTALLED. IF SAME VERSION IS INSTALLED, UNINSTALL
   if [ -f "$MOD_VER" ]; then
@@ -565,8 +567,6 @@ standard_procedure() {
   fi
 
   if [ "$ACTION" == "Install" ]; then
-    test "$MAGISK" == false && { ui_print " "; ui_print "   ! Magisk is not installed!"; ui_print "    ! Installing on system!"; }
-
     # WIPE FILES
     unity_mod_wipe
  
@@ -644,6 +644,7 @@ fi
 
 # MOUNT PARTITIONS
 mount_partitions
+ui_print "- Magisk install detected"
 
 # DETECT VERSION AND ARCHITECTURE
 api_level_arch_detect_mod
