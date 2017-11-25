@@ -648,7 +648,7 @@ mount_partitions
 # DETECT VERSION AND ARCHITECTURE
 api_level_arch_detect_mod
 
-$BOOTMODE && ! is_mounted $BOOTPATH && abort "! Magisk is not activated!"
+$BOOTMODE && ! is_mounted /magisk && abort "! Magisk is not activated!"
 
 # WE NEED BUSYBOX/BINARIES TO BE SETUP (INCLUDES MAGISK CLEAN FLASH SUPPORT)
 if $BOOTMODE; then
