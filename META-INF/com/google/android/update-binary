@@ -89,55 +89,57 @@ done
 # PRINT MOD NAME
 print_modname
 
-#### MOUNT FILESYSTEM ####
+# MOUNT DATA AND CACHE
 ui_print "- Mounting /data, /cache"
 mount /data 2>/dev/null
 mount /cache 2>/dev/null
-
-# REMOVE COMMENTS FROM USER INPUT FILES AND ADD PROPER VARIABLES
-for TMP in $INSTALLER/common/unity-files-wipe.sh $INSTALLER/common/aml-patches.sh $INSTALLER/common/aml-xml-patches.sh $INSTALLER/common/aml-patches-remove.sh $INSTALLER/common/aml-xml-patches-remove.sh $INSTALLER/common/aml-patches-wipe.sh $INSTALLER/common/aml-xml-patches-wipe.sh $INSTALLER/common/unity-uservariables.sh $INSTALLER/common/unity-customrules $INSTALLER/common/post-fs-data.sh $INSTALLER/common/service.sh $INSTALLER/common/*.prop; do
-  if [ "$TMP" == "$INSTALLER/common/unity-customrules" ]; then
-    NUM=1; while true; do
-      if [ -f $TMP$NUM.sh ]; then
-        sed -i -e '/^#/ d' -e 's|$SYS/$VEN|$VEN|g' $TMP$NUM.sh
-      else
-        NUMOFCUSTRULES=$(($NUM-1))
-        break
-      fi
-      NUM=$((NUM+1))
-    done
-  else
-    if [ -f $TMP ]; then
-      sed -i -e '/^#/ d' -e 's|$SYS/$VEN|$VEN|g' $TMP
-    else
-      ui_print "   !$TMP missing!"
-      ui_print "   !Copy it back to above and try again!"
-	  exit 1
-    fi
-  fi
-done
-
-# IMPORT USER VARIABLES
-source $INSTALLER/common/unity-uservariables.sh
-
-# SET MODID, MODPATH, AMLPATH, and AUDMODLIB variables
-test -z $MODID && MODID=`grep_prop id $INSTALLER/module.prop`
-MODPATH=$MOUNTPATH/$MODID
-AMLPATH=$MOUNTPATH/audmodlib
-test -z $AUDMODLIB && AUDMODLIB=false || AUDMODLIB=true
-
-# MAKE MODID SERVICE AND POST-FS-DATA SCRIPTS
-cp -f $INSTALLER/common/unity-audmodlib/modid.sh $INSTALLER/common/unity-audmodlib/$MODID-post-fs-data.sh
-mv -f $INSTALLER/common/unity-audmodlib/modid.sh $INSTALLER/common/unity-audmodlib/$MODID-service.sh
-
-# INSERT MODID AND CUSTOM USER SCRIPT INTO MOD SCRIPT
-sed -i -e "s/<MODID>/$MODID/" -e "/# CUSTOM USER SCRIPT/ r $INSTALLER/common/post-fs-data.sh" -e '/# CUSTOM USER SCRIPT/d' $INSTALLER/common/unity-audmodlib/$MODID-post-fs-data.sh
-sed -i -e "s/<MODID>/$MODID/" -e "/# CUSTOM USER SCRIPT/ r $INSTALLER/common/service.sh" -e '/# CUSTOM USER SCRIPT/d' $INSTALLER/common/unity-audmodlib/$MODID-service.sh
 
 # UNIVERSAL VARIABLES
 CP_NBPRFX="cp_ch"
 WP_PRFX="wipe_ch"
 SYS=/system
+
+pre_install() {
+  # REMOVE COMMENTS FROM USER INPUT FILES AND ADD PROPER VARIABLES
+  for TMP in $INSTALLER/common/unity-files-wipe.sh $INSTALLER/common/aml-patches.sh $INSTALLER/common/aml-xml-patches.sh $INSTALLER/common/aml-patches-remove.sh $INSTALLER/common/aml-xml-patches-remove.sh $INSTALLER/common/aml-patches-wipe.sh $INSTALLER/common/aml-xml-patches-wipe.sh $INSTALLER/common/unity-uservariables.sh $INSTALLER/common/unity-customrules $INSTALLER/common/post-fs-data.sh $INSTALLER/common/service.sh $INSTALLER/common/*.prop; do
+    if [ "$TMP" == "$INSTALLER/common/unity-customrules" ]; then
+      NUM=1; while true; do
+        if [ -f $TMP$NUM.sh ]; then
+          sed -i -e '/^#/ d' -e 's|$SYS/$VEN|$VEN|g' $TMP$NUM.sh
+        else
+          NUMOFCUSTRULES=$(($NUM-1))
+          break
+        fi
+        NUM=$((NUM+1))
+      done
+    else
+      if [ -f $TMP ]; then
+        sed -i -e '/^#/ d' -e 's|$SYS/$VEN|$VEN|g' $TMP
+      else
+        ui_print "   !$TMP missing!"
+        ui_print "   !Copy it back to above and try again!"
+	    exit 1
+      fi
+    fi
+  done
+
+  # IMPORT USER VARIABLES
+  source $INSTALLER/common/unity-uservariables.sh
+
+  # SET MODID, MODPATH, AMLPATH, and AUDMODLIB variables
+  test -z $MODID && MODID=`grep_prop id $INSTALLER/module.prop`
+  MODPATH=$MOUNTPATH/$MODID
+  AMLPATH=$MOUNTPATH/audmodlib
+  test -z $AUDMODLIB && AUDMODLIB=false || AUDMODLIB=true
+
+  # MAKE MODID SERVICE AND POST-FS-DATA SCRIPTS
+  cp -f $INSTALLER/common/unity-audmodlib/modid.sh $INSTALLER/common/unity-audmodlib/$MODID-post-fs-data.sh
+  mv -f $INSTALLER/common/unity-audmodlib/modid.sh $INSTALLER/common/unity-audmodlib/$MODID-service.sh
+
+  # INSERT MODID AND CUSTOM USER SCRIPT INTO MOD SCRIPT
+  sed -i -e "s/<MODID>/$MODID/" -e "/# CUSTOM USER SCRIPT/ r $INSTALLER/common/post-fs-data.sh" -e '/# CUSTOM USER SCRIPT/d' $INSTALLER/common/unity-audmodlib/$MODID-post-fs-data.sh
+  sed -i -e "s/<MODID>/$MODID/" -e "/# CUSTOM USER SCRIPT/ r $INSTALLER/common/service.sh" -e '/# CUSTOM USER SCRIPT/d' $INSTALLER/common/unity-audmodlib/$MODID-service.sh
+}
 
 common_install() {
   # XMLSTARLET - THANKS TO @JAMES34602 and @LAZERL0RD @XDADEVELOPERS FOR PORTING IT
@@ -156,6 +158,8 @@ common_install() {
 magisk_install() {
   VEN=/system/vendor
   test $MAGISK_VER_CODE -lt 1450 && BOOTPATH="/magisk" || BOOTPATH="/sbin/.core/img"
+  # PREP FILES & VARIABLES
+  pre_install
   MAGISK=true
   CP_PRFX="cp_ch"
   WPAPP_PRFX="mktouch"
@@ -183,6 +187,8 @@ system_install() {
   ui_print "- System install detected"
   # DETECT VERSION AND ARCHITECTURE
   api_level_arch_detect_mod
+  # PREP FILES & VARIABLES
+  pre_install
   # DETERMINE SYSTEM BOOT SCRIPT TYPE
   supersuimg_mount
   SHEBANG="#!/system/bin/sh"
