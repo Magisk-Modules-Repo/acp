@@ -958,7 +958,7 @@ rmdir $MOUNTPATH
 image_size_check $IMG
 newSizeM=$((curUsedM / 32 * 32 + 64))
 if [ $curSizeM -gt $newSizeM ]; then
-  ui_print "   Shrinking $IMG to ${newSizeM}M"
+  ui_print "- Shrinking $IMG to ${newSizeM}M -"
   $MAGISKBIN/magisk --resizeimg $IMG $newSizeM
 fi
 
