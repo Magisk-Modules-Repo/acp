@@ -302,7 +302,7 @@ patch_script() {
     sed -i "s|<SYS>|$SYS|" $1
     sed -i "s|<SHEBANG>|#!/system/bin/sh|" $1
 	sed -i "s|<SEINJECT>|magiskpolicy|" $1
-	sed -i "s|<AMLPATH>|$AMLPATH|" $1
+	$AUDMODLIB && sed -i "s|<AMLPATH>|$AMLPATH|" $1 || sed -i "/<AMLPATH>/d" $1
 	sed -i "s|$MOUNTPATH|$BOOTPATH|g" $1
   fi
 }
@@ -620,6 +620,7 @@ unity_mod_copy() {
     fi
   else
     ui_print "   Installing scripts for MagiskSU..."
+	
   fi
 
   # ADD BUILDPROPS
@@ -858,7 +859,7 @@ standard_procedure() {
 
     # COMPLETING INSTALL
     ui_print " "
-    ui_print "- Setting permissions -"
+    ui_print "- Setting Permissions"
     if [ "$MAGISK" == true ]; then
       $AUDMODLIB && set_perm_recursive $AMLPATH 0 0 0755 0644
       set_permissions
@@ -958,7 +959,7 @@ rmdir $MOUNTPATH
 image_size_check $IMG
 newSizeM=$((curUsedM / 32 * 32 + 64))
 if [ $curSizeM -gt $newSizeM ]; then
-  ui_print "- Shrinking $IMG to ${newSizeM}M -"
+  ui_print "- Shrinking $IMG to ${newSizeM}M"
   $MAGISKBIN/magisk --resizeimg $IMG $newSizeM
 fi
 
