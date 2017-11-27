@@ -870,15 +870,13 @@ standard_procedure() {
       exit 0
     fi
   else
-    test "$MAGISK" == false && { ui_print " "; ui_print "   ! Magisk is not installed!"; ui_print "    ! Uninstalling on system!"; }
-
     # UNINSTALL
     unity_uninstall
 
     if $UPGRADE; then
       ACTION=Install
       ui_print " "
-      ui_print  "! Uninstall completed, beginning install !"
+      ui_print "! Uninstall completed, beginning install !"
       standard_procedure
     else
       # COMPLETING UNINSTALL
