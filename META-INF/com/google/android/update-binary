@@ -187,14 +187,15 @@ require_new_magisk() {
 
 require_new_api() {
   ui_print "***********************************"
-  ui_print "!   Your system API of $API doesn't"
-  ui_print "!    meet the $1 API of $MINAPI"
+  ui_print "!   Your system API of $API isn't"
   if [ "$1" == "minimum" ]; then
+    ui_print "! higher than the $1 API of $MINAPI"
     ui_print "! Please upgrade to a newer version"
     ui_print "!  of android with at least API $MINAPI"
   else
+    ui_print "! lower than the $1 API of $MAXAPI"
     ui_print "! Please downgrade to an older version"
-    ui_print "!  of android with at most API $MINAPI"
+    ui_print "!  of android with at most API $MAXAPI"
   fi
   ui_print "***********************************"
   exit 1
