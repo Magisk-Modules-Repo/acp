@@ -202,7 +202,7 @@ require_new_api() {
 }
 
 action_complete() {
-  if [ "$MAGISK" == false ]; then
+  if ! $MAGISK; then
     ui_print "   Unmounting partitions..."
     test "$supersuimg" -o -d /su && umount /su
 	umount -l /system_root 2>/dev/null
@@ -248,14 +248,14 @@ wipe_ch() {
   esac
   case $TYPE in
     "foldata") sys_wipefol_ch $FILE;;
-    "fol") test "$MAGISK" == true && mktouch $FILE/.replace || sys_wipefol_ch $FILE;;
+    "fol") $MAGISK && mktouch $FILE/.replace || sys_wipefol_ch $FILE;;
     "data") sys_wipe_ch $FILE;;
     "app") if $OLDAPP; then
              test -f "/system/app/$FILE.apk" && $WPAPP_PRFX $UNITY/system/app/$FILE.apk || { test -f "/system/app/$FILE/$FILE.apk" && $WPAPP_PRFX $UNITY/system/app/$FILE/$FILE.apk; }
            else
              test -f "/system/priv-app/$FILE/$FILE.apk" && $WPAPP_PRFX $UNITY/system/priv-app/$FILE/$FILE.apk
            fi;;
-    "file") test "$MAGISK" == true && mktouch $FILE || sys_wipe_ch $FILE;;
+    "file") $MAGISK && mktouch $FILE || sys_wipe_ch $FILE;;
   esac
 }
 
@@ -293,18 +293,18 @@ patch_script() {
   sed -i "s|<VEN>|$VEN|" $1
   test ! -z $ROOT && sed -i "s|<ROOT>|$ROOT|" $1 || sed -i "/<ROOT>/d" $1
   test ! -z $XML_PATH && sed -i "s|<XML_PRFX>|$XML_PATH|" $1 || sed -i "/<XML_PRFX>/d" $1
-  if [ "$MAGISK" == false ]; then
-    sed -i "s|<SYS>|$REALSYS|" $1
-    sed -i "s|<SHEBANG>|$SHEBANG|" $1
-	sed -i "s|<SEINJECT>|$SEINJECT|" $1
-	sed -i "/<AMLPATH>/d" $1
-	sed -i "s|$MOUNTPATH||g" $1
-  else
+  if $MAGISK; then
     sed -i "s|<SYS>|$SYS|" $1
     sed -i "s|<SHEBANG>|#!/system/bin/sh|" $1
 	sed -i "s|<SEINJECT>|magiskpolicy|" $1
 	$AUDMODLIB && sed -i "s|<AMLPATH>|$AMLPATH|" $1 || sed -i "/<AMLPATH>/d" $1
 	sed -i "s|$MOUNTPATH|$BOOTPATH|g" $1
+  else
+    sed -i "s|<SYS>|$REALSYS|" $1
+    sed -i "s|<SHEBANG>|$SHEBANG|" $1
+	sed -i "s|<SEINJECT>|$SEINJECT|" $1
+	sed -i "/<AMLPATH>/d" $1
+	sed -i "s|$MOUNTPATH||g" $1
   fi
 }
 
@@ -324,7 +324,7 @@ info_uninstall() {
     done
     rm -f $1
   else
-    test "$MAGISK" == false && ui_print "   ! Mod not detected. Removing scripts..." || ui_print "   Removing/restoring files..."
+    $MAGISK && ui_print "   Removing/restoring files..." || ui_print "   ! Mod not detected. Removing scripts..."
   fi
 }
 
@@ -332,7 +332,7 @@ remove_aml() {
   ui_print " "
   ui_print "   ! No more audmodlib modules detected !"
   ui_print "   ! Removing Audio Modification Library !"
-  test "$MAGISK" == true && { rm -rf $AMLPATH; rm -rf $BOOTPATH/audmodlib; } || { info_uninstall $AMLINFO; rm -f /system/addon.d/audmodlib.sh; }
+  $MAGISK && { rm -rf $AMLPATH; rm -rf $BOOTPATH/audmodlib; } || { info_uninstall $AMLINFO; rm -f /system/addon.d/audmodlib.sh; }
 }
 
 ##########################################################################################
@@ -518,7 +518,7 @@ system_install() {
 # UNITY PROP INSTALL
 unity_prop_copy() {
   sed -i "/#/d" $1
-  if [ "$MAGISK" == true ]; then
+  if $MAGISK; then
     REGEX="s/(.*)=(.*)/\1/"
     sed -i -e "s/setprop //g" -e "s/ /=/g" $1
 	$BOOTMODE && SH="$BOOTPATH $MOUNTPATH" || SH=$MOUNTPATH
@@ -528,7 +528,7 @@ unity_prop_copy() {
     FILE="*props"
   fi
   if [ "$(cat $1)" ]; then
-    test ! -f $PROPFILE && { test "$MAGISK" == true && mktouch $PROPFILE || mktouch $PROPFILE "$SHEBANG"; }
+    test ! -f $PROPFILE && { $MAGISK && mktouch $PROPFILE || mktouch $PROPFILE "$SHEBANG"; }
 	for TMP in $(find $SH -type f -name $FILE); do
 	  cat $1 | while read PROP; do
         TPROP=$(echo $PROP | sed -r "$REGEX")
@@ -552,7 +552,7 @@ unity_prop_copy() {
         }
       done
 	done
-    test "$MAGISK" == false && { chmod 0700 $PROPFILE; restorecon $PROPFILE; }
+    $MAGISK || chmod 0700 $PROPFILE
   fi
 }
 
@@ -563,7 +563,7 @@ unity_mod_wipe() {
 
   # REMOVE FILES
   ui_print "   Removing files..."
-  test "$MAGISK" == true && rm -rf $MODPATH 2>/dev/null || rm -f $CONFPROPS
+  $MAGISK && rm -rf $MODPATH 2>/dev/null || rm -f $CONFPROPS
   test ! -f "$INFO" && mktouch $INFO
 
   cat $INSTALLER/common/unity-files-wipe.sh | while read LINE; do
@@ -582,7 +582,7 @@ unity_mod_copy() {
   ui_print "- Installing modification -"
 
   # INSTALL SCRIPTS
-  if [ "$MAGISK" == false ]; then                                                 
+  if ! $MAGISK; then                                                 
     ui_print "   Installing scripts for $ROOTTYPE..."
     test "$ROOTTYPE" == "LineageOS SU" -o "$ROOTTYPE" == "other root or rootless" && { ui_print " "; ui_print "   ! This root method has no boot script support !"; ui_print "   ! You will need to add init.d support !"; ui_print " "; }
 
@@ -621,7 +621,6 @@ unity_mod_copy() {
     fi
   else
     ui_print "   Installing scripts for MagiskSU..."
-	
   fi
 
   # ADD BUILDPROPS
@@ -657,7 +656,7 @@ aml_mod() {
   test "$ACTION" == "Install" && { ui_print " "; ui_print "- Installing Audio Modification Library -"; } || ui_print "   Removing $MODID from Audio Modification Library"
 
   for FILE in ${CFGS} ${POLS} ${MIXS}; do
-	test "$MAGISK" == false && { add_to_info $FILE $AMLINFO; add_to_info $FILE.bak $AMLINFO; }
+	$MAGISK || { add_to_info $FILE $AMLINFO; add_to_info $FILE.bak $AMLINFO; }
     if [ ! -f $AMLPATH$FILE.bak ]; then
       test -f $FILE.bak && $CP_NBPRFX $FILE.bak $AMLPATH$FILE.bak || $CP_NBPRFX $FILE $AMLPATH$FILE.bak
     fi
@@ -665,7 +664,7 @@ aml_mod() {
   done
   
   if [ ! -z $XML_PRFX ]; then
-    if [ "$MAGISK" == true ]; then
+    if $MAGISK; then
       test ! -f $AMLPATH/system/xbin/xmlstarlet && { XML_PATH=$AMLPATH/system/xbin/xmlstarlet; $CP_NBPRFX "$XML_PRFX" "$XML_PATH" 0755; }
     elif [ "${SH%/*}" != "/system/etc" ]; then
       test ! -f $AMLPATH${SH%/*}/xbin/xmlstarlet && { XML_PATH=$AMLPATH${SH%/*}/xbin/xmlstarlet; $CP_NBPRFX "$XML_PRFX" "$XML_PATH" 0755; add_to_info $XML_PATH $AMLINFO; }
@@ -675,10 +674,10 @@ aml_mod() {
   fi
   
   test "$ACTION" == "Install" -a ! -f $AMLSCRIPT && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh $AMLSCRIPT 0755; patch_script $AMLSCRIPT; }    
-  if [ "$MAGISK" == true ]; then
+  if $MAGISK; then
     test "$BOOTMODE" == "true" -a -f $BOOTPATH/audmodlib/post-fs-data.sh && $CP_NBPRFX $BOOTPATH/audmodlib/post-fs-data.sh $AMLSCRIPT 0755
     test "$BOOTMODE" == "true" -a "$ACTION" == "Uninstall" && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlibmodule.prop $AMLPATH/module.prop; mktouch $BOOTPATH/audmodlib/update; mktouch $AMLPATH/auto_mount; }
-  elif [ "$MAGISK" == false ] && [ "$ACTION" == "Install" ]; then
+  elif ! $MAGISK && [ "$ACTION" == "Install" ]; then
     add_to_info $AMLSCRIPT $AMLINFO
     $POSTFSDATA && patch_script $SH/$MODID-post-fs-data
     $LATESTARTSERVICE && patch_script $SH/$MODID-service
@@ -710,7 +709,7 @@ aml_mod_patch() {
   ui_print "- Patching necessary files -"
 
   # PATCH AUDMODLIB-SERVICES SCRIPT
-  if [ "$MAGISK" == true ]; then
+  if $MAGISK; then
     test "$(grep '<PROPREMOVE>' $AMLPATH/post-fs-data.sh)" && sed -i -e "/<PROPREMOVE>/ r $INSTALLER/common/unity-audmodlib/remove_prop.sh" -e "/<PROPREMOVE>/d" $AMLSCRIPT
     sed -i "/^#$MODID/,/fi #$MODID/d" $AMLSCRIPT
     sed -i 's/^/  /' $INSTALLER/common/aml-patches-remove.sh
@@ -760,7 +759,7 @@ unity_uninstall() {
     test ! -z $XML_PRFX && source $INSTALLER/common/aml-xml-patches-remove.sh
   fi
   
-  if [ "$MAGISK" == true ]; then
+  if $MAGISK; then
     rm -rf $MODPATH
     rm -rf $BOOTPATH/$MODID
     $AUDMODLIB && { test -f $BOOTPATH/audmodlib/post-fs-data.sh && sed -i "/^#$MODID/,/fi #$MODID/d" $BOOTPATH/audmodlib/post-fs-data.sh || sed -i "/^#$MODID/,/fi #$MODID/d" $AMLSCRIPT; }
@@ -856,12 +855,12 @@ standard_procedure() {
     # PATCH FILES
     $AUDMODLIB && aml_mod
 
-    test "$MAGISK" == true && magisk_procedure_extras
+    $MAGISK && magisk_procedure_extras
 
     # COMPLETING INSTALL
     ui_print " "
     ui_print "- Setting Permissions"
-    if [ "$MAGISK" == true ]; then
+    if $MAGISK; then
       $AUDMODLIB && set_perm_recursive $AMLPATH 0 0 0755 0644
       set_permissions
       set_perm_recursive $AMLPATH/system/xbin 0 0 0755 0755
@@ -883,7 +882,7 @@ standard_procedure() {
       # COMPLETING UNINSTALL
 	  ui_print " "
       ui_print "- Completing uninstall -"
-      if [ "$MAGISK" == false ]; then
+      if ! $MAGISK; then
         action_complete
         exit 0
       fi
