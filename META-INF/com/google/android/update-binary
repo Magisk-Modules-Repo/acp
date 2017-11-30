@@ -74,7 +74,7 @@ is_mounted() {
   return $?
 }
 
-mount_partitions_system() {
+mount_partitions_mod() {
   # Check A/B slot
   SLOT=`getprop ro.boot.slot_suffix`
   if [ -z $SLOT ]; then
@@ -84,10 +84,10 @@ mount_partitions_system() {
   [ -z $SLOT ] || ui_print "- A/B partition detected, current slot: $SLOT"
   ui_print "- Mounting /system, /vendor"
   REALSYS=/system
-  is_mounted /system || [ -f /system/build.prop ] || mount -o rw /system 2>/dev/null
+  is_mounted /system || [ -f /system/build.prop ] || mount -o $WRITE /system 2>/dev/null
   if ! is_mounted /system && ! [ -f /system/build.prop ]; then
     SYSTEMBLOCK=`find /dev/block -iname system$SLOT | head -n 1`
-    mount -t ext4 -o rw $SYSTEMBLOCK /system
+    mount -t ext4 -o $WRITE $SYSTEMBLOCK /system
 	REALSYS=/system/system
   fi
   is_mounted /system || [ -f /system/build.prop ] || abort "! Cannot mount /system"
@@ -104,10 +104,10 @@ mount_partitions_system() {
   if [ -L /system/vendor ]; then
     # Seperate /vendor partition
     VEN=/vendor
-    is_mounted /vendor || mount -o rw /vendor 2>/dev/null
+    is_mounted /vendor || mount -o $WRITE /vendor 2>/dev/null
     if ! is_mounted /vendor; then
       VENDORBLOCK=`find /dev/block -iname vendor$SLOT | head -n 1`
-      mount -t ext4 -o rw $VENDORBLOCK /vendor
+      mount -t ext4 -o $WRITE $VENDORBLOCK /vendor
     fi
     is_mounted /vendor || abort "! Cannot mount /vendor"
   else
@@ -291,15 +291,16 @@ sys_rm_ch() {
 patch_script() {
   sed -i "s|<MAGISK>|$MAGISK|" $1
   sed -i "s|<VEN>|$VEN|" $1
-  test ! -z $ROOT && sed -i "s|<ROOT>|$ROOT|" $1 || sed -i "/<ROOT>/d" $1
   test ! -z $XML_PATH && sed -i "s|<XML_PRFX>|$XML_PATH|" $1 || sed -i "/<XML_PRFX>/d" $1
   if $MAGISK; then
+    sed -i "/<ROOT>/d" $1
     sed -i "s|<SYS>|$SYS|" $1
     sed -i "s|<SHEBANG>|#!/system/bin/sh|" $1
 	sed -i "s|<SEINJECT>|magiskpolicy|" $1
 	$AUDMODLIB && sed -i "s|<AMLPATH>|$AMLPATH|" $1 || sed -i "/<AMLPATH>/d" $1
 	sed -i "s|$MOUNTPATH|$BOOTPATH|g" $1
   else
+    test ! -z $ROOT && sed -i "s|<ROOT>|$ROOT|" $1 || sed -i "/<ROOT>/d" $1
     sed -i "s|<SYS>|$REALSYS|" $1
     sed -i "s|<SHEBANG>|$SHEBANG|" $1
 	sed -i "s|<SEINJECT>|$SEINJECT|" $1
@@ -456,7 +457,8 @@ magisk_install() {
 
 system_install() {
   # MOUNT PARTITIONS
-  mount_partitions_system
+  WRITE=rw
+  mount_partitions_mod
   ui_print "- System install detected"
   # DETECT VERSION AND ARCHITECTURE
   api_level_arch_detect_mod
@@ -908,7 +910,7 @@ if [ ! -d /data/magisk ]; then system_install; standard_procedure; fi
 [ ! -z $MAGISK_VER_CODE -a $MAGISK_VER_CODE -ge 1400 ] || require_new_magisk
 
 # MOUNT PARTITIONS
-mount_partitions
+[ $MAGISK_VER_CODE -lt 1410 ] && { WRITE=ro; mount_partitions_mod; } || mount_partitions
 ui_print "- Magisk install detected"
 
 # DETECT VERSION AND ARCHITECTURE
