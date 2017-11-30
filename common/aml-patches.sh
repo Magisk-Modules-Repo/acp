@@ -1,6 +1,6 @@
 ui_print "    Patching existing audio_policy files..."
 if [ -f $VEN/etc/audio_output_policy.conf ] && [ -f $SYS/etc/audio_policy_configuration.xml ]; then
-  for BUFFER in "Speaker" "Wired Headset" "Wired Headphones"; do
+  for BUFFER in "Earpiece" "Speaker" "Wired Headset" "Wired Headphones" "Line" "HDMI" "Proxy" "FM" "BT SCO All" "USB Device Out" "Telephony Tx" "voice_rx" "primary input" "surround_sound" "record_24" "BT A2DP Out" "BT A2DP Headphones" "BT A2DP Speaker"; do
     if [ "$(sed -n "/$BUFFER/ {n;/deep_buffer,/ p}" $AMLPATH$SYS/etc/audio_policy_configuration.xml)" ] && [ ! "$(sed -n "/$BUFFER/ {n;n;/deep_buffer,/p}" $AMLPATH$SYS/etc/audio_policy_configuration.xml)" ]; then
       sed -i "/$BUFFER/ {n;/deep_buffer,/ p}" $AMLPATH$SYS/etc/audio_policy_configuration.xml
       sed -ri "/$BUFFER/ {n;n;/deep_buffer,/ s/( *)(.*)/\1<!--\2-->/}" $AMLPATH$SYS/etc/audio_policy_configuration.xml
