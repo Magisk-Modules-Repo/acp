@@ -36,7 +36,7 @@ set_sepolicy $SOURCE,audio_prop
 
 if [ "$MAGISK" == true ]; then
   for MOD in ${MODIDS}; do
-    sed -i "/magisk\/$MOD/,/fi #$MOD/d" $SH/post-fs-data.sh
+    sed -i "/^#$MODID/,/fi #$MODID/d" $SH/post-fs-data.sh
   done
   test ! "$(sed -n '/# MOD PATCHES/{n;p}' $AMLPATH/post-fs-data.sh)" && rm -rf $AMLPATH
 fi
