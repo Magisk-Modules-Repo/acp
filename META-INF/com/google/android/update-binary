@@ -626,7 +626,7 @@ unity_mod_copy() {
   fi
 
   # ADD BUILDPROPS
-  test -s $INSTALLER/common/unity-props.prop && { ui_print "   Adding build.props..."; unity_prop_copy $INSTALLER/common/unity-props.prop; }
+  test -s $INSTALLER/common/system.prop && { ui_print "   Adding build.props..."; unity_prop_copy $INSTALLER/common/system.prop; }
   test "$MAGISK" == false -a -f "$SH/$MODID-props" && add_to_info $SH/$MODID-props $INFO
   
   # INSTALL APPS & LIBRARIES
