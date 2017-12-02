@@ -8,7 +8,7 @@ ROOT=<ROOT>
 SYS=<SYS>
 VEN=<VEN>
 MODIDS=""
-test -d $SYS/priv-app && SOURCE=priv_app || SOURCE=system_app
+if [ -d $SYS/priv-app ]; then SOURCE=priv_app; else SOURCE=system_app; fi
 
 ### FILE LOCATIONS ###
 CFGS="${CFGS} $(find -L $SYS -type f -name "*audio_effects*.conf")"
