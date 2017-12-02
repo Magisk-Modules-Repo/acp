@@ -17,10 +17,10 @@ MIXS="${MIXS} $(find -L $SYS -type f -name "*mixer_paths*.xml")"
 
 # SEPOLICY SETTING FUNCTION
 set_sepolicy() {
-  if [ $(basename $SEINJECT) == "sepolicy-inject" ]; then
-	test -z $2 && $SEINJECT -Z $1 -l || $SEINJECT -s $1 -t $2 -c $3 -p $4 -l
+  if [ "$(basename $SEINJECT)" == "sepolicy-inject" ]; then
+	if [ -z $2 ]; then $SEINJECT -Z $1 -l; else $SEINJECT -s $1 -t $2 -c $3 -p $4 -l; fi
   else
-    test -z $2 && $SEINJECT --live "permissive $(echo $1 | sed 's/,/ /g')" || $SEINJECT --live "allow $1 $2 $3 { $(echo $4 | sed 's/,/ /g') }" 
+    if [ -z $2 ]; then $SEINJECT --live "permissive $(echo $1 | sed 's/,/ /g')"; else $SEINJECT --live "allow $1 $2 $3 { $(echo $4 | sed 's/,/ /g') }"; fi
   fi
 }
 

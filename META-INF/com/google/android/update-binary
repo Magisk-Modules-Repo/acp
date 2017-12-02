@@ -210,9 +210,9 @@ action_complete() {
     umount -l /vendor 2>/dev/null
   fi
   ui_print " "
-  test "$ACTION" == "Install" && ui_print "    --------- INSTALLATION SUCCESSFUL ---------" || ui_print "    --------- RESTORATION SUCCESSFUL ---------"
+  if [ "$ACTION" == "Install" ]; then ui_print "    --------- INSTALLATION SUCCESSFUL ---------"; else ui_print "    --------- RESTORATION SUCCESSFUL ---------"; fi
   ui_print " "
-  test "$ACTION" == "Install" && ui_print "    Unity Installer by ahrion & zackptg5 @ XDA" || ui_print "    Unity Uninstaller by ahrion & zackptg5 @ XDA"
+  if [ "$ACTION" == "Install" ]; then ui_print "    Unity Installer by ahrion & zackptg5 @ XDA"; else ui_print "    Unity Uninstaller by ahrion & zackptg5 @ XDA"; fi
 }
 
 sys_wipe_ch() {
@@ -233,7 +233,7 @@ sys_wipe_ch() {
 sys_wipefol_ch() {
   if [ -d "$1" ] && [ ! -f "$1.tar" ]; then
     tar -cf "$1.tar" "$1"
-    test ! -f $INFO && echo "$1.tar" >> $INFO || { test ! "$(grep "$1.tar" $INFO)" && echo "$1.tar" >> $INFO; }
+    if [ ! -f $INFO ]; then echo "$1.tar" >> $INFO; else test ! "$(grep "$1.tar" $INFO)" && echo "$1.tar" >> $INFO; fi
   else
     rm -rf "$1"
   fi
@@ -241,7 +241,7 @@ sys_wipefol_ch() {
 
 wipe_ch() {
   case $1 in
-    FOL*) test "$(echo "$1" | cut -c 4-9)" == "/data/" && TYPE="foldata" || TYPE="fol"; FILE=$(echo "$1" | cut -c4-);;
+    FOL*) if [ "$(echo "$1" | cut -c 4-9)" == "/data/" ]; then TYPE="foldata"; else TYPE="fol"; fi; FILE=$(echo "$1" | cut -c4-);;
     /data/*) TYPE="data"; FILE=$1;;
     APP*) TYPE="app"; FILE=$(echo "$1" | cut -c4-);;
     *) TYPE="file"; FILE=$1;;
@@ -251,7 +251,7 @@ wipe_ch() {
     "fol") $MAGISK && mktouch $FILE/.replace || sys_wipefol_ch $FILE;;
     "data") sys_wipe_ch $FILE;;
     "app") if $OLDAPP; then
-             test -f "/system/app/$FILE.apk" && $WPAPP_PRFX $UNITY/system/app/$FILE.apk || { test -f "/system/app/$FILE/$FILE.apk" && $WPAPP_PRFX $UNITY/system/app/$FILE/$FILE.apk; }
+             if [ -f "/system/app/$FILE.apk" ]; then $WPAPP_PRFX $UNITY/system/app/$FILE.apk; else test -f "/system/app/$FILE/$FILE.apk" && $WPAPP_PRFX $UNITY/system/app/$FILE/$FILE.apk; fi
            else
              test -f "/system/priv-app/$FILE/$FILE.apk" && $WPAPP_PRFX $UNITY/system/priv-app/$FILE/$FILE.apk
            fi;;
@@ -263,7 +263,7 @@ cp_ch() {
   mkdir -p "${2%/*}"
   chmod 0755 "${2%/*}"
   cp -af "$1" "$2"
-  test -z $3 && chmod 0644 "$2" || chmod "$3" "$2"
+  if [ -z $3 ]; then chmod 0644 "$2"; else chmod "$3" "$2"; fi
 }
 
 sys_cp_ch() {
@@ -291,16 +291,16 @@ sys_rm_ch() {
 patch_script() {
   sed -i "s|<MAGISK>|$MAGISK|" $1
   sed -i "s|<VEN>|$VEN|" $1
-  test ! -z $XML_PATH && sed -i "s|<XML_PRFX>|$XML_PATH|" $1 || sed -i "/<XML_PRFX>/d" $1
+  if [ ! -z $XML_PATH ]; then sed -i "s|<XML_PRFX>|$XML_PATH|" $1; else sed -i "/<XML_PRFX>/d" $1; fi
   if $MAGISK; then
     sed -i "/<ROOT>/d" $1
     sed -i "s|<SYS>|$SYS|" $1
     sed -i "s|<SHEBANG>|#!/system/bin/sh|" $1
 	sed -i "s|<SEINJECT>|magiskpolicy|" $1
-	$AUDMODLIB && sed -i "s|<AMLPATH>|$AMLPATH|" $1 || sed -i "/<AMLPATH>/d" $1
+	if $AUDMODLIB; then sed -i "s|<AMLPATH>|$AMLPATH|" $1; else sed -i "/<AMLPATH>/d" $1; fi
 	sed -i "s|$MOUNTPATH|$BOOTPATH|g" $1
   else
-    test ! -z $ROOT && sed -i "s|<ROOT>|$ROOT|" $1 || sed -i "/<ROOT>/d" $1
+    if [ ! -z $ROOT ]; then sed -i "s|<ROOT>|$ROOT|" $1; else sed -i "/<ROOT>/d" $1; fi
     sed -i "s|<SYS>|$REALSYS|" $1
     sed -i "s|<SHEBANG>|$SHEBANG|" $1
 	sed -i "s|<SEINJECT>|$SEINJECT|" $1
@@ -356,7 +356,7 @@ for TMP in version name author; do
   for i in $(seq $(((41-$CHARS) / 2))); do
     SPACES="${SPACES} "
   done
-  test $(((41-$CHARS) % 2)) == 1 && sed -i "s/<$TMP>/$SPACES$NEW${SPACES} /" $INSTALLER/config.sh || sed -i "s/<$TMP>/$SPACES$NEW$SPACES/" $INSTALLER/config.sh
+  if [ $(((41-$CHARS) % 2)) == 1 ]; then sed -i "s/<$TMP>/$SPACES$NEW${SPACES} /" $INSTALLER/config.sh; else sed -i "s/<$TMP>/$SPACES$NEW$SPACES/" $INSTALLER/config.sh; fi
 done
 
 . $INSTALLER/config.sh
@@ -404,7 +404,7 @@ pre_install() {
   test -z $MODID && MODID=`grep_prop id $INSTALLER/module.prop`
   MODPATH=$MOUNTPATH/$MODID
   AMLPATH=$MOUNTPATH/audmodlib
-  test -z $AUDMODLIB && AUDMODLIB=false || AUDMODLIB=true
+  if [ -z $AUDMODLIB ]; then AUDMODLIB=false; else AUDMODLIB=true; fi
 
   # MAKE MODID SERVICE AND POST-FS-DATA SCRIPTS
   cp -f $INSTALLER/common/unity-audmodlib/modid.sh $INSTALLER/common/unity-audmodlib/$MODID-post-fs-data.sh
@@ -431,7 +431,7 @@ common_install() {
 
 magisk_install() {
   VEN=/system/vendor
-  test $MAGISK_VER_CODE -lt 1450 && BOOTPATH="/magisk" || BOOTPATH="/sbin/.core/img"
+  if [ $MAGISK_VER_CODE -lt 1450 ]; then BOOTPATH="/magisk"; else BOOTPATH="/sbin/.core/img"; fi
   # PREP FILES & VARIABLES
   pre_install
   MAGISK=true
@@ -530,7 +530,7 @@ unity_prop_copy() {
     FILE="*props"
   fi
   if [ "$(cat $1)" ]; then
-    test ! -f $PROPFILE && { $MAGISK && mktouch $PROPFILE || mktouch $PROPFILE "$SHEBANG"; }
+    test ! -f $PROPFILE && if $MAGISK; then mktouch $PROPFILE; else mktouch $PROPFILE "$SHEBANG"; fi
 	for TMP in $(find $SH -type f -name $FILE); do
 	  cat $1 | while read PROP; do
         TPROP=$(echo $PROP | sed -r "$REGEX")
@@ -655,12 +655,12 @@ unity_mod_copy() {
 # AUDIO MODIFICATION LIBRARY
 aml_mod() {
   ### CREATE AUDIO MODIFICATION LIBRARY ###
-  test "$ACTION" == "Install" && { ui_print " "; ui_print "- Installing Audio Modification Library -"; } || ui_print "   Removing $MODID from Audio Modification Library"
+  if [ "$ACTION" == "Install" ]; then ui_print " "; ui_print "- Installing Audio Modification Library -"; else ui_print "   Removing $MODID from Audio Modification Library"; fi
 
   for FILE in ${CFGS} ${POLS} ${MIXS}; do
 	$MAGISK || { add_to_info $FILE $AMLINFO; add_to_info $FILE.bak $AMLINFO; }
     if [ ! -f $AMLPATH$FILE.bak ]; then
-      test -f $FILE.bak && $CP_NBPRFX $FILE.bak $AMLPATH$FILE.bak || $CP_NBPRFX $FILE $AMLPATH$FILE.bak
+      if [ -f $FILE.bak ]; then $CP_NBPRFX $FILE.bak $AMLPATH$FILE.bak; else $CP_NBPRFX $FILE $AMLPATH$FILE.bak; fi
     fi
     test ! -f $AMLPATH$FILE && $CP_NBPRFX $FILE $AMLPATH$FILE
   done
@@ -701,7 +701,6 @@ aml_mod() {
   ui_print "   ! AML framework by ahrion & zackptg5 @ XDA !"
 
   test "$ACTION" == "Install" && aml_mod_patch
-  return 0
 }
 
 # AML FILE PATCHER
@@ -716,7 +715,7 @@ aml_mod_patch() {
     sed -i 's/^/  /' $INSTALLER/common/aml-patches-remove.sh
     test ! -z $XML_PRFX && sed -i 's/^/  /' $INSTALLER/common/aml-xml-patches-remove.sh
 	sed -i -e "/^# MOD PATCHES/ a\  MODIDS=\"\${MODIDS} $MODID\"" -e "/^# MOD PATCHES/ r $INSTALLER/common/aml-patches-remove.sh" -e "/^# MOD PATCHES/ a\TEMP$MODID" $AMLSCRIPT
-	test ! -z $XML_PRFX && sed -i -e "/TEMP$MODID/ r $INSTALLER/common/aml-xml-patches-remove.sh" -e "/TEMP$MODID/ a\fi #$MODID" -e "/TEMP$MODID/d" $AMLSCRIPT || sed -i -e "/TEMP$MODID/ a\fi #$MODID" -e "/TEMP$MODID/d" $AMLSCRIPT
+	if [ ! -z $XML_PRFX ]; then sed -i -e "/TEMP$MODID/ r $INSTALLER/common/aml-xml-patches-remove.sh" -e "/TEMP$MODID/ a\fi #$MODID" -e "/TEMP$MODID/d" $AMLSCRIPT; else sed -i -e "/TEMP$MODID/ a\fi #$MODID" -e "/TEMP$MODID/d" $AMLSCRIPT; fi
 	sed -i -e "/^# MOD PATCHES/ a\#$MODID" -e "/^# MOD PATCHES/ a\if [ ! -d \"$BOOTPATH/$MODID\" ]; then" $AMLSCRIPT
   else
     sed -i "/^# MOD PATCHES/ a\#$MODID" $AMLSCRIPT
@@ -763,9 +762,9 @@ unity_uninstall() {
   if $MAGISK; then
     rm -rf $MODPATH
     rm -rf $BOOTPATH/$MODID
-    $AUDMODLIB && { test -f $BOOTPATH/audmodlib/post-fs-data.sh && sed -i "/^#$MODID/,/fi #$MODID/d" $BOOTPATH/audmodlib/post-fs-data.sh || sed -i "/^#$MODID/,/fi #$MODID/d" $AMLSCRIPT; }
+    $AUDMODLIB && if [ -f $BOOTPATH/audmodlib/post-fs-data.sh ]; then sed -i "/^#$MODID/,/fi #$MODID/d" $BOOTPATH/audmodlib/post-fs-data.sh; else sed -i "/^#$MODID/,/fi #$MODID/d" $AMLSCRIPT; fi
     # Use magisk_merge for aml during bootmode uninstall
-    $AUDMODLIB && { test "$BOOTMODE" == "true" && aml_mod || ui_print "   Removing $MODID from Audio Modification Library"; }
+    $AUDMODLIB && if $BOOTMODE; then aml_mod; else ui_print "   Removing $MODID from Audio Modification Library"; fi
     # Remove AML if no modules are installed
     $AUDMODLIB && { if [ -f "$BOOTPATH/audmodlib/post-fs-data.sh" ]; then
 	  test ! "$(sed -n '/^# MOD PATCHES/{n;p}' $BOOTPATH/audmodlib/post-fs-data.sh)" && remove_aml
@@ -828,7 +827,7 @@ standard_procedure() {
   test -z $MAXAPI || { test $API -le $MAXAPI || require_new_api 'maximum'; }
   
   # PREPARE (UN)INSTALL
-  test -d /system/priv-app && OLDAPP=false || OLDAPP=true
+  if [ -d /system/priv-app ]; then OLDAPP=false; else OLDAPP=true; fi
 
   # DETERMINE IF MOD IS ALREADY INSTALLED. IF SAME VERSION IS INSTALLED, UNINSTALL
   if [ -f "$MOD_VER" ]; then
