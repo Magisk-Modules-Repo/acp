@@ -815,7 +815,7 @@ standard_procedure() {
       ui_print "   ! Older version detected. Removing..."
       UPGRADE=true
     fi
-    INSTALL=Uninstall
+    INSTALL=false
   else
     UPGRADE=false
   fi
@@ -847,7 +847,7 @@ standard_procedure() {
     unity_uninstall
 
     if $UPGRADE; then
-      INSTALL=Install
+      INSTALL=true
       ui_print " "
       ui_print "! Uninstall completed, beginning install !"
       standard_procedure
