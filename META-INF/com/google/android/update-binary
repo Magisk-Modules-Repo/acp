@@ -43,11 +43,11 @@ if [ "$?" -eq "0" ]; then
   for FD in `ls /proc/$$/fd`; do
     readlink /proc/$$/fd/$FD 2>/dev/null | grep pipe >/dev/null
     if [ "$?" -eq "0" ]; then
-	  ps | grep " 3 $FD " | grep -v grep >/dev/null
-	  if [ "$?" -eq "0" ]; then
-	    OUTFD=$FD
-	    break
-	  fi
+    ps | grep " 3 $FD " | grep -v grep >/dev/null
+    if [ "$?" -eq "0" ]; then
+      OUTFD=$FD
+      break
+    fi
     fi
   done
 fi
@@ -88,7 +88,7 @@ mount_partitions_mod() {
   if ! is_mounted /system && ! [ -f /system/build.prop ]; then
     SYSTEMBLOCK=`find /dev/block -iname system$SLOT | head -n 1`
     mount -t ext4 -o $WRITE $SYSTEMBLOCK /system
-	  REALSYS=/system/system
+    REALSYS=/system/system
   fi
   is_mounted /system || [ -f /system/build.prop ] || abort "! Cannot mount /system"
   cat /proc/mounts | grep -E '/dev/root|/system_root' >/dev/null && SKIP_INITRAMFS=true || SKIP_INITRAMFS=false
@@ -97,8 +97,8 @@ mount_partitions_mod() {
     mkdir /system_root 2>/dev/null
     mount --move /system /system_root
     mount -o bind /system_root/system /system
-	  ROOT=/system_root
-	  REALSYS=/system_root/system
+    ROOT=/system_root
+    REALSYS=/system_root/system
   fi
   $SKIP_INITRAMFS && ui_print "- Device skip_initramfs detected"
   if [ -L /system/vendor ]; then
@@ -214,7 +214,7 @@ action_complete() {
   if ! $MAGISK; then
     ui_print "   Unmounting partitions..."
     test "$supersuimg" -o -d /su && umount /su
-	  umount -l /system_root 2>/dev/null
+    umount -l /system_root 2>/dev/null
     umount -l /system 2>/dev/null
     umount -l /vendor 2>/dev/null
   fi
@@ -306,16 +306,16 @@ patch_script() {
     sed -i "/<ROOT>/d" $1
     sed -i "s|<SYS>|$SYS|" $1
     sed -i "s|<SHEBANG>|#!/system/bin/sh|" $1
-	sed -i "s|<SEINJECT>|magiskpolicy|" $1
-	if $AUDMODLIB; then sed -i "s|<AMLPATH>|$AMLPATH|" $1; else sed -i "/<AMLPATH>/d" $1; fi
-	sed -i "s|$MOUNTPATH|$BOOTPATH|g" $1
+  sed -i "s|<SEINJECT>|magiskpolicy|" $1
+  if $AUDMODLIB; then sed -i "s|<AMLPATH>|$AMLPATH|" $1; else sed -i "/<AMLPATH>/d" $1; fi
+  sed -i "s|$MOUNTPATH|$BOOTPATH|g" $1
   else
     if [ ! -z $ROOT ]; then sed -i "s|<ROOT>|$ROOT|" $1; else sed -i "/<ROOT>/d" $1; fi
     sed -i "s|<SYS>|$REALSYS|" $1
     sed -i "s|<SHEBANG>|$SHEBANG|" $1
-	sed -i "s|<SEINJECT>|$SEINJECT|" $1
-	sed -i "/<AMLPATH>/d" $1
-	sed -i "s|$MOUNTPATH||g" $1
+  sed -i "s|<SEINJECT>|$SEINJECT|" $1
+  sed -i "/<AMLPATH>/d" $1
+  sed -i "s|$MOUNTPATH||g" $1
   fi
 }
 
@@ -382,8 +382,8 @@ is_mounted /data || mount /data || is_mounted /cache || mount /cache || { ui_pri
 for TMP in $INSTALLER/common/unity-files-wipe.sh $INSTALLER/common/aml-patches.sh $INSTALLER/common/aml-patches-remove.sh $INSTALLER/common/aml-patches-wipe.sh $INSTALLER/common/unity-uservariables.sh $INSTALLER/common/unity-customrules $INSTALLER/common/post-fs-data.sh $INSTALLER/common/service.sh $INSTALLER/common/*.prop; do
   if [ "$TMP" == "$INSTALLER/common/unity-customrules" ]; then
     NUM=1; while true; do
-  	  test -f $TMP$NUM.sh || { NUMOFCUSTRULES=$(($NUM-1)); break; }
-	    NUM=$((NUM+1))
+      test -f $TMP$NUM.sh || { NUMOFCUSTRULES=$(($NUM-1)); break; }
+      NUM=$((NUM+1))
     done
   else
     test ! -f $TMP && { ui_print "   !$TMP missing!"; ui_print "   !Copy it back to above and try again!"; exit 1; }
@@ -441,15 +441,15 @@ magisk_install() {
   if $BOOTMODE; then
     INFO="$BOOTPATH/$MODID/$MODID-files"
     MOD_VER="$BOOTPATH/$MODID/module.prop"
-	AML_VER="$BOOTPATH/audmodlib/module.prop"
-	PROPFILE="$BOOTPATH/$MODID/system.prop"
-	CONFPROPS="$BOOTPATH/$MODID/$MODID-conflictingprops.txt"
+    AML_VER="$BOOTPATH/audmodlib/module.prop"
+    PROPFILE="$BOOTPATH/$MODID/system.prop"
+    CONFPROPS="$BOOTPATH/$MODID/$MODID-conflictingprops.txt"
   else
     INFO="$MODPATH/$MODID-files"
     MOD_VER="$MODPATH/module.prop"
-	AML_VER="$AMLPATH/module.prop"
-	PROPFILE="$MODPATH/system.prop"
-	CONFPROPS="$MODPATH/$MODID-conflictingprops.txt"
+    AML_VER="$AMLPATH/module.prop"
+    PROPFILE="$MODPATH/system.prop"
+    CONFPROPS="$MODPATH/$MODID-conflictingprops.txt"
   fi
   common_install
 }
@@ -468,12 +468,12 @@ system_install() {
   SHEBANG="#!/system/bin/sh"
   if [ "$supersuimg" ] || [ -d /su ]; then
     SHEBANG="#!/su/bin/sush"
-	  SH=/su/su.d
+    SH=/su/su.d
     SEINJECT=/su/bin/supolicy
     ROOTTYPE="systemless SuperSU"
   elif [ -e "$(find /data /cache -name supersu_is_here | head -n1)" ]; then
     SHEBANG="#!/su/bin/sush"
-	  SH=$(dirname `find /data /cache -name supersu_is_here | head -n1`)/su.d
+    SH=$(dirname `find /data /cache -name supersu_is_here | head -n1`)/su.d
     SEINJECT=$(dirname `find /data /cache -name supersu_is_here | head -n1`)/bin/supolicy
     ROOTTYPE="bindsbin SuperSU"
   elif [ -d /system/su ] || [ -f /system/xbin/daemonsu ] || [ -f /system/xbin/sugote ]; then
@@ -522,8 +522,8 @@ unity_prop_copy() {
   if $MAGISK; then
     REGEX="s/(.*)=(.*)/\1/"
     sed -i -e "s/setprop //g" -e "s/ /=/g" $1
-	  $BOOTMODE && SH="$BOOTPATH $MOUNTPATH" || SH=$MOUNTPATH
-	  FILE=system.prop
+    $BOOTMODE && SH="$BOOTPATH $MOUNTPATH" || SH=$MOUNTPATH
+    FILE=system.prop
   else
     REGEX="s/setprop (.*) (.*)/\1/"
     FILE="*props"
@@ -580,7 +580,7 @@ aml_mod() {
   if [ "$ACTION" == "Install" ]; then ui_print " "; ui_print "- Installing Audio Modification Library -"; else ui_print "   Removing $MODID from Audio Modification Library"; fi
 
   for FILE in ${CFGS} ${POLS} ${MIXS}; do
-	$MAGISK || { add_to_info $FILE $AMLINFO; add_to_info $FILE.bak $AMLINFO; }
+  $MAGISK || { add_to_info $FILE $AMLINFO; add_to_info $FILE.bak $AMLINFO; }
     if [ ! -f $AMLPATH$FILE.bak ]; then
       if [ -f $FILE.bak ]; then $CP_NBPRFX $FILE.bak $AMLPATH$FILE.bak; else $CP_NBPRFX $FILE $AMLPATH$FILE.bak; fi
     fi
@@ -633,9 +633,9 @@ aml_mod_patch() {
   if $MAGISK; then
     sed -i "/^#$MODID/,/fi #$MODID/d" $AMLSCRIPT
     sed -i 's/^/  /' $INSTALLER/common/aml-patches-remove.sh
-	  sed -i -e "/^# MOD PATCHES/ a\  MODIDS=\"\${MODIDS} $MODID\"" -e "/^# MOD PATCHES/ r $INSTALLER/common/aml-patches-remove.sh" -e "/^# MOD PATCHES/ a\TEMP$MODID" $AMLSCRIPT
-	  sed -i -e "/TEMP$MODID/ a\fi #$MODID" -e "/TEMP$MODID/d" $AMLSCRIPT
-	  sed -i -e "/^# MOD PATCHES/ a\#$MODID" -e "/^# MOD PATCHES/ a\if [ ! -d \"$BOOTPATH/$MODID\" ]; then" $AMLSCRIPT
+    sed -i -e "/^# MOD PATCHES/ a\  MODIDS=\"\${MODIDS} $MODID\"" -e "/^# MOD PATCHES/ r $INSTALLER/common/aml-patches-remove.sh" -e "/^# MOD PATCHES/ a\TEMP$MODID" $AMLSCRIPT
+    sed -i -e "/TEMP$MODID/ a\fi #$MODID" -e "/TEMP$MODID/d" $AMLSCRIPT
+    sed -i -e "/^# MOD PATCHES/ a\#$MODID" -e "/^# MOD PATCHES/ a\if [ ! -d \"$BOOTPATH/$MODID\" ]; then" $AMLSCRIPT
   else
     sed -i "/^# MOD PATCHES/ a\#$MODID" $AMLSCRIPT
   fi
@@ -648,7 +648,7 @@ aml_mod_patch() {
   for FILE in /system/etc/audio_effects.conf $VEN/etc/audio_effects.conf; do
     if [ -f $FILE ] && [ ! "$(grep '^# *volume_listener {' $AMLPATH$FILE)" ] && [ "$(grep '^ *volume_listener {' $AMLPATH$FILE)" ]; then
       sed -i '/volume_listener {/,/}/ s/^/#/' $AMLPATH$FILE
-	  fi
+    fi
   done
 
   source $INSTALLER/common/aml-patches.sh
@@ -667,7 +667,7 @@ unity_mod_copy() {
   # INSTALL SCRIPTS
   if $MAGISK; then
     ui_print "   Installing scripts for MagiskSU..."
-	  # COPY PROP FILE TO MAGISK_MERGE FOR BOOTMODE
+    # COPY PROP FILE TO MAGISK_MERGE FOR BOOTMODE
     $BOOTMODE && { $CP_NBPRFX $PROPFILE $MODPATH/system.prop; $CP_NBPRFX $CONFPROPS $MODPATH/$MODID-conflictingprops.txt; }
   
     # HANDLE REPLACE FOLDERS
@@ -692,8 +692,8 @@ unity_mod_copy() {
       $CP_NBPRFX $INSTALLER/module.prop $BOOTPATH/$MODID/module.prop
       $AUDMODLIB && { mktouch $BOOTPATH/audmodlib/update; $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlibmodule.prop $BOOTPATH/audmodlib/module.prop; }
     fi
-	
-	  #INSTALL POST-FS-DATA MODE SCRIPTS
+  
+    #INSTALL POST-FS-DATA MODE SCRIPTS
     $POSTFSDATA && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/$MODID-post-fs-data.sh $MODPATH/post-fs-data.sh; patch_script $MODPATH/post-fs-data.sh; }
 
     # SERVICE MODE SCRIPTS
@@ -782,10 +782,10 @@ unity_uninstall() {
     $AUDMODLIB && if $BOOTMODE; then aml_mod; else ui_print "   Removing $MODID from Audio Modification Library"; fi
     # Remove AML if no modules are installed
     $AUDMODLIB && { if [ -f "$BOOTPATH/audmodlib/post-fs-data.sh" ]; then
-	    test ! "$(sed -n '/^# MOD PATCHES/{n;p}' $BOOTPATH/audmodlib/post-fs-data.sh)" && remove_aml
-	  else
-	    test ! "$(sed -n '/^# MOD PATCHES/{n;p}' $AMLSCRIPT)" && remove_aml
-	  fi; }
+      test ! "$(sed -n '/^# MOD PATCHES/{n;p}' $BOOTPATH/audmodlib/post-fs-data.sh)" && remove_aml
+    else
+      test ! "$(sed -n '/^# MOD PATCHES/{n;p}' $AMLSCRIPT)" && remove_aml
+    fi; }
   else
     $AUDMODLIB && sed -i "/#$MODID/d" $AMLSCRIPT
     rm -f /system/addon.d/$MODID.sh
@@ -857,7 +857,7 @@ standard_procedure() {
       standard_procedure
     else
       # COMPLETING UNINSTALL
-	    ui_print " "
+      ui_print " "
       ui_print "- Completing uninstall -"
       $MAGISK || { action_complete; exit 0; }
     fi
