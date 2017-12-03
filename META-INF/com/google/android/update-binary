@@ -324,7 +324,7 @@ add_to_info() {
 }
 
 custom_app_install() {
-  $OLDAPP && $CP_PRFX $INSTALLER/custom/$1/$1.apk $UNITY/system/app/$1.apk || $CP_PRFX $INSTALLER/custom/$1/$1.apk $UNITY/system/priv-app/$1/$1.apk
+  if $OLDAPP; then $CP_PRFX $INSTALLER/custom/$1/$1.apk $UNITY/system/app/$1.apk; else $CP_PRFX $INSTALLER/custom/$1/$1.apk $UNITY/system/priv-app/$1/$1.apk; fi
 }
 
 info_uninstall() {
@@ -746,7 +746,7 @@ unity_mod_copy() {
   
   cat $INSTALLER/tfiles | while read LINE; do
     $OLDAPP && LINE2=$(echo $LINE | sed 's|/app/.*/|/app/|') || LINE2=$(echo $LINE | sed 's|/app/|/priv-app/|')
-    test "$(echo "$LINE" | cut -c 1-6)" == "/data/" && sys_cp_ch $INSTALLER$LINE $LINE || $CP_PRFX $INSTALLER$LINE $UNITY$LINE2
+    if [ "$(echo "$LINE" | cut -c 1-6)" == "/data/" ]; then sys_cp_ch $INSTALLER$LINE $LINE; else $CP_PRFX $INSTALLER$LINE $UNITY$LINE2; fi
   done
 
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
