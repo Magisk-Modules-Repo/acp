@@ -18,7 +18,7 @@ MIXS="${MIXS} $(find -L $SYS -type f -name "*mixer_paths*.xml")"
 # SEPOLICY SETTING FUNCTION
 set_sepolicy() {
   if [ "$(basename $SEINJECT)" == "sepolicy-inject" ]; then
-	if [ -z $2 ]; then $SEINJECT -Z $1 -l; else $SEINJECT -s $1 -t $2 -c $3 -p $4 -l; fi
+	  if [ -z $2 ]; then $SEINJECT -Z $1 -l; else $SEINJECT -s $1 -t $2 -c $3 -p $4 -l; fi
   else
     if [ -z $2 ]; then $SEINJECT --live "permissive $(echo $1 | sed 's/,/ /g')"; else $SEINJECT --live "allow $1 $2 $3 { $(echo $4 | sed 's/,/ /g') }"; fi
   fi
