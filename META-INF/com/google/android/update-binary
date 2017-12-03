@@ -306,16 +306,16 @@ patch_script() {
     sed -i "/<ROOT>/d" $1
     sed -i "s|<SYS>|$SYS|" $1
     sed -i "s|<SHEBANG>|#!/system/bin/sh|" $1
-  sed -i "s|<SEINJECT>|magiskpolicy|" $1
-  if $AUDMODLIB; then sed -i "s|<AMLPATH>|$AMLPATH|" $1; else sed -i "/<AMLPATH>/d" $1; fi
-  sed -i "s|$MOUNTPATH|$BOOTPATH|g" $1
+    sed -i "s|<SEINJECT>|magiskpolicy|" $1
+    if $AUDMODLIB; then sed -i "s|<AMLPATH>|$AMLPATH|" $1; else sed -i "/<AMLPATH>/d" $1; fi
+    sed -i "s|$MOUNTPATH|$BOOTPATH|g" $1
   else
     if [ ! -z $ROOT ]; then sed -i "s|<ROOT>|$ROOT|" $1; else sed -i "/<ROOT>/d" $1; fi
     sed -i "s|<SYS>|$REALSYS|" $1
     sed -i "s|<SHEBANG>|$SHEBANG|" $1
-  sed -i "s|<SEINJECT>|$SEINJECT|" $1
-  sed -i "/<AMLPATH>/d" $1
-  sed -i "s|$MOUNTPATH||g" $1
+    sed -i "s|<SEINJECT>|$SEINJECT|" $1
+    sed -i "/<AMLPATH>/d" $1
+    sed -i "s|$MOUNTPATH||g" $1
   fi
 }
 
@@ -466,6 +466,9 @@ system_install() {
   # DETERMINE SYSTEM BOOT SCRIPT TYPE
   supersuimg_mount
   SHEBANG="#!/system/bin/sh"
+  SH=/system/etc/init.d
+  SEINJECT=/sbin/sepolicy-inject
+  ROOTTYPE="other root or rootless"
   if [ "$supersuimg" ] || [ -d /su ]; then
     SHEBANG="#!/su/bin/sush"
     SH=/su/su.d
@@ -486,14 +489,8 @@ system_install() {
       SEINJECT=/system/xbin/supolicy
       ROOTTYPE="system SuperSU"
     else
-      SH=/system/etc/init.d
-      SEINJECT=/sbin/sepolicy-inject
       ROOTTYPE="LineageOS SU"
     fi
-  else
-    SH=/system/etc/init.d
-    SEINJECT=/sbin/sepolicy-inject
-    ROOTTYPE="other root or rootless"
   fi
   # SYSTEM ONLY VARIABLES
   MAGISK=false
