@@ -7,9 +7,10 @@ XML_PRFX=<XML_PRFX>
 ROOT=<ROOT>
 SYS=<SYS>
 VEN=<VEN>
+SOURCE=<SOURCE>
 MODIDS=""
-if [ -d $SYS/priv-app ]; then SOURCE=priv_app; else SOURCE=system_app; fi
-
+LIBDIR=<LIBDIR>
+LIBPATCH=<LIBPATCH>
 ### FILE LOCATIONS ###
 CFGS="${CFGS} $(find -L $SYS -type f -name "*audio_effects*.conf")"
 POLS="${POLS} $(find -L $SYS -type f -name "*audio*policy*.conf" -o -name "*audio_policy*.xml")"
