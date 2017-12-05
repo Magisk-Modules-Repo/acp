@@ -159,12 +159,16 @@ mktouch() {
   chmod 644 $1
 }
 
-abort() {
-  ui_print "$1"
+unmount_partitions() {
   test "$supersuimg" -o -d /su && umount /su
   umount -l /system_root 2>/dev/null
   umount -l /system 2>/dev/null
   umount -l /vendor 2>/dev/null
+}
+
+abort() {
+  ui_print "$1"
+  unmount_partitions
   exit 1
 }
 
@@ -213,10 +217,7 @@ require_new_api() {
 action_complete() {
   if ! $MAGISK; then
     ui_print "   Unmounting partitions..."
-    test "$supersuimg" -o -d /su && umount /su
-    umount -l /system_root 2>/dev/null
-    umount -l /system 2>/dev/null
-    umount -l /vendor 2>/dev/null
+    unmount_partitions
   fi
   ui_print " "
   if $INSTALL; then ui_print "    --------- INSTALLATION SUCCESSFUL ---------"; else ui_print "    --------- RESTORATION SUCCESSFUL ---------"; fi
@@ -231,7 +232,7 @@ sys_wipe_ch() {
   while read LINE; do
     test "$1" == "$(eval echo $LINE)" && { TPARTMOD=true; sed -i "/$1/d" $INFO; }
   done
-  if [ -f "$1" ] && [ ! -f "$1.bak" ] && [ "$TPARTMOD" != true ]; then
+  if ! $TPARTMOD && [ -f "$1" ] && [ ! -f "$1.bak" ]; then
     mv -f "$1" "$1.bak"
     echo "$1.bak" >> $INFO
   else
@@ -363,7 +364,7 @@ ui_print " "
 ui_print "Unzipping files..."
 unzip -o "$ZIP" -d $INSTALLER 2>/dev/null
 
-[ ! -f $INSTALLER/config.sh ] && { ui_print "! Unable to extract zip file!"; exit 1; }
+[ ! -f $INSTALLER/config.sh ] && { ui_print "! Unable to extract zip file !"; exit 1; }
 
 # INSERT MODULE INFO INTO CONFIG.SH
 for TMP in version name author; do
@@ -548,7 +549,7 @@ unity_prop_copy() {
             TOLDPROP=$(echo $OLDPROP | sed -r "$REGEX")
             test "$TPROP" == "$TOLDPROP" && PRESENT=true
           done
-          if [ "$PRESENT" == "false" ]; then
+          if ! $PRESENT; then
             test ! "$(grep "$PROP" $PROPFILE)" && echo "$PROP" >> $PROPFILE
           elif [ "$TMP" != "$PROPFILE" ]; then
             test "$(grep "^$PROP" $PROPFILE)" && sed -i "/$PROP/d" $PROPFILE
@@ -589,7 +590,7 @@ aml_mod() {
   if $INSTALL; then ui_print " "; ui_print "- Installing Audio Modification Library -"; else ui_print "   Removing $MODID from Audio Modification Library"; fi
 
   for FILE in ${CFGS} ${POLS} ${MIXS}; do
-  $MAGISK || { add_to_info $FILE $AMLINFO; add_to_info $FILE.bak $AMLINFO; }
+    $MAGISK || { add_to_info $FILE $AMLINFO; add_to_info $FILE.bak $AMLINFO; }
     if [ ! -f $AMLPATH$FILE.bak ]; then
       if [ -f $FILE.bak ]; then $CP_NBPRFX $FILE.bak $AMLPATH$FILE.bak; else $CP_NBPRFX $FILE $AMLPATH$FILE.bak; fi
     fi
@@ -822,6 +823,16 @@ standard_procedure() {
   # PREPARE (UN)INSTALL
   if [ -d /system/priv-app ]; then OLDAPP=false; else OLDAPP=true; fi
 
+  # DON'T INSTALL IF INSTALLED AML VER IS NEWER THAN ONE IN ZIP
+  if $AUDMODLIB && [ -f "$AML_VER" ]; then
+    if [ $(grep_prop versionCode $AML_VER) -gt $(grep_prop versionCode $INSTALLER/common/audmodlib-unity/audmodlibmodule.prop) ]; then
+      ui_print " "
+      ui_print "   ! Module contains older version of audmodlib !"
+      ui_print "   ! than is currently installed ! "
+      abort "   ! Upgrade this module to latest audmodlib !"
+    fi
+  fi
+  
   # DETERMINE IF MOD IS ALREADY INSTALLED. IF SAME VERSION IS INSTALLED, UNINSTALL
   if [ -f "$MOD_VER" ]; then
     if [ $(grep_prop versionCode $MOD_VER) -ge $(grep_prop versionCode $INSTALLER/module.prop) ]; then
