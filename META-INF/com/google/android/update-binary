@@ -762,7 +762,7 @@ unity_mod_copy() {
       case $LINE in
         /system/app/*|/system/lib*) LINE2=$(echo $LINE | sed "s|/system/|$VEN/|");;
       esac
-    else    
+    else
       $OLDAPP && LINE2=$(echo $LINE | sed 's|/app/.*/|/app/|') || LINE2=$(echo $LINE | sed 's|/app/|/priv-app/|')
     fi
     if [ "$(echo "$LINE" | cut -c 1-6)" == "/data/" ]; then sys_cp_ch $INSTALLER$LINE $LINE; else $CP_PRFX $INSTALLER$LINE $UNITY$LINE2; fi
