@@ -683,8 +683,8 @@ unity_mod_copy() {
     done
 
     # AUTO MOUNT
-    $AUTOMOUNT && touch $MODPATH/auto_mount
-    $AUDMODLIB && touch $AMLPATH/auto_mount
+    $AUTOMOUNT && mktouch $MODPATH/auto_mount
+    $AUDMODLIB && mktouch $AMLPATH/auto_mount
 
     # REMOVE OLD AML FILES IF IN BOOTMODE
     $BOOTMODE && $AUDMODLIB && { rm -rf $BOOTPATH/audmodlib; mkdir -p $BOOTPATH/audmodlib; }
@@ -709,7 +709,7 @@ unity_mod_copy() {
     test "$ROOTTYPE" == "LineageOS SU" -o "$ROOTTYPE" == "other root or rootless" && { ui_print " "; ui_print "   ! This root method has no boot script support !"; ui_print "   ! You will need to add init.d support !"; ui_print " "; }
 
     # CREATE FILE CONTAINING LIST OF ALL INSTALLED MOD FILES
-    $AUDMODLIB && [ ! -f $AMLINFO ] && touch $AMLINFO
+    $AUDMODLIB && [ ! -f $AMLINFO ] && mktouch $AMLINFO
 
     # COPY MODULE.PROP FILE FOR VERSION CHECKING
     $CP_NBPRFX $INSTALLER/module.prop $MOD_VER
