@@ -761,6 +761,7 @@ unity_mod_copy() {
     if $OREONEW; then
       case $LINE in
         /system/app/*|/system/lib*) LINE2=$(echo $LINE | sed "s|/system/|$VEN/|");;
+        *) LINE2=$LINE;;
       esac
     else
       $OLDAPP && LINE2=$(echo $LINE | sed 's|/app/.*/|/app/|') || LINE2=$(echo $LINE | sed 's|/app/|/priv-app/|')
