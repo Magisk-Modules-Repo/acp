@@ -532,7 +532,7 @@ unity_prop_copy() {
   if $MAGISK; then
     REGEX="s/(.*)=(.*)/\1/"
     sed -i -e "s/setprop //g" -e "s/ /=/g" $1
-    $BOOTMODE && SH="$BOOTPATH $MOUNTPATH" || SH=$MOUNTPATH
+    if $BOOTMODE; then SH="$BOOTPATH $MOUNTPATH"; else SH=$MOUNTPATH; fi
     FILE=system.prop
   else
     REGEX="s/setprop (.*) (.*)/\1/"
@@ -676,9 +676,6 @@ unity_mod_copy() {
   # INSTALL SCRIPTS
   if $MAGISK; then
     ui_print "   Installing scripts for MagiskSU..."
-    # COPY PROP FILE TO MAGISK_MERGE FOR BOOTMODE
-    $BOOTMODE && { $CP_NBPRFX $PROPFILE $MODPATH/system.prop; $CP_NBPRFX $CONFPROPS $MODPATH/$MODID-conflictingprops.txt; }
-  
     # HANDLE REPLACE FOLDERS
     for TARGET in $REPLACE; do
       mktouch $MODPATH$TARGET/.replace
@@ -690,7 +687,7 @@ unity_mod_copy() {
     $AUDMODLIB && touch $AMLPATH/auto_mount
 
     # REMOVE OLD AML FILES IF IN BOOTMODE
-    if $BOOTMODE && $AUDMODLIB; then rm -rf $BOOTPATH/audmodlib; mkdir -p $BOOTPATH/audmodlib; fi
+    $BOOTMODE && $AUDMODLIB && { rm -rf $BOOTPATH/audmodlib; mkdir -p $BOOTPATH/audmodlib; }
 
     # MODULE INFO
     $CP_NBPRFX $INSTALLER/module.prop $MODPATH/module.prop
@@ -773,6 +770,9 @@ unity_mod_copy() {
     test "$(grep "TIMEOFEXEC=3" $INSTALLER/common/unity-customrules$NUM.sh)" && source $INSTALLER/common/unity-customrules$NUM.sh
     NUM=$((NUM+1))
   done
+  
+  # COPY PROP FILE & CONF FILEmTO MAGISK_MERGE FOR BOOTMODE
+  $BOOTMODE && { test -f $PROPFILE && $CP_NBPRFX $PROPFILE $MODPATH/system.prop; test -f $CONFPROPS && $CP_NBPRFX $CONFPROPS $MODPATH/$MODID-conflictingprops.txt; }
   
   # REMOVE INFO FILE IF NOT NEEDED
   $MAGISK && [ ! -s $INFO ] && rm -f $INFO
