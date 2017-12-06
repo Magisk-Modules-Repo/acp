@@ -826,7 +826,7 @@ standard_procedure() {
 
   # DON'T INSTALL IF INSTALLED AML VER IS NEWER THAN ONE IN ZIP
   if $AUDMODLIB && [ -f "$AML_VER" ]; then
-    if [ $(grep_prop versionCode $AML_VER) -gt $(grep_prop versionCode $INSTALLER/common/audmodlib-unity/audmodlibmodule.prop) ]; then
+    if [ $(grep_prop versionCode $AML_VER) -gt $(grep_prop versionCode $INSTALLER/common/unity-audmodlib/audmodlibmodule.prop) ]; then
       ui_print " "
       ui_print "   ! Module contains older version of audmodlib !"
       ui_print "   ! than is currently installed ! "
