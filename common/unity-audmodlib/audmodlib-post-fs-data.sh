@@ -9,6 +9,8 @@ SYS=<SYS>
 VEN=<VEN>
 SOURCE=<SOURCE>
 MODIDS=""
+LIBDIR=<LIBDIR>
+LIBPATCH=<LIBPATCH>
 ### FILE LOCATIONS ###
 CFGS="${CFGS} $(find -L $SYS -type f -name "*audio_effects*.conf")"
 POLS="${POLS} $(find -L $SYS -type f -name "*audio*policy*.conf" -o -name "*audio_policy*.xml")"

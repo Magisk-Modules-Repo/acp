@@ -9,6 +9,8 @@ ROOT=<ROOT>
 SYS=<SYS>
 VEN=<VEN>
 SOURCE=<SOURCE>
+LIBDIR=<LIBDIR>
+LIBPATCH=<LIBPATCH>
 if [ -d $SYS/priv-app ]; then SOURCE=priv_app; else SOURCE=system_app; fi
 
 ### FILE LOCATIONS ###
