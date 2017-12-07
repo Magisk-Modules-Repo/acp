@@ -10,11 +10,14 @@ elif [ ! -f $VEN/etc/audio_output_policy.conf ] && [ -f $SYS/etc/audio_policy_co
   sed -ri '/deep_buffer/ s/<!--(.*)-->/\1/g' $AMLPATH$SYS/etc/audio_policy_configuration.xml
 else
   for FILE in ${POLS}; do
-    if [ "$FILE" == "*.conf" -o "$FILE" == "$SYS/etc/audio_policy_configuration.xml" ] && [ ! "$(grep "#deep_buffer" $AMLPATH$FILE)" ] && [ "$(grep '^deep_buffer' $AMLPATH$FILE)" ]; then
-	  sed -i '/deep_buffer {/,/}/ s/^#//' $AMLPATH$FILE
-	elif [ "$FILE" == "*.xml" ] && [ "$(grep "<!--.*deep_buffer" $AMLPATH$FILE)" ]; then
-	  sed -i '/<!--deep_buffer {/,/}-->/ s/<!--deep_buffer/deep_buffer/g; s/}-->/}/g' $AMLPATH$FILE
-	fi
+    if [ "$FILE" == "$SYS/etc/audio_policy_configuration.xml" ] && [ ! "$(grep "#deep_buffer" $AMLPATH$FILE)" ] && [ "$(grep '^deep_buffer' $AMLPATH$FILE)" ]; then
+	    sed -i '/deep_buffer {/,/}/ s/^#//' $AMLPATH$FILE
+    fi
+  done
+  for FILE in ${POLSXML}; do
+    if [ "$(grep "<!--.*deep_buffer" $AMLPATH$FILE)" ]; then
+      sed -i '/<!--deep_buffer {/,/}-->/ s/<!--deep_buffer/deep_buffer/g; s/}-->/}/g' $AMLPATH$FILE
+    fi
   done
 fi
 # if [ ! -z $XML_PRFX ]; then
