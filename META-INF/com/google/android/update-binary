@@ -580,7 +580,7 @@ aml_mod() {
   ### CREATE AUDIO MODIFICATION LIBRARY ###
   if $INSTALL; then ui_print " "; ui_print "- Installing Audio Modification Library -"; else ui_print "   Removing $MODID from Audio Modification Library"; fi
 
-  for FILE in ${CFGS} ${POLS} ${MIXS}; do
+  for FILE in ${CFGS} ${CFGSXML} ${POLS} ${POLSXML} ${MIXS}; do
     $MAGISK || { add_to_info $FILE $AMLINFO; add_to_info $FILE.bak $AMLINFO; }
     if [ ! -f $AMLPATH$FILE.bak ]; then
       if [ -f $FILE.bak ]; then $CP_NBPRFX $FILE.bak $AMLPATH$FILE.bak; else $CP_NBPRFX $FILE $AMLPATH$FILE.bak; fi
