@@ -25,6 +25,7 @@ set_sepolicy() {
   fi
 }
 
+set_sepolicy hal_audio_default hal_audio_default process execmem
 set_sepolicy audioserver audioserver_tmpfs file read,write,execute
 set_sepolicy audioserver system_file file execmod
 set_sepolicy mediaserver mediaserver_tmpfs file read,write,execute

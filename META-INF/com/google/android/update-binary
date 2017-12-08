@@ -661,7 +661,12 @@ aml_mod_patch() {
       sed -i '/volume_listener {/,/}/ s/^/#/' $AMLPATH$FILE
     fi
   done
-
+  for FILE in /system/etc/audio_effects.xml $VEN/etc/audio_effects.xml; do
+    if [ -f $FILE ] && [ ! "$(grep '^ *<!--<library name=\"volume_listener\" path=\"libvolumelistener.so\"/>-->' $AMLPATH$FILE)" ] && [ "$(grep '^ *<library name=\"volume_listener\" path=\"libvolumelistener.so\"/>' $AMLPATH$FILE)" ]; then
+      sed -i "s|<library name=\"volume_listener\" path=\"libvolumelistener.so\"/>|<!--<library name=\"volume_listener\" path=\"libvolumelistener.so\"/>-->|" $AMLPATH$FILE
+    fi
+  done
+  
   source $INSTALLER/common/aml-patches.sh
 
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
