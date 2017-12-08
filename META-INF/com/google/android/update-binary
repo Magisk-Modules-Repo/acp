@@ -405,6 +405,9 @@ WP_PRFX="wipe_ch"
 SYS=/system
 
 pre_install() {
+  # USE VENDOR IF OREO OR NEWER
+  if [ $API -ge 26 ]; then LIBPATCH="$(echo $REALVEN | sed "s|/|\\\/|g")"; LIBDIR=$VEN ;OREONEW=true; else LIBPATCH="\/system"; LIBDIR=/system; OREONEW=false; fi
+  
   # IMPORT USER VARIABLES
   source $INSTALLER/common/unity-uservariables.sh
 
@@ -437,8 +440,6 @@ common_install() {
   POLS="${POLS} $(find -L /system -type f -name "*audio*policy*.conf")"
   POLSXML="${POLSXML} $(find -L /system -type f -name "*audio_policy*.xml")"
   MIXS="${MIXS} $(find -L /system -type f -name "*mixer_paths*.xml")"
-  # USE VENDOR IF OREO OR NEWER
-  if [ $API -ge 26 ]; then LIBPATCH="$(echo $REALVEN | sed "s|/|\\\/|g")"; LIBDIR=$VEN ;OREONEW=true; else LIBPATCH="\/system"; LIBDIR=/system; OREONEW=false; fi
 }
 
 magisk_install() {
