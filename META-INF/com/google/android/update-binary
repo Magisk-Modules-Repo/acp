@@ -306,7 +306,6 @@ patch_script() {
   sed -i "s|<LIBDIR>|$LIBDIR|" $1
   sed -i "s|<LIBPATCH>|$LIBPATCH|" $1
   if $OLDAPP; then sed -i "s|<SOURCE>|system_app|" $1; else sed -i "s|<SOURCE>|priv_app|" $1; fi
-  if [ ! -z $XML_PATH ]; then sed -i "s|<XML_PRFX>|$XML_PATH|" $1; else sed -i "/<XML_PRFX>/d" $1; fi
   if $MAGISK; then
     sed -i "/<ROOT>/d" $1
     sed -i "s|<SYS>|/system|" $1
@@ -427,13 +426,6 @@ pre_install() {
 }
 
 common_install() {
-  # XMLSTARLET - THANKS TO @JAMES34602 and @LAZERL0RD @XDADEVELOPERS FOR PORTING IT
-  case $ABILONG in
-    arm64*) XML_PRFX=$INSTALLER/common/unity-audmodlib/xmlstarlet/arm64/xmlstarlet; chmod 777 $XML_PRFX;; 
-    arm*) XML_PRFX=$INSTALLER/common/unity-audmodlib/xmlstarlet/arm/xmlstarlet; chmod 777 $XML_PRFX;;
-    x86*) XML_PRFX=$INSTALLER/common/unity-audmodlib/xmlstarlet/x86/xmlstarlet; chmod 777 $XML_PRFX;;              
-    *) ui_print "   ! Only arm, arm64, and x86 devices are compatible for xml patching"; ui_print "   ! XML Patching will be skipped";;
-  esac
   # FILE LOCATIONS
   CFGS="${CFGS} $(find -L /system -type f -name "*audio_effects*.conf")"
   CFGSXML="${CFGSXML} $(find -L /system -type f -name "*audio_effects*.xml")"
@@ -599,16 +591,6 @@ aml_mod() {
     fi
     test ! -f $AMLPATH$FILE && $CP_NBPRFX $FILE $AMLPATH$FILE
   done
-  
-  if [ ! -z $XML_PRFX ]; then
-    if $MAGISK; then
-      test ! -f $AMLPATH/system/xbin/xmlstarlet && { XML_PATH=$AMLPATH/system/xbin/xmlstarlet; $CP_NBPRFX "$XML_PRFX" "$XML_PATH" 0755; }
-    elif [ "${SH%/*}" != "/system/etc" ]; then
-      test ! -f $AMLPATH${SH%/*}/xbin/xmlstarlet && { XML_PATH=$AMLPATH${SH%/*}/xbin/xmlstarlet; $CP_NBPRFX "$XML_PRFX" "$XML_PATH" 0755; add_to_info $XML_PATH $AMLINFO; }
-    else
-      test ! -f $AMLPATH/system/xbin/xmlstarlet && { XML_PATH=$AMLPATH/system/xbin/xmlstarlet; $CP_NBPRFX "$XML_PRFX" "$XML_PATH" 0755; add_to_info $XML_PATH $AMLINFO; }
-    fi
-  fi
   
   $INSTALL && [ ! -f $AMLSCRIPT ] && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh $AMLSCRIPT 0755; patch_script $AMLSCRIPT; }    
   if $MAGISK; then
