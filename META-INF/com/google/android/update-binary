@@ -304,7 +304,6 @@ patch_script() {
   sed -i "s|<MAGISK>|$MAGISK|" $1
   sed -i "s|<VEN>|$VEN|" $1
   sed -i "s|<LIBDIR>|$LIBDIR|" $1
-  sed -i "s|<LIBPATCH>|$LIBPATCH|" $1
   if $OLDAPP; then sed -i "s|<SOURCE>|system_app|" $1; else sed -i "s|<SOURCE>|priv_app|" $1; fi
   if $MAGISK; then
     sed -i "/<ROOT>/d" $1
@@ -386,26 +385,34 @@ print_modname
 ui_print "- Mounting /data, /cache"
 is_mounted /data || mount /data || is_mounted /cache || mount /cache || { ui_print "! Unable to mount partitions"; exit 1; }
 
-# REMOVE COMMENTS FROM USER INPUT FILES AND ADD PROPER VARIABLES
-for TMP in $INSTALLER/common/unity-files-wipe.sh $INSTALLER/common/aml-patches.sh $INSTALLER/common/aml-patches-remove.sh $INSTALLER/common/aml-patches-wipe.sh $INSTALLER/common/unity-uservariables.sh $INSTALLER/common/unity-customrules $INSTALLER/common/post-fs-data.sh $INSTALLER/common/service.sh $INSTALLER/common/*.prop; do
-  if [ "$TMP" == "$INSTALLER/common/unity-customrules" ]; then
-    NUM=1; while true; do
-      test -f $TMP$NUM.sh || { NUMOFCUSTRULES=$(($NUM-1)); break; }
-      NUM=$((NUM+1))
-    done
-  else
-    test ! -f $TMP && { ui_print "   !$TMP missing!"; ui_print "   !Copy it back to above and try again!"; exit 1; }
-  fi
-done
-
-# UNIVERSAL VARIABLES
-CP_NBPRFX="cp_ch"
-WP_PRFX="wipe_ch"
-SYS=/system
-
 pre_install() {
   # USE VENDOR IF OREO OR NEWER
-  if [ $API -ge 26 ]; then LIBPATCH="$(echo $REALVEN | sed "s|/|\\\/|g")"; LIBDIR=$VEN ;OREONEW=true; else LIBPATCH="\/system"; LIBDIR=/system; OREONEW=false; fi
+  if [ $API -ge 26 ]; then LIBPATCH="$(echo $REALVEN | sed "s|/|\\\amltemp\\\/|g" | sed "s|amltemp||g")"; LIBDIR=$VEN ;OREONEW=true; else LIBPATCH="\\\/system"; LIBDIR=/system; OREONEW=false; fi
+  
+  # REMOVE COMMENTS FROM USER INPUT FILES AND ADD PROPER VARIABLES
+  for TMP in $INSTALLER/common/unity-files-wipe.sh $INSTALLER/common/aml-patches.sh $INSTALLER/common/aml-patches-remove.sh $INSTALLER/common/aml-patches-wipe.sh $INSTALLER/common/unity-uservariables.sh $INSTALLER/common/unity-customrules $INSTALLER/common/post-fs-data.sh $INSTALLER/common/service.sh $INSTALLER/common/*.prop; do
+    if [ "$TMP" == "$INSTALLER/common/unity-customrules" ]; then
+      NUM=1; while true; do
+        if [ -f $TMP$NUM.sh ]; then
+          sed -i "s|\$LIBPATCH|$LIBPATCH|g" $TMP$NUM.sh
+          NUM=$((NUM+1))
+        else
+          NUMOFCUSTRULES=$(($NUM-1)); break;
+        fi
+      done
+    else
+      if [ -f $TMP ]; then
+        sed -i "s|\$LIBPATCH|$LIBPATCH|g" $TMP
+      else
+        ui_print "   !$TMP missing!"; ui_print "   !Copy it back to above and try again!"; exit 1;
+      fi
+    fi
+  done
+  
+  # UNIVERSAL VARIABLES
+  CP_NBPRFX="cp_ch"
+  WP_PRFX="wipe_ch"
+  SYS=/system
   
   # IMPORT USER VARIABLES
   source $INSTALLER/common/unity-uservariables.sh

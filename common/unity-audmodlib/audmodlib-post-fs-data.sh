@@ -9,7 +9,6 @@ VEN=<VEN>
 SOURCE=<SOURCE>
 MODIDS=""
 LIBDIR=<LIBDIR>
-LIBPATCH=<LIBPATCH>
 ### FILE LOCATIONS ###
 CFGS="${CFGS} $(find -L $SYS -type f -name "*audio_effects*.conf")"
 POLS="${POLS} $(find -L $SYS -type f -name "*audio*policy*.conf" -o -name "*audio_policy*.xml")"
@@ -25,6 +24,7 @@ set_sepolicy() {
 }
 
 set_sepolicy hal_audio_default hal_audio_default process execmem
+set_sepolicy audioserver unlabeled file read,write,open,getattr,execute
 set_sepolicy audioserver audioserver_tmpfs file read,write,execute
 set_sepolicy audioserver system_file file execmod
 set_sepolicy mediaserver mediaserver_tmpfs file read,write,execute
