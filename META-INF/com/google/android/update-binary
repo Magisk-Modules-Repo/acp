@@ -584,6 +584,9 @@ aml_mod() {
   ### CREATE AUDIO MODIFICATION LIBRARY ###
   if $INSTALL; then ui_print " "; ui_print "- Installing Audio Modification Library -"; else ui_print "   Removing $MODID from Audio Modification Library"; fi
 
+  # CREATE FILE CONTAINING LIST OF ALL INSTALLED MOD FILES
+  ! $MAGISK && [ ! -f $AMLINFO ] && mktouch $AMLINFO
+  
   for FILE in ${CFGS} ${CFGSXML} ${POLS} ${POLSXML} ${MIXS}; do
     $MAGISK || { add_to_info $FILE $AMLINFO; add_to_info $FILE.bak $AMLINFO; }
     if [ ! -f $AMLPATH$FILE.bak ]; then
@@ -598,8 +601,6 @@ aml_mod() {
     $BOOTMODE && ! $INSTALL && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlibmodule.prop $AMLPATH/module.prop; mktouch $BOOTPATH/audmodlib/update; mktouch $AMLPATH/auto_mount; }
   elif ! $MAGISK && $INSTALL; then
     add_to_info $AMLSCRIPT $AMLINFO
-    $POSTFSDATA && patch_script $SH/$MODID-post-fs-data
-    $LATESTARTSERVICE && patch_script $SH/$MODID-service
   fi
   
   if [ -f $AML_VER ]; then
@@ -698,9 +699,6 @@ unity_mod_copy() {
     ui_print "   Installing scripts for $ROOTTYPE..."
     test "$ROOTTYPE" == "LineageOS SU" -o "$ROOTTYPE" == "other root or rootless" && { ui_print " "; ui_print "   ! This root method has no boot script support !"; ui_print "   ! You will need to add init.d support !"; ui_print " "; }
 
-    # CREATE FILE CONTAINING LIST OF ALL INSTALLED MOD FILES
-    $AUDMODLIB && [ ! -f $AMLINFO ] && mktouch $AMLINFO
-
     # COPY MODULE.PROP FILE FOR VERSION CHECKING
     $CP_NBPRFX $INSTALLER/module.prop $MOD_VER
     add_to_info $MOD_VER $INFO
@@ -709,14 +707,14 @@ unity_mod_copy() {
     if $POSTFSDATA; then
       $CP_NBPRFX $INSTALLER/common/unity-audmodlib/$MODID-post-fs-data.sh $SH/$MODID-post-fs-data 0700
       add_to_info $SH/$MODID-post-fs-data $INFO
-      $AUDMODLIB || patch_script $SH/$MODID-post-fs-data
+      patch_script $SH/$MODID-post-fs-data
     fi
     
     # INSTALL SERVICE MODE SCRIPTS
     if $LATESTARTSERVICE; then
       $CP_NBPRFX $INSTALLER/common/unity-audmodlib/$MODID-service.sh $SH/$MODID-service 0700
       add_to_info $SH/$MODID-service $INFO
-      $AUDMODLIB || patch_script $SH/$MODID-service
+      patch_script $SH/$MODID-service
     fi
 
     # INSTALL ROM BACKUP SCRIPT
