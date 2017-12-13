@@ -602,7 +602,16 @@ aml_mod() {
     test ! -f $AMLPATH$FILE && $CP_NBPRFX $FILE $AMLPATH$FILE
   done
   
-  $INSTALL && [ ! -f $AMLSCRIPT ] && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh $AMLSCRIPT 0755; patch_script $AMLSCRIPT; }    
+  if $INSTALL && [ ! -f $AMLSCRIPT ]; then
+    $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh $AMLSCRIPT 0755
+    patch_script $AMLSCRIPT
+    if $OREONEW && [ "$(grep_prop ro.product.brand)" == "OnePlus" ]; then
+      ui_print "   ! Oneplus Oreo device detected !"
+      ui_print "   Setting selinux to permissive..."
+      sed -i '/set_sepolicy $SOURCE,audio_prop/ a\setenforce 0' $AMLSCRIPT
+      sed -i '/# SEPOLICY SETTING FUNCTION/,/set_sepolicy $SOURCE,audio_prop/d' $AMLSCRIPT
+    fi
+  fi
   if $MAGISK; then
     $BOOTMODE && [ -f $BOOTPATH/audmodlib/post-fs-data.sh ] && $CP_NBPRFX $BOOTPATH/audmodlib/post-fs-data.sh $AMLSCRIPT 0755
     $BOOTMODE && ! $INSTALL && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlibmodule.prop $AMLPATH/module.prop; mktouch $BOOTPATH/audmodlib/update; mktouch $AMLPATH/auto_mount; }
