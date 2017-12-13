@@ -6,7 +6,7 @@ if [ -f $VEN/etc/audio_output_policy.conf ] && [ -f $SYS/etc/audio_policy_config
     sed -ri "/$BUFFER/ {n;/deep_buffer,/ s/<!--(.*)-->/\1/g}" $AMLPATH$SYS/etc/audio_policy_configuration.xml
   done
 elif [ ! -f $VEN/etc/audio_output_policy.conf ] && [ -f $SYS/etc/audio_policy_configuration.xml ] && [ "$(grep "<!--.*deep_buffer" $AMLPATH$SYS/etc/audio_policy_configuration.xml)" ]; then
-  sed -ri -n "/( *)<!--(.*)deep_buffer/{x;d;};1h;1!{x;p;};${x;p;}" $AMLPATH$SYS/etc/audio_policy_configuration.xml
+  sed -ri -n "/( *)<!--(.*)deep_buffer/{x;d;};1h;1!{x;p;};\${x;p;}" $AMLPATH$SYS/etc/audio_policy_configuration.xml
   sed -ri "/deep_buffer/ s/<!--(.*)-->/\1/g" $AMLPATH$SYS/etc/audio_policy_configuration.xml
 else
   for FILE in ${POLS}; do
