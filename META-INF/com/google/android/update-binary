@@ -835,6 +835,12 @@ standard_procedure() {
       ui_print "   ! Module contains older version of audmodlib !"
       ui_print "   ! than is currently installed ! "
       abort "   ! Upgrade this module to latest audmodlib !"
+    elif [ $(grep_prop versionCode $AML_VER) -lt 9 ]; then
+      ui_print " "
+      ui_print "   ! AML older than v2.3 detected !"
+      ui_print "   ! upgrade process only supported on v2.3+ ! "
+      ui_print "   ! Uninstall all aml modules first !"
+      abort "   ! Then install this module !"
     fi
   fi
   
