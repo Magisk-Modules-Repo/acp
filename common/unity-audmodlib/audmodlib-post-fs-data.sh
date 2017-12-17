@@ -25,6 +25,8 @@ set_sepolicy() {
   fi
 }
 
+set_sepolicy hal_audio_default audio_data_file dir search
+set_sepolicy hal_audio_default hal_audio_default_tmpfs file execute
 set_sepolicy hal_audio_default hal_audio_default process execmem
 set_sepolicy audioserver unlabeled file read,write,open,getattr,execute
 set_sepolicy audioserver audioserver_tmpfs file read,write,execute
