@@ -14,12 +14,9 @@
 ps | grep zygote | grep -v grep >/dev/null && BOOTMODE=true || BOOTMODE=false
 $BOOTMODE || ps -A 2>/dev/null | grep zygote | grep -v grep >/dev/null && BOOTMODE=true
 
-# This path should work in any cases
+# TEMP INSTALLER PATH
 TMPDIR=/dev/tmp
-MOUNTPATH=$TMPDIR/magisk_img
-$BOOTMODE && IMG=/data/magisk_merge.img || IMG=/data/magisk.img
 INSTALLER=$TMPDIR/install
-MAGISKBIN=/data/magisk
 
 # DEFAULT PERMISSIONS
 umask 022
@@ -908,8 +905,14 @@ standard_procedure() {
 # (UN)INSTALL
 ##########################################################################################
 
+# MAGISK PATHS
+MOUNTPATH=$TMPDIR/magisk_img
+if [ -d /data/adb/magisk ]; then MAGISKPATH=/data/adb; else MAGISKPATH=/data; fi
+$BOOTMODE && IMG=$MAGISKPATH/magisk_merge.img || IMG=$MAGISKPATH/magisk.img
+MAGISKBIN=$MAGISKPATH/magisk
+
 ### SYSTEM INSTALL (IF APPLICABLE) ###
-if [ ! -d /data/magisk ]; then system_install; standard_procedure; fi
+if [ ! -d $MAGISKBIN ]; then system_install; standard_procedure; fi
 
 ### MAGISK INSTALL ###
 
@@ -936,7 +939,7 @@ if $BOOTMODE; then
   is_mounted $BOOTPATH || abort "! Magisk is not activated!"
   boot_actions
 else
-  test -d /data/magisk -a ! -f /data/magisk.img && /system/bin/make_ext4fs -l 64M /data/magisk.img
+  test ! -f $MAGISKPATH/magisk.img && /system/bin/make_ext4fs -l 64M $MAGISKPATH/magisk.img
   recovery_actions
 fi
 
