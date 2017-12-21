@@ -67,7 +67,7 @@ resolve_link() {
   done
   echo $RESOLVED
 }
- 
+
 is_mounted() {
   TARGET="`resolve_link $1`"
   cat /proc/mounts | grep " $TARGET " >/dev/null
@@ -449,7 +449,6 @@ common_install() {
 magisk_install() {
   VEN=/system/vendor
   test -L /system/vendor && REALVEN=/vendor
-  if [ $MAGISK_VER_CODE -lt 1450 ]; then BOOTPATH="/magisk"; else BOOTPATH="/sbin/.core/img"; fi
   # PREP FILES & VARIABLES
   pre_install
   MAGISK=true
@@ -677,7 +676,7 @@ aml_mod_patch() {
 # UNITY FILE/FOLDER COPY
 unity_mod_copy() {
   ui_print " "
-  ui_print "- Installing modification -"
+  ui_print "- Copying files/folders -"
 
   # INSTALL SCRIPTS
   if $MAGISK; then
@@ -922,17 +921,19 @@ if [ ! -d /data/magisk ]; then system_install; standard_procedure; fi
 # CHECK THE MIN MAGISK VERSION
 [ ! -z $MAGISK_VER_CODE -a $MAGISK_VER_CODE -ge 1400 ] || require_new_magisk
 
+# GET PROPER BOOTMODE MAGISK PATH
+if [ $MAGISK_VER_CODE -lt 1450 ]; then BOOTPATH="/magisk"; else BOOTPATH="/sbin/.core/img"; fi
+
 # MOUNT PARTITIONS
-[ $MAGISK_VER_CODE -lt 1410 ] && { WRITE=ro; mount_partitions_mod; } || mount_partitions
+if [ $MAGISK_VER_CODE -lt 1410 ]; then WRITE=ro; mount_partitions_mod; else mount_partitions; fi
 ui_print "- Magisk install detected"
 
 # DETECT VERSION AND ARCHITECTURE
 api_level_arch_detect_mod
 
-$BOOTMODE && ! is_mounted /magisk && abort "! Magisk is not activated!"
-
 # WE NEED BUSYBOX/BINARIES TO BE SETUP (INCLUDES MAGISK CLEAN FLASH SUPPORT)
 if $BOOTMODE; then
+  is_mounted $BOOTPATH || abort "! Magisk is not activated!"
   boot_actions
 else
   test -d /data/magisk -a ! -f /data/magisk.img && /system/bin/make_ext4fs -l 64M /data/magisk.img
