@@ -304,6 +304,11 @@ patch_script() {
   sed -i "s|<MAGISK>|$MAGISK|" $1
   sed -i "s|<VEN>|$VEN|" $1
   sed -i "s|<LIBDIR>|$LIBDIR|" $1
+  sed -i "s|<CFGS>|$(echo $CFGS)|" $1
+  sed -i "s|<CFGSXML>|$(echo $CFGSXML)|" $1
+  sed -i "s|<POLS>|$(echo $POLS)|" $1
+  sed -i "s|<POLSXML>|$(echo $POLSXML)|" $1
+  sed -i "s|<MIXS>|$(echo $MIXS)|" $1
   if $OLDAPP; then sed -i "s|<SOURCE>|system_app|" $1; else sed -i "s|<SOURCE>|priv_app|" $1; fi
   if $MAGISK; then
     sed -i "/<ROOT>/d" $1
@@ -605,12 +610,6 @@ aml_mod() {
   if $INSTALL && [ ! -f $AMLSCRIPT ]; then
     $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh $AMLSCRIPT 0755
     patch_script $AMLSCRIPT
-    if $OREONEW && [ "$(grep_prop ro.product.brand)" == "OnePlus" ]; then
-      ui_print "   ! Oneplus Oreo device detected !"
-      ui_print "   Setting selinux to permissive..."
-      sed -i '/set_sepolicy $SOURCE,audio_prop/ a\setenforce 0' $AMLSCRIPT
-      sed -i '/# SEPOLICY SETTING FUNCTION/,/set_sepolicy $SOURCE,audio_prop/d' $AMLSCRIPT
-    fi
   fi
   if $MAGISK; then
     $BOOTMODE && [ -f $BOOTPATH/audmodlib/post-fs-data.sh ] && $CP_NBPRFX $BOOTPATH/audmodlib/post-fs-data.sh $AMLSCRIPT 0755
@@ -708,6 +707,12 @@ unity_mod_copy() {
   
     #INSTALL POST-FS-DATA MODE SCRIPTS
     $POSTFSDATA && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/$MODID-post-fs-data.sh $MODPATH/post-fs-data.sh; patch_script $MODPATH/post-fs-data.sh; }
+    if $OREONEW && [ "$(grep_prop ro.product.brand)" == "OnePlus" ]; then
+      ui_print "   ! Oneplus Oreo device detected !"
+      ui_print "   Setting selinux to permissive..."
+      sed -i '/set_sepolicy audio_prop/ a\setenforce 0' $MODPATH/post-fs-data.sh
+      sed -i '/# SEPOLICY SETTING FUNCTION/,/set_sepolicy audio_prop/d' $MODPATH/post-fs-data.sh
+    fi
 
     # SERVICE MODE SCRIPTS
     $LATESTARTSERVICE && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/$MODID-service.sh $MODPATH/service.sh; patch_script $MODPATH/service.sh; }
