@@ -908,7 +908,7 @@ standard_procedure() {
 # MAGISK PATHS
 MOUNTPATH=$TMPDIR/magisk_img
 if [ -d /data/adb/magisk ]; then MAGISKPATH=/data/adb; else MAGISKPATH=/data; fi
-$BOOTMODE && IMG=$MAGISKPATH/magisk_merge.img || IMG=$MAGISKPATH/magisk.img
+$BOOTMODE && IMG=/data/magisk_merge.img || IMG=$MAGISKPATH/magisk.img
 MAGISKBIN=$MAGISKPATH/magisk
 
 ### SYSTEM INSTALL (IF APPLICABLE) ###
