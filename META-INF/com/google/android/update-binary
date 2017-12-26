@@ -444,7 +444,7 @@ common_install() {
 
 magisk_install() {
   VEN=/system/vendor
-  test -L /system/vendor && REALVEN=/vendor
+  if [ -L /system/vendor ]; then REALVEN=/vendor; else REALVEN=$VEN; fi
   # PREP FILES & VARIABLES
   pre_install
   MAGISK=true
@@ -907,6 +907,9 @@ standard_procedure() {
 MAGISKBIN=/data/adb/magisk
 MOUNTPATH=$TMPDIR/magisk_img
 $BOOTMODE && IMG=/data/adb/magisk_merge.img
+
+# CHECK FOR OLD MAGISK
+[ ! -d $MAGISKBIN -a -d /data/magisk ] && require_new_magisk
 
 ### SYSTEM INSTALL (IF APPLICABLE) ###
 if [ ! -d $MAGISKBIN ]; then system_install; standard_procedure; fi
