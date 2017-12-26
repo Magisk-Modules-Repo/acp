@@ -71,7 +71,7 @@ is_mounted() {
   return $?
 }
 
-mount_partitions_mod() {
+mount_partitions_system() {
   # Check A/B slot
   SLOT=`getprop ro.boot.slot_suffix`
   if [ -z $SLOT ]; then
@@ -81,10 +81,10 @@ mount_partitions_mod() {
   [ -z $SLOT ] || ui_print "- A/B partition detected, current slot: $SLOT"
   ui_print "- Mounting /system, /vendor"
   REALSYS=/system
-  is_mounted /system || [ -f /system/build.prop ] || mount -o $WRITE /system 2>/dev/null
+  is_mounted /system || [ -f /system/build.prop ] || mount -o rw /system 2>/dev/null
   if ! is_mounted /system && ! [ -f /system/build.prop ]; then
     SYSTEMBLOCK=`find /dev/block -iname system$SLOT | head -n 1`
-    mount -t ext4 -o $WRITE $SYSTEMBLOCK /system
+    mount -t ext4 -o rw $SYSTEMBLOCK /system
     REALSYS=/system/system
   fi
   is_mounted /system || [ -f /system/build.prop ] || abort "! Cannot mount /system"
@@ -101,10 +101,10 @@ mount_partitions_mod() {
   if [ -L /system/vendor ]; then
     # Seperate /vendor partition
     VEN=/vendor
-    is_mounted /vendor || mount -o $WRITE /vendor 2>/dev/null
+    is_mounted /vendor || mount -o rw /vendor 2>/dev/null
     if ! is_mounted /vendor; then
       VENDORBLOCK=`find /dev/block -iname vendor$SLOT | head -n 1`
-      mount -t ext4 -o $WRITE $VENDORBLOCK /vendor
+      mount -t ext4 -o rw $VENDORBLOCK /vendor
     fi
     is_mounted /vendor || abort "! Cannot mount /vendor"
   else
@@ -188,10 +188,9 @@ supersuimg_mount() {
 }
 
 require_new_magisk() {
-  ui_print "***********************************"
-  ui_print "! $MAGISKBIN isn't setup properly!"
-  ui_print "!  Please install Magisk v14.0+!"
-  ui_print "***********************************"
+  ui_print "*******************************"
+  ui_print " Please install Magisk v15.0+! "
+  ui_print "*******************************"
   exit 1
 }
 
@@ -313,7 +312,7 @@ patch_script() {
     sed -i "s|<SHEBANG>|#!/system/bin/sh|" $1
     sed -i "s|<SEINJECT>|magiskpolicy|" $1
     if $AUDMODLIB; then sed -i "s|<AMLPATH>|$AMLPATH|" $1; else sed -i "/<AMLPATH>/d" $1; fi
-    sed -i "s|$MOUNTPATH|$BOOTPATH|g" $1
+    sed -i "s|$MOUNTPATH|/sbin/.core/img|g" $1                                   
   else
     if [ ! -z $ROOT ]; then sed -i "s|<ROOT>|$ROOT|" $1; else sed -i "/<ROOT>/d" $1; fi
     sed -i "s|<SYS>|$REALSYS|" $1
@@ -352,7 +351,7 @@ remove_aml() {
   ui_print " "
   ui_print "   ! No more audmodlib modules detected !"
   ui_print "   ! Removing Audio Modification Library !"
-  if $MAGISK; then rm -rf $AMLPATH; rm -rf $BOOTPATH/audmodlib; else rm -f /system/addon.d/audmodlib.sh; info_uninstall $AMLINFO; fi
+  if $MAGISK; then rm -rf $AMLPATH; rm -rf /sbin/.core/img/audmodlib; else rm -f /system/addon.d/audmodlib.sh; info_uninstall $AMLINFO; fi
 }
 
 ##########################################################################################
@@ -454,11 +453,11 @@ magisk_install() {
   UNITY="$MODPATH"
   AMLSCRIPT="$AMLPATH/post-fs-data.sh"
   if $BOOTMODE; then
-    INFO="$BOOTPATH/$MODID/$MODID-files"
-    MOD_VER="$BOOTPATH/$MODID/module.prop"
-    AML_VER="$BOOTPATH/audmodlib/module.prop"
-    PROPFILE="$BOOTPATH/$MODID/system.prop"
-    CONFPROPS="$BOOTPATH/$MODID/$MODID-conflictingprops.txt"
+    INFO="/sbin/.core/img/$MODID/$MODID-files"
+    MOD_VER="/sbin/.core/img/$MODID/module.prop"
+    AML_VER="/sbin/.core/img/audmodlib/module.prop"
+    PROPFILE="/sbin/.core/img/$MODID/system.prop"
+    CONFPROPS="/sbin/.core/img/$MODID/$MODID-conflictingprops.txt"
   else
     INFO="$MODPATH/$MODID-files"
     MOD_VER="$MODPATH/module.prop"
@@ -471,8 +470,7 @@ magisk_install() {
 
 system_install() {
   # MOUNT PARTITIONS
-  WRITE=rw
-  mount_partitions_mod
+  mount_partitions_system
   REALVEN=$VEN
   ui_print "- System install detected"
   # DETECT VERSION AND ARCHITECTURE
@@ -535,7 +533,7 @@ unity_prop_copy() {
   if $MAGISK; then
     REGEX="s/(.*)=(.*)/\1/"
     sed -i -e "s/setprop //g" -e "s/ /=/g" $1
-    if $BOOTMODE; then SH="$BOOTPATH $MOUNTPATH"; else SH=$MOUNTPATH; fi
+    if $BOOTMODE; then SH="/sbin/.core/img $MOUNTPATH"; else SH=$MOUNTPATH; fi
     FILE=system.prop
   else
     REGEX="s/setprop (.*) (.*)/\1/"
@@ -559,8 +557,8 @@ unity_prop_copy() {
             test ! "$(grep "#$PROP" $PROPFILE)" && echo "#$PROP" >> $PROPFILE
             test ! -f $CONFPROPS && { mktouch $CONFPROPS; ui_print " "; ui_print "   ! Conflicting props found !"; 
             ui_print "   ! Conflicting props will be commented out !"; ui_print "   ! Check the conflicting props file at"; 
-            ui_print "   ! $(echo $CONFPROPS | sed "s|$MODPATH|$BOOTPATH/$MODID|") !"; ui_print " "; }
-            echo "FOUND IN: $(echo $TMP | sed "s|$MOUNTPATH|$BOOTPATH|")" >> $CONFPROPS
+            ui_print "   ! $(echo $CONFPROPS | sed "s|$MODPATH|/sbin/.core/img/$MODID|") !"; ui_print " "; }
+            echo "FOUND IN: $(echo $TMP | sed "s|$MOUNTPATH|/sbin/.core/img|")" >> $CONFPROPS
             echo "- PROP: $TPROP" >> $CONFPROPS
           fi
         }
@@ -608,8 +606,8 @@ aml_mod() {
     patch_script $AMLSCRIPT
   fi
   if $MAGISK; then
-    $BOOTMODE && [ -f $BOOTPATH/audmodlib/post-fs-data.sh ] && $CP_NBPRFX $BOOTPATH/audmodlib/post-fs-data.sh $AMLSCRIPT 0755
-    $BOOTMODE && ! $INSTALL && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlibmodule.prop $AMLPATH/module.prop; mktouch $BOOTPATH/audmodlib/update; mktouch $AMLPATH/auto_mount; }
+    $BOOTMODE && [ -f /sbin/.core/img/audmodlib/post-fs-data.sh ] && $CP_NBPRFX /sbin/.core/img/audmodlib/post-fs-data.sh $AMLSCRIPT 0755
+    $BOOTMODE && ! $INSTALL && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlibmodule.prop $AMLPATH/module.prop; mktouch /sbin/.core/img/audmodlib/update; mktouch $AMLPATH/auto_mount; }
   elif ! $MAGISK && $INSTALL; then
     add_to_info $AMLSCRIPT $AMLINFO
   fi
@@ -641,7 +639,7 @@ aml_mod_patch() {
     sed -i 's/^/  /' $INSTALLER/common/aml-patches-remove.sh
     sed -i -e "/^# MOD PATCHES/ a\  MODIDS=\"\${MODIDS} $MODID\"" -e "/^# MOD PATCHES/ r $INSTALLER/common/aml-patches-remove.sh" -e "/^# MOD PATCHES/ a\TEMP$MODID" $AMLSCRIPT
     sed -i -e "/TEMP$MODID/ a\fi #$MODID" -e "/TEMP$MODID/d" $AMLSCRIPT
-    sed -i -e "/^# MOD PATCHES/ a\#$MODID" -e "/^# MOD PATCHES/ a\if [ ! -d \"$BOOTPATH/$MODID\" ]; then" $AMLSCRIPT
+    sed -i -e "/^# MOD PATCHES/ a\#$MODID" -e "/^# MOD PATCHES/ a\if [ ! -d \"/sbin/.core/img/$MODID\" ]; then" $AMLSCRIPT
   else
     sed -i "/^# MOD PATCHES/ a\#$MODID" $AMLSCRIPT
   fi
@@ -689,16 +687,16 @@ unity_mod_copy() {
     $AUDMODLIB && mktouch $AMLPATH/auto_mount
 
     # REMOVE OLD AML FILES IF IN BOOTMODE
-    $BOOTMODE && $AUDMODLIB && { rm -rf $BOOTPATH/audmodlib; mkdir -p $BOOTPATH/audmodlib; }
+    $BOOTMODE && $AUDMODLIB && { rm -rf /sbin/.core/img/audmodlib; mkdir -p /sbin/.core/img/audmodlib; }
 
     # MODULE INFO
     $CP_NBPRFX $INSTALLER/module.prop $MODPATH/module.prop
     $AUDMODLIB && $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlibmodule.prop $AMLPATH/module.prop
     if $BOOTMODE; then
       # UPDATE INFO FOR MAGISK MANAGER
-      mktouch $BOOTPATH/$MODID/update
-      $CP_NBPRFX $INSTALLER/module.prop $BOOTPATH/$MODID/module.prop
-      $AUDMODLIB && { mktouch $BOOTPATH/audmodlib/update; $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlibmodule.prop $BOOTPATH/audmodlib/module.prop; }
+      mktouch /sbin/.core/img/$MODID/update
+      $CP_NBPRFX $INSTALLER/module.prop /sbin/.core/img/$MODID/module.prop
+      $AUDMODLIB && { mktouch /sbin/.core/img/audmodlib/update; $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlibmodule.prop /sbin/.core/img/audmodlib/module.prop; }
     fi
   
     #INSTALL POST-FS-DATA MODE SCRIPTS
@@ -797,13 +795,13 @@ unity_uninstall() {
   
   if $MAGISK; then
     rm -rf $MODPATH
-    rm -rf $BOOTPATH/$MODID
-    $AUDMODLIB && if [ -f $BOOTPATH/audmodlib/post-fs-data.sh ]; then sed -i "/^#$MODID/,/fi #$MODID/d" $BOOTPATH/audmodlib/post-fs-data.sh; else sed -i "/^#$MODID/,/fi #$MODID/d" $AMLSCRIPT; fi
+    rm -rf /sbin/.core/img/$MODID
+    $AUDMODLIB && if [ -f /sbin/.core/img/audmodlib/post-fs-data.sh ]; then sed -i "/^#$MODID/,/fi #$MODID/d" /sbin/.core/img/audmodlib/post-fs-data.sh; else sed -i "/^#$MODID/,/fi #$MODID/d" $AMLSCRIPT; fi
     # Use magisk_merge for aml during bootmode uninstall
     $AUDMODLIB && if $BOOTMODE; then aml_mod; else ui_print "   Removing $MODID from Audio Modification Library"; fi
     # Remove AML if no modules are installed
-    $AUDMODLIB && { if [ -f "$BOOTPATH/audmodlib/post-fs-data.sh" ]; then
-      test ! "$(sed -n '/^# MOD PATCHES/{n;p}' $BOOTPATH/audmodlib/post-fs-data.sh)" && remove_aml
+    $AUDMODLIB && { if [ -f "/sbin/.core/img/audmodlib/post-fs-data.sh" ]; then
+      test ! "$(sed -n '/^# MOD PATCHES/{n;p}' /sbin/.core/img/audmodlib/post-fs-data.sh)" && remove_aml
     else
       test ! "$(sed -n '/^# MOD PATCHES/{n;p}' $AMLSCRIPT)" && remove_aml
     fi; }
@@ -906,10 +904,9 @@ standard_procedure() {
 ##########################################################################################
 
 # MAGISK PATHS
+MAGISKBIN=/data/adb/magisk
 MOUNTPATH=$TMPDIR/magisk_img
-if [ -d /data/adb/magisk ]; then MAGISKPATH=/data/adb; else MAGISKPATH=/data; fi
-$BOOTMODE && IMG=/data/magisk_merge.img || IMG=$MAGISKPATH/magisk.img
-MAGISKBIN=$MAGISKPATH/magisk
+$BOOTMODE && IMG=/data/adb/magisk_merge.img
 
 ### SYSTEM INSTALL (IF APPLICABLE) ###
 if [ ! -d $MAGISKBIN ]; then system_install; standard_procedure; fi
@@ -921,64 +918,31 @@ if [ ! -d $MAGISKBIN ]; then system_install; standard_procedure; fi
 # LOAD MAGISK UTILITY FUNCTIONS
 . $MAGISKBIN/util_functions.sh
 
-# CHECK THE MIN MAGISK VERSION
-[ ! -z $MAGISK_VER_CODE -a $MAGISK_VER_CODE -ge 1400 ] || require_new_magisk
-
-# GET PROPER BOOTMODE MAGISK PATH
-if [ $MAGISK_VER_CODE -lt 1450 ]; then BOOTPATH="/magisk"; else BOOTPATH="/sbin/.core/img"; fi
+# CHECK THE INSTALLED MAGISK VERSION
+[ ! -z $MAGISK_VER_CODE -a $MAGISK_VER_CODE -ge $(grep_prop minMagisk $INSTALLER/module.prop) ] || require_new_magisk
 
 # MOUNT PARTITIONS
-if [ $MAGISK_VER_CODE -lt 1410 ]; then WRITE=ro; mount_partitions_mod; else mount_partitions; fi
+mount_partitions
 ui_print "- Magisk install detected"
 
 # DETECT VERSION AND ARCHITECTURE
 api_level_arch_detect_mod
 
-# WE NEED BUSYBOX/BINARIES TO BE SETUP (INCLUDES MAGISK CLEAN FLASH SUPPORT)
-if $BOOTMODE; then
-  is_mounted $BOOTPATH || abort "! Magisk is not activated!"
-  boot_actions
-else
-  test ! -f $MAGISKPATH/magisk.img && /system/bin/make_ext4fs -l 64M $MAGISKPATH/magisk.img
-  recovery_actions
-fi
+# SETUP BUSYBOX AND BINARIES
+$BOOTMODE && boot_actions || recovery_actions
 
-# MOUNT MAGISK IMG
+# Get the variable reqSizeM
 request_zip_size_check "$ZIP"
 
-if [ -f "$IMG" ]; then
-  ui_print "   Found $IMG"
-  image_size_check $IMG
-  if [ "$reqSizeM" -gt "$curFreeM" ]; then
-    newSizeM=$(((reqSizeM + curUsedM) / 32 * 32 + 64))
-    ui_print "    Resizing $IMG to ${newSizeM}M"
-    $MAGISKBIN/magisk --resizeimg $IMG $newSizeM
-  fi
-else
-  newSizeM=$((reqSizeM / 32 * 32 + 64));
-  ui_print "   Creating $IMG with size ${newSizeM}M"
-  $MAGISKBIN/magisk --createimg $IMG $newSizeM
-fi
-
-ui_print "    Mounting $IMG to $MOUNTPATH"
-MAGISKLOOP=`$MAGISKBIN/magisk --mountimg $IMG $MOUNTPATH`
-is_mounted $MOUNTPATH || abort "     $IMG mount failed..."
+# THIS FUNCTION WILL MOUNT $IMG TO $MOUNTPATH, AND RESIZE THE IMAGE BASED ON $REQSIZEM
+mount_magisk_img
 
 # ACTUAL (UN)INSTALL
 magisk_install
 standard_procedure
 
-# UNMOUNT MAGISK IMG
-$MAGISKBIN/magisk --umountimg $MOUNTPATH $MAGISKLOOP
-rmdir $MOUNTPATH
-
-# SHRINK THE IMAGE IF POSSIBLE
-image_size_check $IMG
-newSizeM=$((curUsedM / 32 * 32 + 64))
-if [ $curSizeM -gt $newSizeM ]; then
-  ui_print "- Shrinking $IMG to ${newSizeM}M"
-  $MAGISKBIN/magisk --resizeimg $IMG $newSizeM
-fi
+# UNMOUNT MAGISK IMAGE AND SHRINK IF POSSIBLE
+unmount_magisk_img
 
 $BOOTMODE || recovery_cleanup
 rm -rf $TMPDIR
