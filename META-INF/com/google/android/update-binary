@@ -908,21 +908,16 @@ MAGISKBIN=/data/adb/magisk
 MOUNTPATH=$TMPDIR/magisk_img
 $BOOTMODE && IMG=/data/adb/magisk_merge.img
 
-# CHECK FOR OLD MAGISK
-[ ! -d $MAGISKBIN -a -d /data/magisk ] && require_new_magisk
-
-### SYSTEM INSTALL (IF APPLICABLE) ###
-if [ ! -d $MAGISKBIN ]; then system_install; standard_procedure; fi
-
-### MAGISK INSTALL ###
-
-# UTILITY FUNCTIONS MUST EXIST
-[ -f $MAGISKBIN/util_functions.sh ] || require_new_magisk
-# LOAD MAGISK UTILITY FUNCTIONS
-. $MAGISKBIN/util_functions.sh
-
-# CHECK THE INSTALLED MAGISK VERSION
-[ ! -z $MAGISK_VER_CODE -a $MAGISK_VER_CODE -ge $(grep_prop minMagisk $INSTALLER/module.prop) ] || require_new_magisk
+# CHECK FOR OLD MAGISK, DETERMINE IF SYSTEM INSTALL OR MAGISK INSTALL, CHECK MAGISK VERSION (IF APPLICABLE)
+if [ ! -d $MAGISKBIN ] && [ ! -d /data/magisk ]; then
+  system_install
+  standard_procedure
+elif [ ! -f $MAGISKBIN/util_functions.sh ]; then
+  require_new_magisk
+else
+  . $MAGISKBIN/util_functions.sh
+  [ ! -z $MAGISK_VER_CODE -a $MAGISK_VER_CODE -ge $(grep_prop minMagisk $INSTALLER/module.prop) ] || require_new_magisk
+fi
 
 # MOUNT PARTITIONS
 mount_partitions
