@@ -699,6 +699,12 @@ unity_mod_copy() {
   
     #INSTALL POST-FS-DATA MODE SCRIPTS
     $POSTFSDATA && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/$MODID-post-fs-data.sh $MODPATH/post-fs-data.sh; patch_script $MODPATH/post-fs-data.sh; }
+    if $OREONEW && [ "$(grep_prop ro.product.brand)" == "OnePlus" ]; then
+      ui_print "   ! Oneplus Oreo device detected !"
+      ui_print "   Setting selinux to permissive..."
+      sed -i '/# SEPOLICY SETTING FUNCTION/,$d' $MODPATH/post-fs-data.sh
+      echo "setenforce 0" >> $MODPATH/post-fs-data.sh
+    fi
 
     # SERVICE MODE SCRIPTS
     $LATESTARTSERVICE && { $CP_NBPRFX $INSTALLER/common/unity-audmodlib/$MODID-service.sh $MODPATH/service.sh; patch_script $MODPATH/service.sh; }
