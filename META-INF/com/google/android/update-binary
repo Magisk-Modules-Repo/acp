@@ -369,7 +369,7 @@ unzip -o "$ZIP" -d $INSTALLER 2>/dev/null
 for TMP in version name author; do
   NEW=$(grep_prop $TMP $INSTALLER/module.prop)
   test "$TMP" == "author" && NEW="by ${NEW}"
-  CHARS=$((${#NEW}-$(echo "$NEW" | tr -cd "©®" | wc -m)))
+  CHARS=$((${#NEW}-$(echo "$NEW" | tr -cd "©®™" | wc -m)))
   SPACES=""
   for i in $(seq $(((41-$CHARS) / 2))); do
     SPACES="${SPACES} "
@@ -756,7 +756,7 @@ unity_mod_copy() {
         *) LINE2=$LINE;;
       esac
     else
-      $OLDAPP && LINE2=$(echo $LINE | sed 's|/app/.*/|/app/|') || LINE2=$(echo $LINE | sed 's|/app/|/priv-app/|')
+      $OLDAPP && LINE2=$(echo $LINE | sed 's|/system/app/.*/|/system/app/|') || LINE2=$(echo $LINE | sed 's|/system/app/|/system/priv-app/|')
     fi
     if [ "$(echo "$LINE" | cut -c 1-6)" == "/data/" ]; then sys_cp_ch $INSTALLER$LINE $LINE; else $CP_PRFX $INSTALLER$LINE $UNITY$LINE2; fi
   done
