@@ -268,18 +268,25 @@ wipe_ch() {
 }
 
 cp_ch() {
-  mkdir -p "${2%/*}"
-  chmod 0755 "${2%/*}"
-  cp -af "$1" "$2"
-  if [ -z $3 ]; then chmod 0644 "$2"; else chmod "$3" "$2"; fi
+  case $2 in
+    $MOUNTPATH/audmodlib*) CP=$2;;
+    */system/*|*/vendor/*) CP=$UNITY$2;;
+    *) CP=$2;;
+  esac
+  mkdir -p "${CP%/*}"
+  chmod 0755 "${CP%/*}"
+  cp -af "$1" "$CP"
+  if [ -z $3 ]; then chmod 0644 "$CP"; else chmod "$3" "$CP"; fi
 }
 
-sys_cp_ch() {
-  if [ -f "$2" ] && [ ! -f "$2.bak" ]; then
-    cp -f "$2" "$2.bak"
-    echo "$2.bak" >> $INFO
+cp_ch_bak() {
+  if ! $MAGISK; then
+    if [ -f "$2" ] && [ ! -f "$2.bak" ]; then
+      cp -f "$2" "$2.bak"
+      echo "$2.bak" >> $INFO
+    fi
+    test ! "$(grep "$2" $INFO)" && echo "$2" >> $INFO
   fi
-  test ! "$(grep "$2" $INFO)" && echo "$2" >> $INFO
   cp_ch $1 $2 $3
 }
 
@@ -329,9 +336,9 @@ add_to_info() {
 
 custom_app_install() {
   if $OREONEW; then
-    $CP_PRFX $INSTALLER/custom/$1/$1.apk $UNITY$VEN/app/$1/$1.apk
+    $CP_PRFX $INSTALLER/custom/$1/$1.apk $VEN/app/$1/$1.apk
   else
-    if $OLDAPP; then $CP_PRFX $INSTALLER/custom/$1/$1.apk $UNITY/system/app/$1.apk; else $CP_PRFX $INSTALLER/custom/$1/$1.apk $UNITY/system/priv-app/$1/$1.apk; fi
+    if $OLDAPP; then $CP_PRFX $INSTALLER/custom/$1/$1.apk /system/app/$1.apk; else $CP_PRFX $INSTALLER/custom/$1/$1.apk /system/priv-app/$1/$1.apk; fi
   fi
 }
 
@@ -365,15 +372,19 @@ unzip -o "$ZIP" -d $INSTALLER 2>/dev/null
 
 [ ! -f $INSTALLER/config.sh ] && { ui_print "! Unable to extract zip file !"; exit 1; }
 
+test "$(grep_prop id $INSTALLER/module.prop)" == "AMLTemplate" && { ui_print "! AML Template is not a separate module !"; ui_print "! AML is already included in all modules that use it !"; ui_print "! This template is for devs only !"; exit 1; }
+
 # INSERT MODULE INFO INTO CONFIG.SH
 for TMP in version name author; do
   NEW=$(grep_prop $TMP $INSTALLER/module.prop)
   test "$TMP" == "author" && NEW="by ${NEW}"
   CHARS=$((${#NEW}-$(echo "$NEW" | tr -cd "©®™" | wc -m)))
   SPACES=""
-  for i in $(seq $(((41-$CHARS) / 2))); do
-    SPACES="${SPACES} "
-  done
+  if [ $CHARS -le 41 ]; then
+    for i in $(seq $(((41-$CHARS) / 2))); do
+      SPACES="${SPACES} "
+    done
+  fi
   if [ $(((41-$CHARS) % 2)) == 1 ]; then sed -i "s/<$TMP>/$SPACES$NEW${SPACES} /" $INSTALLER/config.sh; else sed -i "s/<$TMP>/$SPACES$NEW$SPACES/" $INSTALLER/config.sh; fi
 done
 
@@ -412,6 +423,7 @@ pre_install() {
   
   # UNIVERSAL VARIABLES
   CP_NBPRFX="cp_ch"
+  CP_PRFX="cp_ch_bak"
   WP_PRFX="wipe_ch"
   SYS=/system
   
@@ -440,6 +452,11 @@ common_install() {
   POLS="${POLS} $(find -L /system -type f -name "*audio*policy*.conf")"
   POLSXML="${POLSXML} $(find -L /system -type f -name "*audio_policy*.xml")"
   MIXS="${MIXS} $(find -L /system -type f -name "*mixer_paths*.xml")"
+
+  NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
+    test "$(grep "TIMEOFEXEC=1" $INSTALLER/common/unity-customrules$NUM.sh)" && source $INSTALLER/common/unity-customrules$NUM.sh
+    NUM=$((NUM+1))
+  done
 }
 
 magisk_install() {
@@ -447,9 +464,8 @@ magisk_install() {
   # PREP FILES & VARIABLES
   pre_install
   MAGISK=true
-  CP_PRFX="cp_ch"
-  WPAPP_PRFX="mktouch"
   UNITY="$MODPATH"
+  WPAPP_PRFX="mktouch"
   AMLSCRIPT="$AMLPATH/post-fs-data.sh"
   if $BOOTMODE; then
     INFO="/sbin/.core/img/$MODID/$MODID-files"
@@ -506,9 +522,8 @@ system_install() {
   fi
   # SYSTEM ONLY VARIABLES
   MAGISK=false
-  CP_PRFX="sys_cp_ch"
-  WPAPP_PRFX="sys_wipe_ch"
   UNITY=""
+  WPAPP_PRFX="sys_wipe_ch"
   AMLPATH=""
   PROPFILE="$SH/$MODID-props"
   AMLSCRIPT="$SH/audmodlib-post-fs-data"
@@ -564,23 +579,6 @@ unity_prop_copy() {
     done
   $MAGISK || chmod 0700 $PROPFILE
   fi
-}
-
-# UNITY FILE/FOLDER WIPE
-unity_mod_wipe() {
-  ui_print " "
-  ui_print "- Wiping conflicting files/folders -"
-  $MAGISK || rm -f $CONFPROPS
-  test ! -f "$INFO" && mktouch $INFO
-
-  cat $INSTALLER/common/unity-files-wipe.sh | while read LINE; do
-    wipe_ch $LINE
-  done
-
-  NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
-    test "$(grep "TIMEOFEXEC=1" $INSTALLER/common/unity-customrules$NUM.sh)" && source $INSTALLER/common/unity-customrules$NUM.sh
-    NUM=$((NUM+1))
-  done
 }
 
 # AUDIO MODIFICATION LIBRARY
@@ -745,7 +743,8 @@ unity_mod_copy() {
   
   # PROCESS FOLDERS AND FILES
   find -L $INSTALLER/system -type f -print > $INSTALLER/tfiles
-  test "$(find $INSTALLER/data -type f -print)" != "$INSTALLER/data/placeholder" && find $INSTALLER/data -type f -print >> $INSTALLER/tfiles
+  rm -f $INSTALLER/data/placeholder
+  find $INSTALLER/data -type f -print >> $INSTALLER/tfiles
   sed -i -e '/addon.d/ d' -e 's/&/\\&/g' -e "s|$INSTALLER||g" $INSTALLER/tfiles
   $IS64BIT || sed -i '/lib64/ d' $INSTALLER/tfiles
   
@@ -758,7 +757,7 @@ unity_mod_copy() {
     else
       $OLDAPP && LINE2=$(echo $LINE | sed 's|/system/app/.*/|/system/app/|') || LINE2=$(echo $LINE | sed 's|/system/app/|/system/priv-app/|')
     fi
-    if [ "$(echo "$LINE" | cut -c 1-6)" == "/data/" ]; then sys_cp_ch $INSTALLER$LINE $LINE; else $CP_PRFX $INSTALLER$LINE $UNITY$LINE2; fi
+    $CP_PRFX $INSTALLER$LINE $LINE2
   done
 
   NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
@@ -852,8 +851,14 @@ standard_procedure() {
   fi
 
   if $INSTALL; then
-    # WIPE FILES
-    unity_mod_wipe
+    # MAKE INFO FILE
+    $MAGISK || rm -f $CONFPROPS
+    test ! -f "$INFO" && mktouch $INFO
+    
+    # WIPE FILES/FOLDERS
+    cat $INSTALLER/common/unity-files-wipe.sh | while read LINE; do
+      wipe_ch $LINE
+    done
 
     # PATCH FILES
     $AUDMODLIB && aml_mod
