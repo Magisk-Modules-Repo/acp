@@ -71,6 +71,35 @@ is_mounted() {
   return $?
 }
 
+find_boot_image() {
+  BOOTIMAGE=
+  if [ ! -z $SLOT ]; then
+    BOOTIMAGE=`find /dev/block -iname boot$SLOT | head -n 1` 2>/dev/null
+  fi
+  if [ -z "$BOOTIMAGE" ]; then
+    # The slot info is incorrect...
+    SLOT=
+    for BLOCK in boot_a kern-a android_boot kernel boot lnx bootimg; do
+      BOOTIMAGE=`find /dev/block -iname $BLOCK | head -n 1` 2>/dev/null
+      [ ! -z $BOOTIMAGE ] && break
+    done
+  fi
+  # Recovery fallback
+  if [ -z "$BOOTIMAGE" ]; then
+    for FSTAB in /etc/*fstab*; do
+      BOOTIMAGE=`grep -v '#' $FSTAB | grep -E '/boot[^a-zA-Z]' | grep -oE '/dev/[a-zA-Z0-9_./-]*'`
+      [ ! -z $BOOTIMAGE ] && break
+    done
+  fi
+  [ ! -z "$BOOTIMAGE" ] && BOOTIMAGE=`resolve_link $BOOTIMAGE`
+}
+
+
+find_dtbo_image() {
+  DTBOIMAGE=`find /dev/block -iname dtbo$SLOT | head -n 1` 2>/dev/null
+  [ ! -z $DTBOIMAGE ] && DTBOIMAGE=`resolve_link $DTBOIMAGE`
+}
+
 mount_partitions_system() {
   # Check A/B slot
   SLOT=`getprop ro.boot.slot_suffix`
@@ -78,6 +107,9 @@ mount_partitions_system() {
     SLOT=_`getprop ro.boot.slot`
     [ $SLOT = "_" ] && SLOT=
   fi
+  # Check the boot image to make sure the slot actually make sense
+  find_boot_image
+  find_dtbo_image
   [ -z $SLOT ] || ui_print "- A/B partition detected, current slot: $SLOT"
   ui_print "- Mounting /system, /vendor"
   REALSYS=/system
@@ -85,7 +117,7 @@ mount_partitions_system() {
   if ! is_mounted /system && ! [ -f /system/build.prop ]; then
     SYSTEMBLOCK=`find /dev/block -iname system$SLOT | head -n 1`
     mount -t ext4 -o rw $SYSTEMBLOCK /system
-    REALSYS=/system/system
+    REALSYS=$SYSTEMBLOCK
   fi
   is_mounted /system || [ -f /system/build.prop ] || abort "! Cannot mount /system"
   cat /proc/mounts | grep -E '/dev/root|/system_root' >/dev/null && SKIP_INITRAMFS=true || SKIP_INITRAMFS=false
