@@ -628,6 +628,12 @@ aml_mod() {
     fi
     test ! -f $AMLPATH$FILE && $CP_NBPRFX $FILE $AMLPATH$FILE
   done
+  # Create vendor audio_effects.conf if missing
+  if [ -f /system/etc/audio_effects.conf ] && [ ! -f $VEN/etc/audio_effects.conf ]; then
+    $MAGISK || { add_to_info $VEN/etc/audio_effects.conf $AMLINFO; add_to_info $VEN/etc/audio_effects.conf.bak $AMLINFO; }
+    if [ -f /system/etc/audio_effects.conf.bak ]; then $CP_NBPRFX /system/etc/audio_effects.conf.bak $AMLPATH$VEN/etc/audio_effects.conf.bak; else $CP_NBPRFX /system/etc/audio_effects.conf $AMLPATH$VEN/etc/audio_effects.conf.bak; fi
+    $CP_NBPRFX /system/etc/audio_effects.conf $AMLPATH$VEN/etc/audio_effects.conf
+  fi
   
   if $INSTALL && [ ! -f $AMLSCRIPT ]; then
     $CP_NBPRFX $INSTALLER/common/unity-audmodlib/audmodlib-post-fs-data.sh $AMLSCRIPT 0755
