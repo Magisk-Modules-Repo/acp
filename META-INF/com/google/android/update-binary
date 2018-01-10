@@ -254,6 +254,14 @@ action_complete() {
   if $INSTALL; then ui_print "    $TMP Installer by ahrion & zackptg5 @ XDA"; else ui_print "    $TMP Uninstaller by ahrion & zackptg5 @ XDA"; fi
 }
 
+device_check() { 
+  if [ "$(grep_prop ro.product.device)" == "$1" ] || [ "$(grep_prop ro.build.product)" == "$1" ]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
 sys_wipe_ch() {
   TPARTMOD=false
   cat $INFO | {
