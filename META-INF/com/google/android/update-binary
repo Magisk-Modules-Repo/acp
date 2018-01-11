@@ -692,13 +692,13 @@ aml_mod_patch() {
   source $INSTALLER/common/aml-patches-remove.sh
   
   for FILE in /system/etc/audio_effects.conf $VEN/etc/audio_effects.conf; do
-    if [ -f $FILE ] && [ ! "$(grep '^# *volume_listener {' $AMLPATH$FILE)" ] && [ "$(grep '^ *volume_listener {' $AMLPATH$FILE)" ]; then
-      sed -i '/volume_listener {/,/}/ s/^/#/' $AMLPATH$FILE
+    if [ -f $FILE ] && [ ! "$(grep '^# *music {' $AMLPATH$FILE)" ] && [ "$(grep '^ *music {' $AMLPATH$FILE)" ]; then
+      sed -i "/output_session_processing {/,/^}/ {/music {/,/^    }/ s/^/#/g}" $AMLPATH$FILE
     fi
   done
   for FILE in /system/etc/audio_effects.xml $VEN/etc/audio_effects.xml; do
-    if [ -f $FILE ] && [ ! "$(grep '^ *<!--<library name=\"volume_listener\" path=\"libvolumelistener.so\"/>-->' $AMLPATH$FILE)" ] && [ "$(grep '^ *<library name=\"volume_listener\" path=\"libvolumelistener.so\"/>' $AMLPATH$FILE)" ]; then
-      sed -i "s|<library name=\"volume_listener\" path=\"libvolumelistener.so\"/>|<!--<library name=\"volume_listener\" path=\"libvolumelistener.so\"/>-->|" $AMLPATH$FILE
+    if [ -f $FILE ] && [ ! "$(grep '^ *<\!--<stream type=\"music\">' $AMLPATH$FILE)" ] && [ "$(grep '^ *<stream type=\"music\">' $AMLPATH$FILE)" ]; then
+      sed -i "/^ *<postprocess>$/,/<\/postprocess>/ {/<stream type=\"music\">/,/<\/stream>/ s/<stream type=\"music\">/<\!--<stream type=\"music\">/; s/<\/stream>/<\/stream>-->/}" $AMLPATH$FILE
     fi
   done
   
