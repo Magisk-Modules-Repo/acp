@@ -492,11 +492,6 @@ common_install() {
   POLS="${POLS} $(find -L /system -type f -name "*audio*policy*.conf")"
   POLSXML="${POLSXML} $(find -L /system -type f -name "*audio_policy*.xml")"
   MIXS="${MIXS} $(find -L /system -type f -name "*mixer_paths*.xml")"
-
-  NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
-    test "$(grep "TIMEOFEXEC=1" $INSTALLER/common/unity-customrules$NUM.sh)" && source $INSTALLER/common/unity-customrules$NUM.sh
-    NUM=$((NUM+1))
-  done
 }
 
 magisk_install() {
@@ -900,6 +895,12 @@ standard_procedure() {
     # MAKE INFO FILE
     $MAGISK || rm -f $CONFPROPS
     test ! -f "$INFO" && mktouch $INFO
+    
+    # Run customrule1
+    NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
+      test "$(grep "TIMEOFEXEC=1" $INSTALLER/common/unity-customrules$NUM.sh)" && source $INSTALLER/common/unity-customrules$NUM.sh
+      NUM=$((NUM+1))
+    done
     
     # WIPE FILES/FOLDERS
     cat $INSTALLER/common/unity-files-wipe.sh | while read LINE; do
