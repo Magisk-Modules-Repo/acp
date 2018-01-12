@@ -896,7 +896,7 @@ standard_procedure() {
     $MAGISK || rm -f $CONFPROPS
     test ! -f "$INFO" && mktouch $INFO
     
-    # Run customrule1
+    # RUN CUSTOMFULES1
     NUM=1; while [ $NUM -le $NUMOFCUSTRULES ]; do
       test "$(grep "TIMEOFEXEC=1" $INSTALLER/common/unity-customrules$NUM.sh)" && source $INSTALLER/common/unity-customrules$NUM.sh
       NUM=$((NUM+1))
