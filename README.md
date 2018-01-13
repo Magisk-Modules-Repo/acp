@@ -14,7 +14,7 @@ This hack fixes when streaming apps (Spotify, Pandora, etc) do not process audio
 * Works with nearly every device, kernel, and rom
 
 ## Change Log
-### v3.9 - 
+### v3.9 - 1.12.2018
 * Updated to Unity/AML 2.9
 * Script bug fixes
 
