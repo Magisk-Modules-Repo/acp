@@ -238,7 +238,7 @@ device_check() {
 
 cp_ch_nb() {
   if [ -z $4 ]; then ALLBAK=false; else ALLBAK=$4; fi
-  if ( ! $MAGISK || $ALLBAK ) && [ ! "$(grep "$2" $INFO)" ]; then echo "$2" >> $INFO; fi
+  if ( ! $MAGISK || $ALLBAK ) && [ ! "$(grep "$2$" $INFO)" ]; then echo "$2" >> $INFO; fi
   if [ -z $3 ] || [ "$3" == "noperm" ]; then
     install -D "$1" "$2"
   else
