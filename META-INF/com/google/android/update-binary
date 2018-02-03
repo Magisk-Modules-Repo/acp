@@ -201,7 +201,9 @@ unity_uninstall() {
   # REMOVE FILES
   if [ -f $INFO ]; then
     while read LINE; do
-      if [ -f "$LINE.bak" ]; then
+      if [ "$(echo -n $LINE | tail -c 4)" == ".bak" ]; then
+        continue
+      elif [ -f "$LINE.bak" ]; then
         mv -f $LINE.bak $LINE
       else
         rm -f $LINE
