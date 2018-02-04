@@ -127,7 +127,7 @@ recovery_cleanup() {
 }
 
 unmount_partitions() {
-  [ "$supersuimg" -o -d /su ] && umount /su
+  [ "$supersuimg" -o -d /su ] && umount /su 2>/dev/null
   umount -l /system_root 2>/dev/null
   umount -l /system 2>/dev/null
   umount -l /vendor 2>/dev/null
@@ -217,12 +217,12 @@ cleanup() {
     unmount_partitions
     rm -rf $TMPDIR
   fi
-  $INSTALL || UN="Un"
+  if $INSTALL; then UN=""; else UN="Un"; fi
   ui_print " "
   ui_print "    --------- ${UN}INSTALLATION SUCCESSFUL ---------"
   ui_print " "
   ui_print "    ************************************************"
-  ui_print "   * Unity ${UN}Installer by ahrion & zackptg5 @ XDA *"
+  ui_print "    * Unity ${UN}Installer by ahrion & zackptg5 @ XDA *"
   ui_print "    ************************************************"
   ui_print " "
   exit 0
