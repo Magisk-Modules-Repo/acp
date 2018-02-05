@@ -240,10 +240,15 @@ cp_ch_nb() {
   if [ -z $4 ]; then ALLBAK=false; else ALLBAK=$4; fi
   if ( ! $MAGISK || $ALLBAK ) && [ ! "$(grep "$2$" $INFO)" ]; then echo "$2" >> $INFO; fi
   if [ -z $3 ] || [ "$3" == "noperm" ]; then
-    install -D "$1" "$2"
+    install -D -m 0644 "$1" "$2"
   else
     install -D -m "$3" "$1" "$2"
   fi
+  case $2 in
+    */vendor/*.apk) chcon u:object_r:vendor_app_file:s0 $2;;
+    */vendor/*) chcon u:object_r:vendor_file:s0 $2;;
+    */system/*) chcon u:object_r:system_file:s0 $2;;
+  esac
 }
 
 cp_ch() {
@@ -288,13 +293,13 @@ patch_script() {
 }
 
 prop_process() {
+  sed -i "/^#/d" $1
   if $MAGISK; then
     [ -f $PROP ] || mktouch $PROP
   else
-    [ -f $PROP ] || mktouch $PROP "#!/system/bin/sh"
+    [ -f $PROP ] || mktouch $PROP "$SHEBANG"
     sed -ri "s|^(.*)=(.*)|setprop \1 \2|g" $1
   fi
-  sed -i "/^#/d" $1
   while read LINE; do
     echo "$LINE" >> $PROP
   done < $1

@@ -207,7 +207,8 @@ unity_uninstall() {
         mv -f $LINE.bak $LINE
       else
         rm -f $LINE
-      fi      
+        [ "$(ls $(dirname $LINE))" ] || rm -rf $(dirname $LINE)
+      fi
     done < $INFO
     rm -f $INFO
   else
