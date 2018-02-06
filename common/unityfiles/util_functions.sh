@@ -245,7 +245,7 @@ cp_ch_nb() {
     install -D -m "$3" "$1" "$2"
   fi
   case $2 in
-    */vendor/etc/audio_effects.conf) chcon u:object_r:vendor_configs_file:s0 $2;;
+    */vendor/etc/*) chcon u:object_r:vendor_configs_file:s0 $2;;
     */vendor/*.apk) chcon u:object_r:vendor_app_file:s0 $2;;
     */vendor/*) chcon u:object_r:vendor_file:s0 $2;;
     */system/*) chcon u:object_r:system_file:s0 $2;;
