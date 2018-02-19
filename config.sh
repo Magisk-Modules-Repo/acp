@@ -46,10 +46,10 @@ LATESTARTSERVICE=false
 # Custom Variables - Keep everything within this function
 unity_custom() {
   if $MAGISK && $BOOTMODE; then ORIGDIR="/sbin/.core/mirror"; else ORIGDIR=""; fi
-  if [ -L /system/vendor ]; then
-    POLS="$(find /system /vendor -type f -name "*audio*policy*.conf" -o -name "*audio_policy*.xml")"
+  if $BOOTMODE; then
+    POLS="$(find /system /vendor -type f -name "*audio_*policy*.conf" -o -name "*audio_*policy*.xml" | sed "s|^/vendor|/system/vendor|g")"
   else  
-    POLS="$(find /system -type f -name "*audio*policy*.conf" -o -name "*audio_policy*.xml")"
+    POLS="$(find -L /system -type f -name "*audio_*policy*.conf" -o -name "*audio_*policy*.xml")"
   fi
 }
 
