@@ -186,7 +186,7 @@ unity_install() {
   
   # ADD BLANK LINE TO END OF ALL PROP/SCRIPT FILES IF NOT ALREADY PRESENT
   for FILE in $MODPATH/*.sh $MODPATH/*.prop; do
-    [ "$(tail -1 $FILE)" ] && echo "" >> $FILE
+    [ -f $FILE ] && { [ "$(tail -1 $FILE)" ] && echo "" >> $FILE; }
   done
   
   # REMOVE INFO FILE IF NOT NEEDED
