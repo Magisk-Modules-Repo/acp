@@ -233,9 +233,9 @@ cp_ch_nb() {
   if [ -z $4 ]; then ALLBAK=false; else ALLBAK=$4; fi
   if ( ! $MAGISK || $ALLBAK ) && [ ! "$(grep "$2$" $INFO)" ]; then echo "$2" >> $INFO; fi
   if [ -z $3 ] || [ "$3" == "noperm" ]; then
-    install -D -m 0644 "$1" "$2"
+    /system/bin/install -D -m 0644 "$1" "$2"
   else
-    install -D -m "$3" "$1" "$2"
+    /system/bin/install -D -m "$3" "$1" "$2"
   fi
   case $2 in
     */vendor/etc/*) chcon u:object_r:vendor_configs_file:s0 $2;;
