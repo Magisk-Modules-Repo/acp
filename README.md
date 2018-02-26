@@ -10,6 +10,7 @@ This hack fixes when streaming apps (Spotify, Pandora, etc) do not process audio
 ### v1.3 - 2.xx.2018
 * Added detection of more pol files
 * Fixed vendor files in bootmode for devices with separate vendor partitions
+* Fix seg faults on system installs
 
 ### v1.2 - 2.16.2018
 * Add file backup on system installs
