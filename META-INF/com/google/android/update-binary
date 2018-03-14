@@ -175,7 +175,8 @@ unity_install() {
   for FILE in $(find $INSTALLER/system -type f | sed "s|$INSTALLER||"); do
     if $DYNAMICOREO && [ $API -ge 26 ]; then
       case $FILE in
-        /system/app/*|/system/lib*) FILE2=$(echo $FILE | sed "s|/system/|$VEN/|");;
+        /system/app/*) if [ -d $VEN/app ]; then FILE2=$(echo $FILE | sed "s|/system/|$VEN/|"); else FILE2=$(echo $FILE | sed 's|/system/app/|/system/priv-app/|'); fi;;
+        /system/lib*) FILE2=$(echo $FILE | sed "s|/system/|$VEN/|");;
         *) FILE2=$FILE;;
       esac
     else
