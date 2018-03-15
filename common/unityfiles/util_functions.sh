@@ -211,9 +211,9 @@ cleanup() {
     rm -rf $TMPDIR
   fi
   ui_print " "
-  ui_print "    ************************************************"
-  ui_print "    *       Unity by ahrion & zackptg5 @ XDA       *"
-  ui_print "    ************************************************"
+  ui_print "    *******************************************"
+  ui_print "    *    Unity by ahrion & zackptg5 @ XDA     *"
+  ui_print "    *******************************************"
   ui_print " "
   exit 0
 }
