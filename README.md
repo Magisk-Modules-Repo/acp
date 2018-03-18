@@ -7,8 +7,8 @@ This hack fixes when streaming apps (Spotify, Pandora, etc) do not process audio
 * All root solutions (requires init.d support if not using magisk or supersu. Try [Init.d Injector](https://forum.xda-developers.com/android/software-hacking/mod-universal-init-d-injector-wip-t3692105))
 
 ## Change Log
-### v1.3.1 - 3.xx.2018
-* Remove redundant code
+### v1.3.1 - 3.18.2018
+* Unity v1.4 update
 
 ### v1.3 - 2.25.2018
 * Added detection of more pol files
