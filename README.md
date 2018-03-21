@@ -1,4 +1,4 @@
-# Universal deep_buffer Remover
+# Universal deep_buffer/raw Remover
 This hack fixes when streaming apps (Spotify, Pandora, etc) do not process audio effects for various equalizer applications. [More details in support thread](https://forum.xda-developers.com/apps/magisk/module-universal-deepbuffer-remover-t3577067).
 
 ## Compatibility
@@ -7,6 +7,9 @@ This hack fixes when streaming apps (Spotify, Pandora, etc) do not process audio
 * All root solutions (requires init.d support if not using magisk or supersu. Try [Init.d Injector](https://forum.xda-developers.com/android/software-hacking/mod-universal-init-d-injector-wip-t3692105))
 
 ## Change Log
+### v1.4 - 3.xx.2018
+* Complete redo - removes raw now as well. Should fix compatibility issues too
+
 ### v1.3.1 - 3.18.2018
 * Unity v1.4 update
 

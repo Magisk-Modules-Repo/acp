@@ -51,6 +51,7 @@ unity_custom() {
   else  
     POLS="$(find -L /system -type f -name "*audio_*policy*.conf" -o -name "*audio_*policy*.xml")"
   fi
+  [ "$(echo $POLS | sed -n '/audio_policy_configuration.xml/p')" ] && XML=true
 }
 
 ##########################################################################################
