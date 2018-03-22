@@ -51,6 +51,18 @@ unity_custom() {
   else  
     POLS="$(find -L /system -type f -name "*audio_*policy*.conf" -o -name "*audio_*policy*.xml")"
   fi
+  # Remove old udbr
+  if [ -f "$(echo $MOD_VER | sed "s/$MODID/Udb_Remover/g")" ]; then
+    ui_print " "
+    ui_print "! Old Udbr detected! Removing..."
+    INFO=$(echo $INFO | sed "s/$MODID/Udb_Remover/g")
+    MODPATH=$(echo $MODPATH | sed "s/$MODID/Udb_Remover/g")
+    MODID="Udb_Remover"
+    unity_uninstall
+    MODID=`grep_prop id $INSTALLER/module.prop`
+    INFO=$(echo $INFO | sed "s/Udb_Remover/$MODID/g")
+    MODPATH=$MOUNTPATH/$MODID
+  fi
 }
 
 ##########################################################################################

@@ -1,9 +1,9 @@
-id=Udbraw_Remover
-name=Universal Deep_buffer and Raw Remover
+id=Udbraw_Disabler
+name=Universal Deep_buffer and Raw Disabler
 version=v1.4
 versionCode=21
 author=ahrion, zackptg5
-description=deep_buffer Remover is a fix for when streaming apps (Spotify, Pandora, etc) do not process audio effects for various equalizer applications
+description=Deep_buffer & Raw Disabler is a fix for when streaming apps (Spotify, Pandora, etc) do not process audio effects for various equalizer applications
 support=https://forum.xda-developers.com/apps/magisk/module-universal-deepbuffer-remover-t3577067
 donate=https://github.com/therealahrion/Universal-deep_buffer-Remover
 minMagisk=1530

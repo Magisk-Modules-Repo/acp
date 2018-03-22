@@ -1,5 +1,5 @@
 if ! $MAGISK; then
-  if [ "$MODID" == "Ubd_Remover" ]; then
+  if [ "$MODID" == "Udb_Remover" ]; then
     if [ -f $UNITY$VEN/etc/audio_output_policy.conf ] && [ -f $UNITY$SYS/etc/audio_policy_configuration.xml ]; then
       for BUFFER in "Speaker" "Wired Headset" "Wired Headphones"; do
         NUM=$(cat -n $UNITY$SYS/etc/audio_policy_configuration.xml | sed -n "/$BUFFER/ {n;n;/deep_buffer,/p}" | sed "s/<!--.*//")
