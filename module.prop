@@ -1,9 +1,9 @@
-id=Udbraw_Disabler
-name=Universal Deep_buffer and Raw Disabler
-version=v1.4
-versionCode=21
+id=acp
+name=Audio Compatibility Patch
+version=v1.0
+versionCode=1
 author=ahrion, zackptg5
-description=Deep_buffer & Raw Disabler is a fix for when streaming apps (Spotify, Pandora, etc) do not process audio effects for various equalizer applications
+description=Fixes music and streaming apps (Spotify, Pandora, etc) that aren't processing audio effects for various equalizer applications through the disabling of both deep_buffer and raw
 support=https://forum.xda-developers.com/apps/magisk/module-universal-deepbuffer-remover-t3577067
-donate=https://github.com/therealahrion/Universal-deep_buffer-Remover
+donate=https://github.com/therealahrion/Audio-Compatibility-Patch
 minMagisk=1530
