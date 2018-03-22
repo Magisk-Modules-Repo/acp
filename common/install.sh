@@ -7,7 +7,7 @@ for FILE in ${POLS}; do
     sed -ri "/<mixPort name=\"(deep_buffer)|(raw)\"/,/<\/mixPort> *$/ {/<!--/! {s|flags=\".*\"|flags=\"AUDIO_OUTPUT_FLAG_FAST\"|}}" $UNITY$FILE
   else
     cp_ch $ORIGDIR$FILE $UNITY$FILE
-    sed -i "/^ *deep_buffer {/,/}/ s/^/#$MODID/" $UNITY$FILE
-    sed -i "/^ *raw {/,/}/ s/^/#$MODID/" $UNITY$FILE
+    sed -ri "/^ *(deep_buffer)|(raw) \{/,/}/ {/flags .*$/p; s|( *flags .*$)|#$MODID\1|}" $UNITY$FILE
+    sed -ri "/^ *(deep_buffer)|(raw) \{/,/}/ {/^ *flags .*$/ s|(flags .*)|flags AUDIO_OUTPUT_FLAG_FAST|}" $UNITY$FILE
   fi
 done
