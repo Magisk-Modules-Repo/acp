@@ -1,11 +1,15 @@
 # Audio Compatibility Patch
-This fixes music and streaming apps (Spotify, Pandora, etc) that aren't processing audio effects for various equalizer applications through the disabling of both deep_buffer and raw. [More details in support thread](https://forum.xda-developers.com/apps/magisk/module-universal-deepbuffer-remover-t3577067).
+This fixes music and streaming apps (Spotify, Pandora, etc) that aren't processing audio effects for various equalizer applications through the modification of the flags for deep_buffer, raw, and low_latency and/or build props. [More details in support thread](https://forum.xda-developers.com/apps/magisk/module-universal-deepbuffer-remover-t3577067).
 
 ## Compatibility
 * Any Android Jellybean+ device
 
 ## Change Log
-### v1.0 - 3.xx.2018
+### v1.1 - 3.xx.2018
+* Added disabling of low_latency (seen on older HTC devices instead of deep_buffer)
+* Added detection of altering of deep_buffer build prop
+
+### v1.0 - 3.22.2018
 * Initial release
 
 ## Source Code

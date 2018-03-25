@@ -63,6 +63,12 @@ unity_custom() {
     INFO=$(echo $INFO | sed "s/Udb_Remover/$MODID/g")
     MODPATH=$MOUNTPATH/$MODID
   fi
+  # Only disable deep_buffer prop rather than patch if found
+  if [ "$(grep 'audio.deep_buffer.media=true' $SYS/build.prop)" ]; then
+    PROPFILE=true
+    sed -i "s/(deep_buffer)|//g" $INSTALLER/common/install.sh
+    sed -i "s/(deep_buffer)|//g" $INSTALLER/common/uninstall.sh
+  fi
 }
 
 ##########################################################################################
