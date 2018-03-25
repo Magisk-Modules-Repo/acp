@@ -297,6 +297,7 @@ prop_process() {
   while read LINE; do
     echo "$LINE" >> $PROP
   done < $1
+  $MAGISK || chmod 0700 $PROP
 }
 
 remove_old_aml() {
