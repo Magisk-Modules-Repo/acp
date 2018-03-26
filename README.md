@@ -7,6 +7,7 @@ This fixes music and streaming apps (Spotify, Pandora, etc) that aren't processi
 ## Change Log
 ### v1.1 - 3.xx.2018
 * Added disabling of low_latency (seen on older HTC devices instead of deep_buffer)
+* Use flag of NONE for deep_buffer and low_latency, still FAST for raw
 
 ### v1.0 - 3.22.2018
 * Initial release
