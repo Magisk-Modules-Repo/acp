@@ -1,3 +1,4 @@
+[ "$(grep 'audio.deep_buffer.media=true' $SYS/build.prop)" ] && { ui_print "   Deep_buffer prop found! Setting to false..."; PROPFILE=true; }
 ui_print "   Patching existing audio policy files..."
 for FILE in ${POLS}; do
   cp_ch $ORIGDIR$FILE $UNITY$FILE
