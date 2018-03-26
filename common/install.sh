@@ -1,4 +1,3 @@
-$PROPFILE && ui_print "   Overriding deep_buffer enable prop..."
 ui_print "   Patching existing audio policy files..."
 for FILE in ${POLS}; do
   cp_ch $ORIGDIR$FILE $UNITY$FILE
