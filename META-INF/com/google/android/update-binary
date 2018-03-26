@@ -176,6 +176,7 @@ unity_install() {
     if $DYNAMICOREO && [ $API -ge 26 ]; then
       case $FILE in
         /system/app/*) if [ -d $VEN/app ]; then FILE2=$(echo $FILE | sed "s|/system/|$VEN/|"); else FILE2=$(echo $FILE | sed 's|/system/app/|/system/priv-app/|'); fi;;
+        /system/lib/modules/*) FILE2=$FILE;;
         /system/lib*) FILE2=$(echo $FILE | sed "s|/system/|$VEN/|");;
         *) FILE2=$FILE;;
       esac
