@@ -10,3 +10,6 @@ for FILE in ${POLS}; do
             sed -i "/^ *raw \{/,/}/ {/^ *flags .*$/ s|flags .*|flags AUDIO_OUTPUT_FLAG_FAST|}" $UNITY$FILE;;
   esac
 done
+if $MAGISK; then
+  cp -f $INSTALLER/common/aml.sh $UNITY/.aml.sh
+fi
