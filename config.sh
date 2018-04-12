@@ -38,10 +38,16 @@ LATESTARTSERVICE=false
 
 # Unity Variables
 # Uncomment and change 'MINAPI' and 'MAXAPI' to the minimum and maxium android version for your mod (note that magisk has it's own minimum api: 21 (lollipop))
-# Uncomment DYNAMICOREO if you want apps and libs installed to vendor for oreo and newer and system for anything older
+# Uncomment DYNAMICOREO if you want libs installed to vendor for oreo and newer and system for anything older
+# Uncomment DYNAMICAPP if you want anything in $INSTALLER/system/app to be installed to the optimal app directory (/system/priv-app if it exists, /system/app otherwise)
+# Uncomment SYSOVERRIDE if you want the mod to always be installed to system (even on magisk)
+# Uncomment ALWAYSRW if you always want system & vendor mounted as rw - only useful when modifiying init folders or something that needs loaded before magisk mount - you likely won't need this
 #MINAPI=21
 #MAXAPI=25
+#ALWAYSRW=true
+#SYSOVERRIDE=true
 #DYNAMICOREO=true
+#DYNAMICAPP=true
 
 # Custom Variables - Keep everything within this function
 unity_custom() {
