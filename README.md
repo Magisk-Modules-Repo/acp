@@ -6,7 +6,7 @@ This fixes music and streaming apps (Spotify, Pandora, etc) that aren't processi
 
 ## Change Log
 ### v1.1.1 - 4.12.2018
-* Unity v1.5 update
+* Unity v1.5.1 update
 
 ### v1.1 - 3.27.2018
 * Added disabling of low_latency
