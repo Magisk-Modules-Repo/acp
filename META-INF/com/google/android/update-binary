@@ -179,16 +179,16 @@ unity_install() {
   rm -f $INSTALLER/system/placeholder
   $IS64BIT || rm -rf $INSTALLER/system/lib64 $INSTALLER/system/vendor/lib64
   for FILE in $(find $INSTALLER/system -type f | sed "s|$INSTALLER||"); do
-    if $DYNAMICOREO && [ $API -ge 26 ]; then
-      case $FILE in
-        /system/lib/modules/*) FILE2=$FILE;;
-        /system/lib*) FILE2=$(echo $FILE | sed "s|/system/|$VEN/|");;
-      esac
-    fi
     if $DYNAMICAPP; then
       if $OLDAPP; then FILE2=$(echo $FILE | sed 's|/system/app/.*/|/system/app/|'); else FILE2=$(echo $FILE | sed 's|/system/app/|/system/priv-app/|'); fi
     else
       FILE2=$FILE
+    fi
+    if $DYNAMICOREO && [ $API -ge 26 ]; then
+      case $FILE in
+        /system/lib/modules/*) FILE2=$FILE;;
+        /system/lib/*) FILE2=$(echo $FILE | sed "s|/system/|$VEN/|");;
+      esac
     fi
     cp_ch $INSTALLER$FILE $UNITY$FILE2
   done

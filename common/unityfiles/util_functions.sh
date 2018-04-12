@@ -229,7 +229,7 @@ device_check() {
 check_bak() {
   case $1 in
     /system/*|/vendor/*) BAK=true;;
-    $MOUNTPATH/*) BAK=false;;
+    $MOUNTPATH/*|/sbin/.core/img/*) BAK=false;;
     *) BAK=true;;
   esac
   if ! $MAGISK || $SYSOVERRIDE; then BAK=true; fi
