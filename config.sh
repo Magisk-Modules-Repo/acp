@@ -53,7 +53,7 @@ LATESTARTSERVICE=false
 unity_custom() {
   if $MAGISK && $BOOTMODE; then ORIGDIR="/sbin/.core/mirror"; else ORIGDIR=""; fi
   if $BOOTMODE; then
-    POLS="$(find /system /vendor -type f -name "*audio_*policy*.conf" -o -name "*audio_*policy*.xml" | sed "s|^/vendor|/system/vendor|g")"
+    POLS="$(find /system /vendor -type f -name "*audio_*policy*.conf" -o -name "*audio_*policy*.xml")"
   else  
     POLS="$(find -L /system -type f -name "*audio_*policy*.conf" -o -name "*audio_*policy*.xml")"
   fi

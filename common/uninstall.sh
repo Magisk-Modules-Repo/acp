@@ -14,18 +14,20 @@ if ! $MAGISK; then
       sed -ri -n "/( *)<!--(.*)deep_buffer/{x;d;};1h;1!{x;p;};\${x;p;}" $UNITY$VEN/etc/audio/audio_policy_configuration.xml
       sed -ri "/deep_buffer/ s/<!--(.*)-->/\1/g" $UNITY$VEN/etc/audio/audio_policy_configuration.xml
     else
-      for FILE in ${POLS}; do
+      for OFILE in ${POLS}; do
+        FILE="$UNITY$(echo $OFILE | sed "s|^/vendor|/system/vendor|g")"
         case $FILE in
-          *.conf) sed -i "/deep_buffer {/,/}/ s/^#//" $UNITY$FILE;;
-          *.xml) sed -i "/<!--deep_buffer {/,/}-->/ s/<!--deep_buffer/deep_buffer/g; s/}-->/}/g" $UNITY$FILE;;
+          *.conf) sed -i "/deep_buffer {/,/}/ s/^#//" $FILE;;
+          *.xml) sed -i "/<!--deep_buffer {/,/}-->/ s/<!--deep_buffer/deep_buffer/g; s/}-->/}/g" $FILE;;
         esac 
       done
     fi
   else
-    for FILE in ${POLS}; do
+    for OFILE in ${POLS}; do
+      FILE="$UNITY$(echo $OFILE | sed "s|^/vendor|/system/vendor|g")"
       case $FILE in
-        *.xml) sed -ri "/<mixPort name=\"(deep_buffer)|(raw)|(low_latency)\"/,/<\/mixPort>/ {/<!--/!{/flags=\"AUDIO_OUTPUT_FLAG_.*\"/d}; s|( *)<!--(.*flags=\".*\".*)$MODID-->|\1\2|}" $UNITY$FILE;;
-        *.conf) sed -ri "/^ *(deep_buffer)|(raw)|(low_latency) \{/,/}/ {/^ *flags AUDIO_OUTPUT_FLAG_.*$/d; s|#$MODID||}" $UNITY$FILE;;
+        *.xml) sed -ri "/<mixPort name=\"(deep_buffer)|(raw)|(low_latency)\"/,/<\/mixPort>/ {/<!--/!{/flags=\"AUDIO_OUTPUT_FLAG_.*\"/d}; s|( *)<!--(.*flags=\".*\".*)$MODID-->|\1\2|}" $FILE;;
+        *.conf) sed -ri "/^ *(deep_buffer)|(raw)|(low_latency) \{/,/}/ {/^ *flags AUDIO_OUTPUT_FLAG_.*$/d; s|#$MODID||}" $FILE;;
       esac
     done
   fi
