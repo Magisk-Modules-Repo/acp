@@ -1,3 +1,16 @@
+# Tell user aml is needed if applicable
+if $MAGISK; then
+  if $BOOTMODE; then LOC="/sbin/.core/img/*/system $MOUNTPATH/*/system"; else LOC="$MOUNTPATH/*/system"; fi
+  FILES=$(find $LOC -type f -name "*audio_*policy*.conf" -o -name "*audio_*policy*.xml")
+  if [ ! -z "$FILES" ] && [ ! "$(echo $FILES | grep '/aml/')" ]; then
+    ui_print " "
+    ui_print "   ! Conflicting audio mod found!"
+    ui_print "   ! You will need to install !"
+    ui_print "   ! Audio Modification Library !"
+    sleep 3
+  fi
+fi
+
 ui_print "   Patching existing audio policy files..."
 for OFILE in ${POLS}; do
   FILE="$UNITY$(echo $OFILE | sed "s|^/vendor|/system/vendor|g")"

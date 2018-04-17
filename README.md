@@ -5,6 +5,10 @@ This fixes music and streaming apps (Spotify, Pandora, etc) that aren't processi
 * Any Android Jellybean+ device
 
 ## Change Log
+### v1.1.3 - 4.16.2018
+* Unity v1.5.2 update
+* Add AML detection/notification
+
 ### v1.1.2 - 4.12.2018
 * Reworking/fixing of audio file patching
 
