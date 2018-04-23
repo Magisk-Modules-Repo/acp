@@ -7,6 +7,7 @@ This fixes music and streaming apps (Spotify, Pandora, etc) that aren't processi
 ## Change Log
 ### v1.4 - 4.xx.2018
 * Brought back old deep_buffer remover logic (vol key option) for the few who need it
+* Minor bug fixes
 
 ### v1.1.3 - 4.16.2018
 * Unity v1.5.2 update
