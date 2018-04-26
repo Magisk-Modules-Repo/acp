@@ -1,4 +1,4 @@
-if ! $MAGISK; then
+if ! $MAGISK || $SYSOVERRIDE; then
   if $(grep_prop patch $MOD_VER); then
     for OFILE in ${POLS}; do
       FILE="$UNITY$(echo $OFILE | sed "s|^/vendor|/system/vendor|g")"

@@ -153,6 +153,22 @@ mktouch() {
   chmod 644 $1
 }
 
+sysover_partitions() {
+  if [ -f /system/init.rc ]; then
+    ROOT=/system_root
+    REALSYS=/system_root/system
+  else
+    REALSYS=/system
+  fi
+  if [ -L /system/vendor ]; then
+    VEN=/vendor
+    REALVEN=/vendor
+  else
+    VEN=/system/vendor
+    REALVEN=$REALSYS/vendor
+  fi
+}
+
 supersuimg_mount() {
   supersuimg=$(ls /cache/su.img /data/su.img 2>/dev/null)
   if [ "$supersuimg" ]; then
@@ -275,8 +291,11 @@ install_script() {
 patch_script() {
   sed -i "s|<MAGISK>|$MAGISK|" $1
   sed -i "s|<LIBDIR>|$LIBDIR|" $1
+  sed -i "s|<SYSOVERRIDE>|$SYSOVERRIDE|" $1
+  sed -i "s|<MODID>|$MODID|" $1
   if $MAGISK; then
     if $SYSOVERRIDE; then
+      sed -i "s|<INFO>|$INFO|" $1
       sed -i "s|<VEN>|$REALVEN|" $1
     else
       sed -i "s|<VEN>|$VEN|" $1

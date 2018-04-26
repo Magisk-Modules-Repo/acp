@@ -5,6 +5,9 @@ This fixes music and streaming apps (Spotify, Pandora, etc) that aren't processi
 * Any Android device
 
 ## Change Log
+### v1.4.1 - 4.26.2018
+* Unity v1.5.3 update
+
 ### v1.4 - 4.23.2018
 * Brought back old deep_buffer remover logic (vol key option) for the few who need it
 * Minor bug fixes
