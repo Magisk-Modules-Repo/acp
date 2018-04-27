@@ -12,6 +12,7 @@ if $MAGISK && ! $SYSOVERRIDE; then
 fi
 
 # Check if FLAGS are even present. If not, do removal since there's nothing to patch
+PATCH=false
 for FILE in ${POLS}; do
   case $FILE in
     *.xml) [ "$(grep 'flags="AUDIO_OUTPUT_FLAG' $FILE)" ] && { PATCH=true; break; };;
@@ -116,7 +117,7 @@ if $PATCH; then
              sed -i "/<mixPort name=\"raw\"/,/<\/mixPort> *$/ {/<!--/! {s|flags=\"[^\"]*|flags=\"AUDIO_OUTPUT_FLAG_FAST|}}" $FILE;;
       *.conf) sed -ri "/^ *(deep_buffer)|(raw)|(low_latency) \{/,/}/ {/flags .*$/p; s|( *flags .*$)|#$MODID\1|}" $FILE
               sed -ri "/^ *(deep_buffer)|(low_latency) \{/,/}/ {/^ *flags .*$/ s|flags .*|flags AUDIO_OUTPUT_FLAG_NONE|}" $FILE
-              sed -i "/^ *raw \{/,/}/ {/^ *flags .*$/ s|flags .*|flags AUDIO_OUTPUT_FLAG_FAST|}" $FILE;;
+              sed -i "/^ *raw {/,/}/ {/^ *flags .*$/ s|flags .*|flags AUDIO_OUTPUT_FLAG_FAST|}" $FILE;;
     esac
   done
 else
