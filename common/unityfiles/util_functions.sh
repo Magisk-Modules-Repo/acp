@@ -283,8 +283,8 @@ install_script() {
     cp_ch_nb $1 $MODPATH/$(basename $1)
     patch_script $MODPATH/$(basename $1)
   else
-    cp_ch_nb $1 $MODPATH/$MODID-$(basename $1) 0700
-    patch_script $MODPATH/$MODID-$(basename $1)
+    cp_ch_nb $1 $MODPATH/$MODID-$(basename $1 | sed 's/.sh$//')$2 0700
+    patch_script $MODPATH/$MODID-$(basename $1 | sed 's/.sh$//')$2
   fi
 }
 

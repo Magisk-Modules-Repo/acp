@@ -214,7 +214,7 @@ unity_install() {
   $POSTFSDATA && install_script $INSTALLER/common/post-fs-data.sh
   
   # SERVICE MODE SCRIPTS
-  $LATESTARTSERVICE && install_script $INSTALLER/common/service.sh
+  $LATESTARTSERVICE && install_script $INSTALLER/common/service.sh -ls
    
   # INSTALL FILES
   ui_print "   Installing files for $ARCH SDK $API device..."
