@@ -1,4 +1,4 @@
-patch=true
+PATCH=true
 if $PATCH; then
   for FILE in ${FILES}; do
     NAME=$(echo "$FILE" | sed "s|$MOD|system|")

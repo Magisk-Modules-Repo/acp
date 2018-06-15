@@ -123,7 +123,7 @@ if $PATCH; then
 else
   ui_print "   Using remove logic"
   sed -i "s/patch=true/patch=false/" $INSTALLER/module.prop
-  sed -i "s/patch=true/patch=false/" $INSTALLER/common/aml.sh
+  sed -i "s/PATCH=true/PATCH=false/" $INSTALLER/common/aml.sh
   FIRST=true
   for FLAG in "deep_buffer" "raw" "low_latency"; do
     if [ -f $VEN/etc/audio_output_policy.conf ] && [ -f /system/etc/audio_policy_configuration.xml ]; then
