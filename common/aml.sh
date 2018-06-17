@@ -1,3 +1,4 @@
+RUNONCE=true
 PATCH=true
 if $PATCH; then
   for FILE in ${FILES}; do
@@ -24,7 +25,9 @@ else
     else
       for FILE in ${FILES}; do
         NAME=$(echo "$FILE" | sed "s|$MOD|system|")
-        sed -i "/$FLAG {/,/}/d" $MODPATH$FILE
+        case $NAME in
+          *audio_*policy*) sed -i "/$FLAG {/,/}/d" $MODPATH/$NAME;;
+        esac
       done
     fi
   done
