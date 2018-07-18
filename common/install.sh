@@ -1,7 +1,7 @@
 # Tell user aml is needed if applicable
 if $MAGISK && ! $SYSOVERRIDE; then
   if $BOOTMODE; then LOC="/sbin/.core/img/*/system $MOUNTPATH/*/system"; else LOC="$MOUNTPATH/*/system"; fi
-  FILES=$(find $LOC -type f -name "*audio_*policy*.conf" -o -name "*audio_*policy*.xml")
+  FILES=$(find $LOC -type f -name "*audio_*policy*.conf" -o -name "*audio_*policy*.xml" 2>/dev/null)
   if [ ! -z "$FILES" ] && [ ! "$(echo $FILES | grep '/aml/')" ]; then
     ui_print " "
     ui_print "   ! Conflicting audio mod found!"
@@ -112,12 +112,26 @@ if $PATCH; then
     FILE="$UNITY$(echo $OFILE | sed "s|^/vendor|/system/vendor|g")"
     cp_ch_nb $ORIGDIR$OFILE $FILE 0644 false
     case $FILE in
-      *.xml) sed -ri "/<mixPort name=\"(deep_buffer)|(raw)|(low_latency)\"/,/<\/mixPort> *$/ {/flags=\"[^\"]*/p; s|( *)(.*flags=\"[^\"]*.*)|\1<!--\2$MODID-->|; s|-->$MODID-->|$MODID-->|}" $FILE
-             sed -ri "/<mixPort name=\"(deep_buffer)|(low_latency)\"/,/<\/mixPort> *$/ {/<!--/! {s|flags=\"[^\"]*|flags=\"AUDIO_OUTPUT_FLAG_NONE|}}" $FILE
-             sed -i "/<mixPort name=\"raw\"/,/<\/mixPort> *$/ {/<!--/! {s|flags=\"[^\"]*|flags=\"AUDIO_OUTPUT_FLAG_FAST|}}" $FILE;;
-      *.conf) sed -ri "/^ *(deep_buffer)|(raw)|(low_latency) \{/,/}/ {/flags .*$/p; s|( *flags .*$)|#$MODID\1|}" $FILE
-              sed -ri "/^ *(deep_buffer)|(low_latency) \{/,/}/ {/^ *flags .*$/ s|flags .*|flags AUDIO_OUTPUT_FLAG_NONE|}" $FILE
-              sed -i "/^ *raw {/,/}/ {/^ *flags .*$/ s|flags .*|flags AUDIO_OUTPUT_FLAG_FAST|}" $FILE;;
+      *.xml) for MIX in "deep_buffer" "raw" "low_latency" "primary-out"; do
+               sed -ri "/<mixPort name=\"$MIX\"/,/<\/mixPort> *$/ {/flags=\"[^\"]*/p; s|( *)(.*flags=\"[^\"]*.*)|\1<!--\2$MODID-->|; s|-->$MODID-->|$MODID-->|}" $FILE
+               if [ "$MIX" == "deep_buffer" -o $MIX == "low_latency" ]; then
+                 sed -ri "/<mixPort name=\"$MIX\"/,/<\/mixPort> *$/ {/<!--/! {s|flags=\"[^\"]*|flags=\"AUDIO_OUTPUT_FLAG_NONE|}}" $FILE
+               elif [ "$MIX" == "raw" ]; then
+                 sed -i "/<mixPort name=\"$MIX\"/,/<\/mixPort> *$/ {/<!--/! {s|flags=\"[^\"]*|flags=\"AUDIO_OUTPUT_FLAG_FAST|}}" $FILE
+               else
+                 sed -i "/<mixPort name=\"$MIX\"/,/<\/mixPort> *$/ {/<!--/! {s/|AUDIO_OUTPUT_FLAG_DEEP_BUFFER//; s/AUDIO_OUTPUT_FLAG_DEEP_BUFFER|//}}" $FILE
+               fi
+             done;;
+      *.conf) for MIX in "deep_buffer" "raw" "low_latency" "primary"; do
+                sed -ri "/^ *$MIX \{/,/}/ {/flags .*$/p; s|( *flags .*$)|#$MODID\1|}" $FILE
+                if [ "$MIX" == "deep_buffer" -o $MIX == "low_latency" ]; then
+                  sed -i "/^ *$MIX {/,/}/ {/^ *flags .*$/ s|flags .*|flags AUDIO_OUTPUT_FLAG_NONE|}" $FILE
+                elif [ "$MIX" == "raw" ]; then
+                  sed -i "/^ *$MIX {/,/}/ {/^ *flags .*$/ s|flags .*|flags AUDIO_OUTPUT_FLAG_FAST|}" $FILE
+                else
+                  sed -i "/^ *$MIX {/,/}/ {/^ *flags .*$/ s/|AUDIO_OUTPUT_FLAG_DEEP_BUFFER//; s/AUDIO_OUTPUT_FLAG_DEEP_BUFFER|//}" $FILE
+                fi
+              done;;
     esac
   done
 else

@@ -5,6 +5,11 @@ This fixes music and streaming apps (Spotify, Pandora, etc) that aren't processi
 * Any Android device
 
 ## Change Log
+### v1.4.6 - 7.18.2018
+* Added patch support for samsungs with deep_buffer contained in primary-out/primary output
+* Fixed patching with busybox sed
+* Unity v1.5.5 update
+
 ### v1.4.5 - 6.17.2018
 * Updated for aml v1.7
 

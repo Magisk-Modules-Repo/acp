@@ -3,8 +3,12 @@ if ! $MAGISK || $SYSOVERRIDE; then
     for OFILE in ${POLS}; do
       FILE="$UNITY$(echo $OFILE | sed "s|^/vendor|/system/vendor|g")"
       case $FILE in
-        *.xml) sed -ri "/<mixPort name=\"(deep_buffer)|(raw)|(low_latency)\"/,/<\/mixPort>/ {/<!--/!{/flags=\"AUDIO_OUTPUT_FLAG_.*\"/d}; s|( *)<!--(.*flags=\".*\".*)$MODID-->|\1\2|}" $FILE;;
-        *.conf) sed -ri "/^ *(deep_buffer)|(raw)|(low_latency) \{/,/}/ {/^ *flags AUDIO_OUTPUT_FLAG_.*$/d; s|#$MODID||}" $FILE;;
+        *.xml) for MIX in "deep_buffer" "raw" "low_latency" "primary-out"; do
+                 sed -ri "/<mixPort name=\"$MIX\"/,/<\/mixPort>/ {/<!--/!{/flags=\"AUDIO_OUTPUT_FLAG_.*\"/d}; s|( *)<!--(.*flags=\".*\".*)$MODID-->|\1\2|}" $FILE
+               done;;
+        *.conf) for MIX in "deep_buffer" "raw" "low_latency" "primary"; do
+                  sed -i "/^ *$MIX {/,/}/ {/^ *flags AUDIO_OUTPUT_FLAG_.*$/d; s|#$MODID||}" $FILE
+                done;;
       esac
     done
   else
