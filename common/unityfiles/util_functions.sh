@@ -44,7 +44,7 @@ mount_partitions() {
   [ -z $SLOT ] || ui_print "- Current boot slot: $SLOT"
   ui_print "- Mounting /system, /vendor"
   REALSYS=/system
-  [ -f /system/build.prop ] || is_mounted /system || mount -o ro /system 2>/dev/null
+  [ -f /system/build.prop ] || is_mounted /system || mount -o rw /system 2>/dev/null
   if ! is_mounted /system && ! [ -f /system/build.prop ]; then
     SYSTEMBLOCK=`find_block system$SLOT`
     mount -t ext4 -o rw $SYSTEMBLOCK /system
