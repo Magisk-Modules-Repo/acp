@@ -29,9 +29,12 @@ ZIP=$3
 MAGISK=true
 DYNAMICOREO=false
 DYNAMICAPP=false
-case $ZIP in
+SYSOVERRIDE=false
+RAMDISK=false
+DEBUG=false
+case $(basename $ZIP) in
+  *debug*|*Debug*|*DEBUG*) DEBUG=true;;
   *sysover*|*Sysover*|*SYSOVER*) SYSOVERRIDE=true;;
-  *) SYSOVERRIDE=false;;
 esac
 
 # DEFAULT PERMISSIONS
@@ -102,67 +105,6 @@ print_modname
 ui_print "- Mounting /data, /cache"
 is_mounted /data || mount /data || is_mounted /cache || mount /cache || { ui_print "! Unable to mount partitions"; exit 1; }
 
-script_type() {
-  supersuimg_mount
-  SHEBANG="#!/system/bin/sh"; ROOTTYPE="other root or rootless"; MODPATH=/system/etc/init.d; SEINJECT=/sbin/sepolicy-inject
-  if [ "$supersuimg" ] || [ -d /su ]; then
-    SHEBANG="#!/su/bin/sush"; ROOTTYPE="systemless SuperSU"; MODPATH=/su/su.d; SEINJECT=supolicy
-  elif [ -e "$(find /data /cache -name supersu_is_here | head -n1)" ]; then
-    SHEBANG="#!/su/bin/sush"; ROOTTYPE="systemless SuperSU"
-    MODPATH=$(dirname `find /data /cache -name supersu_is_here | head -n1`)/su.d
-    SEINJECT=supolicy
-  elif [ -d /system/su ] || [ -f /system/xbin/daemonsu ] || [ -f /system/xbin/sugote ]; then
-    MODPATH=/system/su.d; SEINJECT=supolicy; ROOTTYPE="system SuperSU"
-  elif [ -f /system/xbin/su ]; then
-    if [ "$(grep "SuperSU" /system/xbin/su)" ]; then
-      MODPATH=/system/su.d; ROOTTYPE="system SuperSU"; SEINJECT=supolicy
-    else
-      ROOTTYPE="LineageOS SU"
-    fi
-  fi
-}
-
-set_vars() {
-  SYS=/system
-  if [ -d /system/priv-app ]; then OLDAPP=false; else OLDAPP=true; fi
-  if $BOOTMODE; then
-    MOD_VER="/sbin/.core/img/$MODID/module.prop"
-    OLD_AML_VER="/sbin/.core/img/audmodlib/module.prop"
-  else
-    MOD_VER="$MODPATH/module.prop"
-    OLD_AML_VER="$MOUNTPATH/audmodlib/module.prop"
-  fi
-  INFO="$MODPATH/$MODID-files"
-  PROP=$MODPATH/system.prop
-  if $MAGISK && ! $SYSOVERRIDE; then
-    VEN=/system/vendor
-    UNITY="$MODPATH"
-  else
-    UNITY=""
-    if [ -d /system/addon.d ]; then
-      INFO=/system/addon.d/$MODID-files
-    else
-      INFO=/system/etc/$MODID-files
-    fi
-    if $MAGISK && $SYSOVERRIDE; then
-      patch_script $INSTALLER/common/unityfiles/modidsysover.sh
-      sed -i -e "/# CUSTOM USER SCRIPT/ r $INSTALLER/common/uninstall.sh" -e '/# CUSTOM USER SCRIPT/d' $INSTALLER/common/unityfiles/modidsysover.sh
-      cp_ch_nb $INSTALLER/common/unityfiles/modidsysover.sh $MOUNTPATH/.core/post-fs-data.d/$MODID-sysover.sh 0755 false
-    else
-      # DETERMINE SYSTEM BOOT SCRIPT TYPE
-      script_type
-      PROP=$MODPATH/$MODID-props.sh
-      MOD_VER="/system/etc/$MODID-module.prop"
-      OLD_AML_VER="/system/etc/audmodlib-module.prop"
-    fi
-  fi
-  if $DYNAMICOREO && [ $API -ge 26 ]; then 
-    LIBPATCH="\/vendor"; LIBDIR=$VEN
-  else 
-    LIBPATCH="\/system"; LIBDIR=/system
-  fi
-}
-
 # INSTALL
 unity_install() {
   ui_print " "
@@ -171,10 +113,10 @@ unity_install() {
   # MAKE INFO FILE
   rm -f $INFO
   mktouch $INFO
-    
+
   # RUN USER INSTALL SCRIPT
-  . $INSTALLER/common/install.sh
-  
+  [ -f "$INSTALLER/common/install.sh" ] && . $INSTALLER/common/install.sh
+
   # INSTALL SCRIPTS
   if $MAGISK; then
     ui_print "   Installing scripts for MagiskSU..."
@@ -199,29 +141,29 @@ unity_install() {
       ui_print "   ! Addon.d not detected. Backup script not installed..."
     fi
   fi
-  
+
   # HANDLE REPLACE FOLDERS
   for TARGET in $REPLACE; do
     if $MAGISK; then mktouch $MODPATH$TARGET/.replace; else rm -rf $TARGET; fi
   done
-  
+
   # PROP FILES - add prop function for system installs
   $PROPFILE && { prop_process $INSTALLER/common/system.prop; $MAGISK || echo $PROP >> $INFO; }
-  
+
   # MODULE INFO
   cp_ch_nb $INSTALLER/module.prop $MOD_VER
-  
+
   #INSTALL POST-FS-DATA MODE SCRIPTS
   $POSTFSDATA && install_script $INSTALLER/common/post-fs-data.sh
-  
+
   # SERVICE MODE SCRIPTS
   $LATESTARTSERVICE && install_script $INSTALLER/common/service.sh -ls
-   
+
   # INSTALL FILES
   ui_print "   Installing files for $ARCH SDK $API device..."
-  rm -f $INSTALLER/system/placeholder
+  rm -f $INSTALLER/system/placeholder $INSTALLER/ramdisk/placeholder
   $IS64BIT || rm -rf $INSTALLER/system/lib64 $INSTALLER/system/vendor/lib64
-  for FILE in $(find $INSTALLER/system -type f | sed "s|$INSTALLER||"); do
+  for FILE in $(find $INSTALLER/system -type f 2>/dev/null | sed "s|$INSTALLER||" 2>/dev/null); do
     if $DYNAMICAPP; then
       if $OLDAPP; then FILE2=$(echo $FILE | sed 's|/system/app/.*/|/system/app/|'); else FILE2=$(echo $FILE | sed 's|/system/app/|/system/priv-app/|'); fi
     else
@@ -240,10 +182,21 @@ unity_install() {
   for FILE in $MODPATH/*.sh $MODPATH/*.prop; do
     [ -f $FILE ] && { [ "$(tail -1 $FILE)" ] && echo "" >> $FILE; }
   done
-  
+
   # REMOVE INFO FILE IF NOT NEEDED
   $MAGISK && [ ! -s $INFO ] && rm -f $INFO
   
+  # RAMDISK PATCHES
+  if $RAMDISK; then
+    [ "$RD" ] || unpack_ramdisk "late"
+    echo "#$MODID-UnityIndicator" >> $RD/init.rc
+    [ -f "$INSTALLER/common/ramdiskinstall.sh" ] && . $INSTALLER/common/ramdiskinstall.sh
+    for FILE in $(find $INSTALLER/ramdisk -type f 2>/dev/null | sed "s|$INSTALLER||" 2>/dev/null); do
+      cp_ch $INSTALLER$FILE $BOOTDIR$FILE
+    done
+    [ ! -s $INFORD ] && rm -f $INFORD
+  fi
+
   # SET PERMISSIONS
   ui_print " "
   ui_print "- Setting Permissions"
@@ -256,36 +209,21 @@ unity_uninstall() {
   ui_print "- Uninstalling"
   
   # REMOVE FILES
-  FILE=$INFO
-  $BOOTMODE && [ -f /sbin/.core/img/$MODID/$MODID-files ] && FILE=/sbin/.core/img/$MODID/$MODID-files
-  if [ -f $FILE ]; then
-    while read LINE; do
-      if [ "$(echo -n $LINE | tail -c 4)" == ".bak" ]; then
-        continue
-      elif [ -f "$LINE.bak" ]; then
-        mv -f $LINE.bak $LINE
-      else
-        rm -f $LINE
-        while true; do
-          LINE=$(dirname $LINE)
-          if [ "$(ls $LINE)" ]; then
-            break 1
-          else
-            rm -rf $LINE
-          fi
-        done
-      fi
-    done < $FILE
-    rm -f $FILE
-  else
-    $MAGISK || abort "   ! Mod not detected !"
-  fi
-  
+  uninstall_files $INFO
+
   $MAGISK && { rm -rf $MODPATH /sbin/.core/img/$MODID; rm -f $MOUNTPATH/.core/post-fs-data.d/$MODID-sysover.sh; }
-  
+
   # RUN USER INSTALL SCRIPT
-  . $INSTALLER/common/uninstall.sh
+  [ -f "$INSTALLER/common/uninstall.sh" ] && . $INSTALLER/common/uninstall.sh
   
+  # RAMDISK PATCHES
+  if $RAMDISK; then
+    [ -z $RD ] && unpack_ramdisk "late"
+    uninstall_files $INFORD
+    sed -i "/#$MODID-UnityIndicator/d" $RD/init.rc
+    [ -f "$INSTALLER/common/ramdiskuninstall.sh" ] && . $INSTALLER/common/ramdiskuninstall.sh
+  fi
+
   ui_print " "
   ui_print "- Completing uninstall -"
 }
@@ -331,6 +269,9 @@ fi
 [ -z $MINAPI ] || { [ $API -lt $MINAPI ] && require_new_api 'minimum'; }
 [ -z $MAXAPI ] || { [ $API -gt $MAXAPI ] && require_new_api 'maximum'; }
 
+# UNPACK RAMDISK
+$RAMDISK && unpack_ramdisk
+
 # SET MODID and MODPATH variables
 [ -z $MODID ] && MODID=`grep_prop id $INSTALLER/module.prop`
 MODPATH=$MOUNTPATH/$MODID
@@ -354,15 +295,39 @@ done
 # REMOVE OLD AML & MODS
 [ -f "$OLD_AML_VER" ] && remove_old_aml
 
+#DEBUG
+if $DEBUG; then
+  if $BOOTMODE; then
+    ui_print " "
+    ui_print "- Debug mode"
+    ui_print "  Debug info will be written to magisk log"
+    ui_print "  Save log in magisk manager after flashing!"
+    sleep 3
+  else
+    ui_print " "
+    ui_print "- Debug mode"
+    ui_print "  Debug log will be written to: /sdcard/$MODID-debug.log"
+    exec 3>&1 1>&2 2>&3 2>/data/media/0/$MODID-debug.log
+  fi
+  set -x
+fi
+
 # LOAD USER VARS/FUNCTIONS
 unity_custom
 
 # DETERMINE MOD INSTALLATION STATUS
-if $MAGISK && ! $SYSOVERRIDE && [ -f "/system/addon.d/$MODID-files" -o -f "/system/etc/$MODID-files" ]; then
+if $MAGISK && $RAMDISK && [ "$(grep "#$MODID-UnityIndicator" $RD/init.rc)" ] && [ ! -f "$MOD_VER" ]; then
   ui_print " "
-  ui_print "   ! Previous system override install detected!"
-  ui_print "   ! Removing...!"
-  $BOOTMODE && { ui_print "   ! Magisk manager isn't supported!"; abort "   ! Install in TWRP !"; }
+  ui_print "  ! Mod was removed in magisk manager but"
+  ui_print "     ramdisk changes are still present!"
+  ui_print "  ! Ramdisk modifications will be uninstalled!"
+  rm -f $INSTALLER/common/uninstall.sh
+  unity_uninstall
+elif $MAGISK && ! $SYSOVERRIDE && [ -f "/system/addon.d/$MODID-files" -o -f "/system/etc/$MODID-files" ]; then
+  ui_print " "
+  ui_print "  ! Previous system override install detected!"
+  ui_print "  ! Removing...!"
+  $BOOTMODE && { ui_print "  ! Magisk manager isn't supported!"; abort "   ! Install in TWRP !"; }
   mount -o rw,remount /system
   [ -L /system/vendor ] && mount -o rw,remount /vendor
   sysover_partitions
@@ -375,11 +340,11 @@ if $MAGISK && ! $SYSOVERRIDE && [ -f "/system/addon.d/$MODID-files" -o -f "/syst
 elif [ -f "$MOD_VER" ]; then
   if [ $(grep_prop versionCode $MOD_VER) -ge $(grep_prop versionCode $INSTALLER/module.prop) ]; then
     ui_print " "
-    ui_print "   ! Current or newer version detected!"
+    ui_print "  ! Current or newer version detected!"
     unity_uninstall
   else
     ui_print " "
-    ui_print "   ! Older version detected! Upgrading..."
+    ui_print "  ! Older version detected! Upgrading..."
     unity_uninstall
     unity_install
   fi
