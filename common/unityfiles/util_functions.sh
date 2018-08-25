@@ -310,6 +310,7 @@ device_check() {
 
 check_bak() {
   case $1 in
+    $INSTALLER/system/*) BAK=false; BAKFILE=$INFO;;
     /system/*|/vendor/*) BAK=true; BAKFILE=$INFO;;
     $MOUNTPATH/*|/sbin/.core/img/*) if ! $MAGISK || $SYSOVERRIDE; then 
                                       BAK=true
