@@ -115,16 +115,16 @@ flash_boot_image_unity() {
     *) BLOCK=false;;
   esac
   if $BOOTSIGNED; then
-    ui_print "   Signing boot image..."
-    eval $COMMAND | $BOOTSIGNER /boot $1 $AVB/verity.pk8 $AVB/verity.x509.pem boot-new-signed.img
-    ui_print "   Flashing new boot image..."
+    ui_print "- Signing boot image"
+    eval $COMMAND | $BOOTSIGNER /boot $1 $INSTALLER/common/unityfiles/avb/verity.pk8 $INSTALLER/common/unityfiles/avb/verity.x509.pem boot-new-signed.img
+    ui_print "- Flashing new boot image"
     $BLOCK && dd if=/dev/zero of="$2" 2>/dev/null
     dd if=boot-new-signed.img of="$2"
   elif $BLOCK; then
-    ui_print "   Flashing new boot image..."
+    ui_print "- Flashing new boot image"
     eval $COMMAND | cat - /dev/zero 2>/dev/null | dd of="$2" bs=4096 2>/dev/null
   else
-    ui_print "   Storing new boot image..."
+    ui_print "- Storing new boot image"
     eval $COMMAND | dd of="$2" bs=4096 2>/dev/null
   fi
 }
@@ -160,28 +160,50 @@ api_level_arch_detect() {
   if [ "$ABILONG" = "x86_64" ]; then ARCH=x64; ARCH32=x86; IS64BIT=true; fi;
 }
 
+setup_bb() {
+  if [ -x /sbin/.core/busybox/busybox ]; then
+    # Make sure this path is in the front
+    echo $PATH | grep -q '^/sbin/.core/busybox' || export PATH=/sbin/.core/busybox:$PATH
+  else
+    # Use in-house busybox
+    local BBDIR=$INSTALLER/common/unityfiles/$ARCH32
+    chmod 755 $BBDIR/busybox
+    $BBDIR/busybox --install -s .
+    echo $PATH | grep -q "^$BBDIR" || export PATH=$BBDIR:$PATH
+  fi
+}
+
+recovery_actions() {
+  # TWRP bug fix
+  mount -o bind /dev/urandom /dev/random
+  # Preserve environment varibles
+  OLD_PATH=$PATH
+  setup_bb
+  # Temporarily block out all custom recovery binaries/libs
+  mv /sbin /sbin_tmp
+  # Unset library paths
+  OLD_LD_LIB=$LD_LIBRARY_PATH
+  OLD_LD_PRE=$LD_PRELOAD
+  unset LD_LIBRARY_PATH
+  unset LD_PRELOAD
+}
+
 recovery_cleanup() {
   mv /sbin_tmp /sbin 2>/dev/null
   [ -z $OLD_PATH ] || export PATH=$OLD_PATH
   [ -z $OLD_LD_LIB ] || export LD_LIBRARY_PATH=$OLD_LD_LIB
   [ -z $OLD_LD_PRE ] || export LD_PRELOAD=$OLD_LD_PRE
   ui_print "- Unmounting partitions"
+  [ "$supersuimg" -o -d /su ] && umount /su 2>/dev/null
   umount -l /system_root 2>/dev/null
   umount -l /system 2>/dev/null
   umount -l /vendor 2>/dev/null
   umount -l /dev/random 2>/dev/null
 }
 
-unmount_partitions() {
-  [ "$supersuimg" -o -d /su ] && umount /su 2>/dev/null
-  umount -l /system_root 2>/dev/null
-  umount -l /system 2>/dev/null
-  umount -l /vendor 2>/dev/null
-}
-
 abort() {
   ui_print "$1"
-  unmount_partitions
+  $BOOTMODE || recovery_cleanup
   exit 1
 }
 
@@ -244,7 +266,7 @@ require_new_magisk() {
   ui_print "*******************************"
   ui_print " Please install Magisk $(echo $MINMAGISK | sed -r "s/(.{2})(.{1}).*/v\1.\2+\!/") "
   ui_print "*******************************"
-  exit 1
+  abort
 }
 
 require_new_api() {
@@ -260,19 +282,19 @@ require_new_api() {
     ui_print "!    of android with at most API $MAXAPI"
   fi
   ui_print "***********************************"
-  exit 1
+  abort
 }
 
 cleanup() {
   if $RAMDISK; then
-    ui_print "   Repacking ramdisk..."
+    ui_print "- Repacking ramdisk"
     cd $RD
     find . | cpio -H newc -o > ../ramdisk.cpio
     cd ..
-    ui_print "   Repacking boot image..."
-    ./magiskboot --repack "$BOOTIMAGE" || abort "! Unable to repack boot image!"
+    ui_print "- Repacking boot image"
+    magiskboot --repack "$BOOTIMAGE" || abort "! Unable to repack boot image!"
     $CHROMEOS && sign_chromeos
-    ./magiskboot --cleanup
+    magiskboot --cleanup
     flash_boot_image_unity new-boot.img "$BOOTIMAGE"
     rm -f new-boot.img
     cd /
@@ -288,8 +310,7 @@ cleanup() {
     ui_print "    *      Powered by Magisk (@topjohnwu)     *"
     ui_print "    *******************************************"
   else
-    ui_print "   Unmounting partitions..."
-    unmount_partitions
+    recovery_cleanup
     rm -rf $TMPDIR
   fi
   ui_print " "
@@ -308,36 +329,37 @@ device_check() {
   fi
 }
 
-check_bak() {
-  case $1 in
-    $INSTALLER/system/*) BAK=false; BAKFILE=$INFO;;
-    /system/*|/vendor/*) BAK=true; BAKFILE=$INFO;;
-    $MOUNTPATH/*|/sbin/.core/img/*) if ! $MAGISK || $SYSOVERRIDE; then 
-                                      BAK=true
-                                    else
-                                      BAK=false
-                                    fi
-                                    BAKFILE=$INFO;;
-    $RD*) BAK=true; BAKFILE=$INFORD;;
-    *) BAK=true; BAKFILE=$INFO;;
+cp_ch() {
+  #UBAK: false for no backup file creation. REST: false for no file restore on uninstall
+  local BAK BAKFILE EXT PERM UBAK=true REST=true
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      -nnp|-pnn) shift; PERM=$1; UBAK=false; REST=false; shift;;
+      -np|-pn) shift; PERM=$1; UBAK=false; shift;;
+      -nn) shift; UBAK=false; REST=false;;
+      -n) shift; UBAK=false;;
+      -p) shift; PERM=$1; shift;;
+      *) break;;
+    esac
+  done
+  case $2 in
+    $INSTALLER/*|$MOUNTPATH/*|/sbin/.core/img/*) BAK=false; BAKFILE=$INFO; EXT=".bak";;
+    /system/*|/vendor/*) BAK=true; BAKFILE=$INFO; EXT=".bak";;
+    $RD/*) BAK=true; BAKFILE=$INFORD; EXT="~";;
+    *) BAK=true; BAKFILE=$INFO; EXT=".bak";;
   esac
-  [ -z $2 ] || BAK=$2
-}
-
-cp_ch_nb() {
-  if [ -z $4 ]; then check_bak $2; else check_bak $2 $4; fi
-  if $BAK && [ ! "$(grep "$2$" $BAKFILE 2>/dev/null)" ]; then 
-    echo "$2" >> $BAKFILE
-  elif [ ! "$(grep "$2$" $BAKFILE 2>/dev/null)" ]; then 
-    echo "$2NOBAK" >> $BAKFILE
-  fi
+  [ -z $PERM ] && PERM=0644
+  if $BAK && $UBAK && $REST; then
+    [ ! "$(grep "$2$" $BAKFILE 2>/dev/null)" ] && echo "$2" >> $BAKFILE
+    [ -f "$2" ] && [ ! -f "$2$EXT" ] && { cp -af $2 $2$EXT; echo "$2$EXT" >> $BAKFILE; }
+  elif $BAK && ! $UBAK && $REST; then
+    [ ! "$(grep "$2$" $BAKFILE 2>/dev/null)" ] && echo "$2" >> $BAKFILE
+  elif $BAK && ! $UBAK && ! $REST; then
+    [ ! "$(grep "$2NORESTORE$" $BAKFILE 2>/dev/null)" ] && echo "$2NORESTORE" >> $BAKFILE
+  fi  
   mkdir -p "$(dirname $2)"
-  cp -af "$1" "$2"
-  if [ -z $3 ]; then
-    chmod 0644 "$2"
-  else
-    chmod $3 "$2"
-  fi
+  cp -af "$1" "$2" 2>/dev/null
+  chmod $PERM "$2"
   case $2 in
     */vendor/etc/*) chcon u:object_r:vendor_configs_file:s0 $2;;
     */vendor/*.apk) chcon u:object_r:vendor_app_file:s0 $2;;
@@ -346,54 +368,35 @@ cp_ch_nb() {
   esac
 }
 
-cp_ch() {
-  check_bak $2
-  local EXT 
-  case $2 in
-    $RD*) EXT="~";;
-    *) EXT=".bak";;
-  esac
-  if [ -f "$2" ] && [ ! -f "$2$EXT" ] && $BAK; then
-    cp -af $2 $2$EXT
-    echo "$2$EXT" >> $BAKFILE
-  fi
-  if [ -z $3 ]; then cp_ch_nb $1 $2 0644 $BAK; else cp_ch_nb $1 $2 $3 $BAK; fi
-}
-
 patch_script() {
-  sed -i "s|<MAGISK>|$MAGISK|" $1
-  sed -i "s|<LIBDIR>|$LIBDIR|" $1
-  sed -i "s|<SYSOVERRIDE>|$SYSOVERRIDE|" $1
-  sed -i "s|<MODID>|$MODID|" $1
+  sed -i -e "s|<MAGISK>|$MAGISK|" -e "s|<LIBDIR>|$LIBDIR|" -e "s|<SYSOVERRIDE>|$SYSOVERRIDE|" -e "s|<MODID>|$MODID|" -e "s|<INFO>|$(echo $INFO | sed "s|$MOUNTPATH|/sbin/.core/img|")|" $1
   if $MAGISK; then
     if $SYSOVERRIDE; then
-      sed -i "s|<INFO>|$INFO|" $1
       sed -i "s|<VEN>|$REALVEN|" $1
     else
       sed -i "s|<VEN>|$VEN|" $1
     fi
-    sed -i "s|<ROOT>|\"\"|" $1
-    sed -i "s|<SYS>|/system|" $1
-    sed -i "s|<SHEBANG>|#!/system/bin/sh|" $1
-    sed -i "s|<SEINJECT>|magiskpolicy|" $1
-    sed -i "s|\$MOUNTPATH|/sbin/.core/img|g" $1
+    sed -i -e "s|<ROOT>|\"\"|" -e "s|<SYS>|/system|" -e "s|<SHEBANG>|#!/system/bin/sh|" -e "s|<SEINJECT>|magiskpolicy|" -e "s|\$MOUNTPATH|/sbin/.core/img|g" -e "s|\$UNITY|/sbin/.core/img|g" $1
   else
-    if [ ! -z $ROOT ]; then sed -i "s|<ROOT>|$ROOT|" $1; else sed -i "s|<ROOT>|\"\"|" $1; fi
-    sed -i "s|<SYS>|$REALSYS|" $1
-    sed -i "s|<VEN>|$REALVEN|" $1
-    sed -i "s|<SHEBANG>|$SHEBANG|" $1
-    sed -i "s|<SEINJECT>|$SEINJECT|" $1
-    sed -i "s|\$MOUNTPATH||g" $1
+    sed -i -e "s|<ROOT>|\"$ROOT\"|" -e "s|<SYS>|$REALSYS|" -e "s|<VEN>|$REALVEN|" -e "s|<SHEBANG>|$SHEBANG|" -e "s|<SEINJECT>|$SEINJECT|" -e "s|\$MOUNTPATH||g" -e "s|\$UNITY||g" $1
   fi
 }
 
 install_script() {
+  case "$1" in
+    -l) shift; local INPATH="$MOUNTPATH/.core/service.d" EXT="-ls";;
+    -p) shift; local INPATH="$MOUNTPATH/.core/post-fs-data.d" EXT="";;
+    *) local INPATH="$MOUNTPATH/.core/post-fs-data.d" EXT="";;
+  esac
   if $MAGISK; then
-    cp_ch_nb $1 $MODPATH/$(basename $1)
-    patch_script $MODPATH/$(basename $1)
+    case $(basename $1) in
+      post-fs-data.sh|service.sh) local INPATH=$MODPATH; cp_ch -n $1 $INPATH/$(basename $1);;
+      *) cp_ch -np 0755 $1 $INPATH/$(basename $1);;
+    esac
+    patch_script $INPATH/$(basename $1)
   else
-    cp_ch_nb $1 $MODPATH/$MODID-$(basename $1 | sed 's/.sh$//')$2 0700
-    patch_script $MODPATH/$MODID-$(basename $1 | sed 's/.sh$//')$2
+    cp_ch -np 0700 $1 $MODPATH/$MODID-$(basename $1 | sed 's/.sh$//')$EXT
+    patch_script $MODPATH/$MODID-$(basename $1 | sed 's/.sh$//')$EXT
   fi
 }
 
@@ -433,6 +436,7 @@ script_type() {
 
 set_vars() {
   SYS=/system
+  ROOTTYPE="MagiskSU"
   if [ -d /system/priv-app ]; then OLDAPP=false; else OLDAPP=true; fi
   if $BOOTMODE; then
     MOD_VER="/sbin/.core/img/$MODID/module.prop"
@@ -453,11 +457,7 @@ set_vars() {
     else
       INFO=/system/etc/$MODID-files
     fi
-    if $MAGISK && $SYSOVERRIDE; then
-      patch_script $INSTALLER/common/unityfiles/modidsysover.sh
-      sed -i -e "/# CUSTOM USER SCRIPT/ r $INSTALLER/common/uninstall.sh" -e '/# CUSTOM USER SCRIPT/d' $INSTALLER/common/unityfiles/modidsysover.sh
-      cp_ch_nb $INSTALLER/common/unityfiles/modidsysover.sh $MOUNTPATH/.core/post-fs-data.d/$MODID-sysover.sh 0755 false
-    else
+    if ! $MAGISK; then
       # DETERMINE SYSTEM BOOT SCRIPT TYPE
       script_type
       PROP=$MODPATH/$MODID-props.sh
@@ -470,10 +470,11 @@ set_vars() {
   else
     LIBPATCH="\/system"; LIBDIR=/system
   fi
+  RD=$INSTALLER/common/unityfiles/boot/ramdisk
 }
 
 uninstall_files() {
-  local FILE="$1"
+  local TMP FILE="$1"
   if [ "$1" == "$INFO" ]; then
     $BOOTMODE && [ -f /sbin/.core/img/$MODID/$MODID-files ] && FILE=/sbin/.core/img/$MODID/$MODID-files
     TMP=".bak"
@@ -486,8 +487,7 @@ uninstall_files() {
   fi
   if [ -f $FILE ]; then
     while read LINE; do
-      LINE=$(echo $LINE | sed -r "s/(.*)NOBAK$/\1/")
-      if [ "$(echo -n $LINE | tail -c 4)" == ".bak" ] || [ "$(echo -n $LINE | tail -c 1)" == "~" ]; then
+      if [ "$(echo -n $LINE | tail -c 4)" == ".bak" ] || [ "$(echo -n $LINE | tail -c 1)" == "~" ] || [ "$(echo -n $LINE | tail -c 9)" == "NORESTORE" ]; then
         continue
       elif [ -f "$LINE$TMP" ]; then
         mv -f $LINE$TMP $LINE
@@ -508,22 +508,20 @@ uninstall_files() {
 }
 
 unpack_ramdisk() {
-  local PRE POST
+  local PRE POST PATHDIR BOOTDIR=$INSTALLER/common/unityfiles/boot
   if [ "$1" == "late" ]; then
     PRE="  "; POST="..."
   else
     PRE="-"; POST=""
   fi
-  BOOTDIR=$INSTALLER/common/unityfiles/boot
-  AVB=$INSTALLER/common/unityfiles/avb
-  RD=$BOOTDIR/ramdisk
+  chmod -R 755 $INSTALLER/common/unityfiles/$ARCH32
+  echo $PATH | grep -q "^$INSTALLER/common/unityfiles/$ARCH32" || export PATH=$INSTALLER/common/unityfiles/$ARCH32:$PATH
+  cp -af $INSTALLER/common/unityfiles/chromeos $BOOTDIR
+  chmod -R 0755 $BOOTDIR
   INFORD="$RD/$MODID-files"
-  BOOTSIGNER="/system/bin/dalvikvm -Xbootclasspath:/system/framework/core-oj.jar:/system/framework/core-libart.jar:/system/framework/conscrypt.jar:/system/framework/bouncycastle.jar -Xnodex2oat -Xnoimage-dex2oat -cp $AVB/BootSignature_Android.jar com.android.verity.BootSignature"
+  BOOTSIGNER="/system/bin/dalvikvm -Xbootclasspath:/system/framework/core-oj.jar:/system/framework/core-libart.jar:/system/framework/conscrypt.jar:/system/framework/bouncycastle.jar -Xnodex2oat -Xnoimage-dex2oat -cp $INSTALLER/common/unityfiles/avb/BootSignature_Android.jar com.android.verity.BootSignature"
   RAMDISK=true; BOOTSIGNED=false; HIGHCOMP=false; CHROMEOS=false
   mkdir -p $RD
-  cp -af $INSTALLER/common/unityfiles/$ARCH32/. $CHROMEDIR $BOOTDIR
-  chmod -R 755 $BOOTDIR
-  cp -af $BOOTDIR/magiskboot $RD/magiskboot
   find_boot_image
   ui_print " "
   [ -z $BOOTIMAGE ] && abort "   ! Unable to detect target image"
@@ -533,9 +531,9 @@ unpack_ramdisk() {
   eval $BOOTSIGNER -verify boot.img 2>&1 | grep "VALID" && BOOTSIGNED=true
   $BOOTSIGNED && ui_print "   Boot image is signed with AVB 1.0"
   rm -f boot.img
-  ./magiskinit -x magisk magisk
+  magiskinit -x magisk magisk
   ui_print "$PRE Unpacking boot image$POST"
-  ./magiskboot --unpack "$BOOTIMAGE"
+  magiskboot --unpack "$BOOTIMAGE"
   case $? in
     1 ) abort "  ! Unable to unpack boot image";;
     2 ) HIGHCOMP=true;;
@@ -544,15 +542,14 @@ unpack_ramdisk() {
     5 ) ui_print "   ! Sony ELF64 format detected" abort "   ! Stock kernel cannot be patched, please use a custom kernel";;
   esac
   ui_print "$PRE Checking ramdisk status$POST"
-  ./magiskboot --cpio ramdisk.cpio test
+  magiskboot --cpio ramdisk.cpio test
   if [ $? -eq 2 ]; then
     HIGHCOMP=true
     ui_print "   ! Insufficient boot partition size detected"
     ui_print "   Enabling high compression mode"
   fi
   cd ramdisk
-  ./magiskboot --cpio ../ramdisk.cpio "extract"
-  rm -f magiskboot ../ramdisk.cpio
+  magiskboot --cpio ../ramdisk.cpio "extract"
   cd /
   [ "$POST" ] && ui_print " "
 }

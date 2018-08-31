@@ -23,7 +23,7 @@ case "$1" in
   ;;
   pre-backup)
     cp -f /tmp/addon.d/$MODID-files /tmp/addon.d/$MODID-files2
-    sed -i "/*NOBAK$/d" /tmp/addon.d/$MODID-files2
+    sed -i "s/NORESTORE//g" /tmp/addon.d/$MODID-files2
   ;;
   post-backup)
     # Stub

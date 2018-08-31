@@ -52,11 +52,11 @@ if [ "$?" -eq "0" ]; then
   for FD in `ls /proc/$$/fd`; do
     readlink /proc/$$/fd/$FD 2>/dev/null | grep pipe >/dev/null
     if [ "$?" -eq "0" ]; then
-    ps | grep " 3 $FD " | grep -v grep >/dev/null
-    if [ "$?" -eq "0" ]; then
-      OUTFD=$FD
-      break
-    fi
+      ps | grep " 3 $FD " | grep -v grep >/dev/null
+      if [ "$?" -eq "0" ]; then
+        OUTFD=$FD
+        break
+      fi
     fi
   done
 fi
@@ -73,7 +73,8 @@ ui_print() {
 # UNZIP FILES
 ui_print " "
 ui_print "Unzipping files..."
-unzip -o "$ZIP" -d $INSTALLER 2>/dev/null
+unzip -oq "$ZIP" -d $INSTALLER 2>/dev/null
+tar -xf $INSTALLER/common/unityfiles/tools.tar.xz -C $INSTALLER/common/unityfiles 2>/dev/null
 
 [ ! -f $INSTALLER/config.sh ] && { ui_print "! Unable to extract zip file !"; exit 1; }
 
@@ -83,6 +84,7 @@ unzip -o "$ZIP" -d $INSTALLER 2>/dev/null
 [ "$(grep_prop id $INSTALLER/module.prop)" == "UnityTemplate" ] && { ui_print "! Unity Template is not a separate module !"; abort "! This template is for devs only !"; }
 
 # INSERT MODULE INFO INTO CONFIG.SH
+(
 for TMP in version name author; do
   NEW=$(grep_prop $TMP $INSTALLER/module.prop)
   [ "$TMP" == "author" ] && NEW="by ${NEW}"
@@ -95,6 +97,7 @@ for TMP in version name author; do
   fi
   if [ $(((41-$CHARS) % 2)) == 1 ]; then sed -i "s/<$TMP>/$SPACES$NEW${SPACES} /" $INSTALLER/config.sh; else sed -i "s/<$TMP>/$SPACES$NEW$SPACES/" $INSTALLER/config.sh; fi
 done
+)
 
 . $INSTALLER/config.sh
 
@@ -118,25 +121,31 @@ unity_install() {
   [ -f "$INSTALLER/common/install.sh" ] && . $INSTALLER/common/install.sh
 
   # INSTALL SCRIPTS
+  ui_print "   Installing scripts for $ROOTTYPE..."
   if $MAGISK; then
-    ui_print "   Installing scripts for MagiskSU..."
     # AUTO MOUNT
     $AUTOMOUNT && ! $SYSOVERRIDE && mktouch $MODPATH/auto_mount
     # UPDATE INFO FOR MAGISK MANAGER
     if $BOOTMODE; then
       mktouch /sbin/.core/img/$MODID/update
-      cp_ch_nb $INSTALLER/module.prop $MODPATH/module.prop
+      cp_ch -n $INSTALLER/module.prop $MODPATH/module.prop
     fi
-  else
-    ui_print "   Installing scripts for $ROOTTYPE..."
-    [ "$ROOTTYPE" == "LineageOS SU" -o "$ROOTTYPE" == "other root or rootless" ] && { ui_print " "; ui_print "   ! This root method has no boot script support !"; ui_print "   ! You will need to add init.d support !"; ui_print " "; }
+  elif [ "$ROOTTYPE" == "LineageOS SU" ] || [ "$ROOTTYPE" == "other root or rootless" ]; then
+    ui_print " "
+    ui_print "   ! This root method has no boot script support !"
+    ui_print "   ! You will need to add init.d support !"
+    ui_print " "
   fi
-  if ! $MAGISK || $SYSOVERRIDE; then
+  if $MAGISK && $SYSOVERRIDE; then
+    cp -f $INSTALLER/common/unityfiles/modidsysover.sh $INSTALLER/common/unityfiles/$MODID-sysover.sh
+    sed -i -e "/# CUSTOM USER SCRIPT/ r $INSTALLER/common/uninstall.sh" -e '/# CUSTOM USER SCRIPT/d' $INSTALLER/common/unityfiles/$MODID-sysover.sh
+    install_script -p $INSTALLER/common/unityfiles/$MODID-sysover.sh
+  elif ! $MAGISK || $SYSOVERRIDE; then
     # INSTALL ROM BACKUP SCRIPT
     if [ -d /system/addon.d ]; then
       ui_print "   Installing addon.d backup script..."
       sed -i "s/<MODID>/$MODID/" $INSTALLER/common/unityfiles/addon.sh
-      cp_ch_nb $INSTALLER/common/unityfiles/addon.sh /system/addon.d/$MODID.sh 0755
+      cp_ch -n $INSTALLER/common/unityfiles/addon.sh /system/addon.d/$MODID.sh 0755
     else
       ui_print "   ! Addon.d not detected. Backup script not installed..."
     fi
@@ -151,13 +160,13 @@ unity_install() {
   $PROPFILE && { prop_process $INSTALLER/common/system.prop; $MAGISK || echo $PROP >> $INFO; }
 
   # MODULE INFO
-  cp_ch_nb $INSTALLER/module.prop $MOD_VER
+  cp_ch -n $INSTALLER/module.prop $MOD_VER
 
   #INSTALL POST-FS-DATA MODE SCRIPTS
-  $POSTFSDATA && install_script $INSTALLER/common/post-fs-data.sh
+  $POSTFSDATA && install_script -p $INSTALLER/common/post-fs-data.sh
 
   # SERVICE MODE SCRIPTS
-  $LATESTARTSERVICE && install_script $INSTALLER/common/service.sh -ls
+  $LATESTARTSERVICE && install_script -l $INSTALLER/common/service.sh
 
   # INSTALL FILES
   ui_print "   Installing files for $ARCH SDK $API device..."
@@ -184,11 +193,24 @@ unity_install() {
   done
 
   # REMOVE INFO FILE IF NOT NEEDED
-  $MAGISK && [ ! -s $INFO ] && rm -f $INFO
+  [ ! -s $INFO ] && rm -f $INFO
   
   # RAMDISK PATCHES
   if $RAMDISK; then
-    [ "$RD" ] || unpack_ramdisk "late"
+    [ -d "$RD" ] || unpack_ramdisk "late"
+    # REMOVE RAMDISK MOD IF EXISTS
+    if [ "$(grep "#$MODID-UnityIndicator" $RD/init.rc 2>/dev/null)" ]; then
+      ui_print "   ! Mod detected in ramdisk!"
+      ui_print "   ! Upgrading mod ramdisk modifications..."
+      uninstall_files $INFORD
+      sed -i "/#$MODID-UnityIndicator/d" $RD/init.rc
+      [ -f "$INSTALLER/common/ramdiskuninstall.sh" ] && . $INSTALLER/common/ramdiskuninstall.sh
+    fi
+    # SCRIPT TO REMOVE MOD FROM SYSTEM/MAGISK IN EVENT MOD IS ONLY REMOVED FROM RAMDISK (LIKE DIRTY FLASHING)
+    cp -f $INSTALLER/common/unityfiles/modidramdisk.sh $INSTALLER/common/unityfiles/$MODID-ramdisk.sh
+    sed -i -e "/# CUSTOM USER SCRIPT/ r $INSTALLER/common/uninstall.sh" -e '/# CUSTOM USER SCRIPT/d' $INSTALLER/common/unityfiles/$MODID-ramdisk.sh
+    install_script -p $INSTALLER/common/unityfiles/$MODID-ramdisk.sh
+    # USE COMMENT AS INSTALL INDICATOR
     echo "#$MODID-UnityIndicator" >> $RD/init.rc
     [ -f "$INSTALLER/common/ramdiskinstall.sh" ] && . $INSTALLER/common/ramdiskinstall.sh
     for FILE in $(find $INSTALLER/ramdisk -type f 2>/dev/null | sed "s|$INSTALLER||" 2>/dev/null); do
@@ -218,7 +240,7 @@ unity_uninstall() {
   
   # RAMDISK PATCHES
   if $RAMDISK; then
-    [ -z $RD ] && unpack_ramdisk "late"
+    [ -d "$RD" ] || unpack_ramdisk "late"
     uninstall_files $INFORD
     sed -i "/#$MODID-UnityIndicator/d" $RD/init.rc
     [ -f "$INSTALLER/common/ramdiskuninstall.sh" ] && . $INSTALLER/common/ramdiskuninstall.sh
@@ -258,19 +280,19 @@ api_level_arch_detect
 
 if $MAGISK; then
   # SETUP BUSYBOX AND BINARIES
-  $BOOTMODE && boot_actions || recovery_actions
+  $BOOTMODE && boot_actions || { recovery_actions; [ -z $OLD_PATH ] && { OLD_PATH=$PATH; setup_bb; }; }
   # GET THE VARIABLE REQSIZEM
   request_zip_size_check "$ZIP"
   # THIS FUNCTION WILL MOUNT $IMG TO $MOUNTPATH, AND RESIZE THE IMAGE BASED ON $REQSIZEM
   mount_magisk_img
+else
+  # SETUP BUSYBOX AND BINARIES
+  recovery_actions
 fi
 
 # CHECK FOR MIN & MAX API VERSION
 [ -z $MINAPI ] || { [ $API -lt $MINAPI ] && require_new_api 'minimum'; }
 [ -z $MAXAPI ] || { [ $API -gt $MAXAPI ] && require_new_api 'maximum'; }
-
-# UNPACK RAMDISK
-$RAMDISK && unpack_ramdisk
 
 # SET MODID and MODPATH variables
 [ -z $MODID ] && MODID=`grep_prop id $INSTALLER/module.prop`
@@ -295,20 +317,15 @@ done
 # REMOVE OLD AML & MODS
 [ -f "$OLD_AML_VER" ] && remove_old_aml
 
+# UNPACK RAMDISK
+$RAMDISK && unpack_ramdisk
+
 #DEBUG
 if $DEBUG; then
-  if $BOOTMODE; then
-    ui_print " "
-    ui_print "- Debug mode"
-    ui_print "  Debug info will be written to magisk log"
-    ui_print "  Save log in magisk manager after flashing!"
-    sleep 3
-  else
-    ui_print " "
-    ui_print "- Debug mode"
-    ui_print "  Debug log will be written to: /sdcard/$MODID-debug.log"
-    exec 3>&1 1>&2 2>&3 2>/data/media/0/$MODID-debug.log
-  fi
+  ui_print " "
+  ui_print "- Debug mode"
+  ui_print "  Debug log will be written to: /sdcard/$MODID-debug.log"
+  if $BOOTMODE; then exec 2>/storage/emulated/0/$MODID-debug.log; else exec 2>/data/media/0/$MODID-debug.log; fi
   set -x
 fi
 
@@ -316,10 +333,9 @@ fi
 unity_custom
 
 # DETERMINE MOD INSTALLATION STATUS
-if $MAGISK && $RAMDISK && [ "$(grep "#$MODID-UnityIndicator" $RD/init.rc)" ] && [ ! -f "$MOD_VER" ]; then
+if $RAMDISK && [ "$(grep "#$MODID-UnityIndicator" $RD/init.rc 2>/dev/null)" ] && [ ! -f "$MOD_VER" ]; then
   ui_print " "
-  ui_print "  ! Mod was removed in magisk manager but"
-  ui_print "     ramdisk changes are still present!"
+  ui_print "  ! Mod present in ramdisk but not in system!"
   ui_print "  ! Ramdisk modifications will be uninstalled!"
   rm -f $INSTALLER/common/uninstall.sh
   unity_uninstall
@@ -338,7 +354,13 @@ elif $MAGISK && ! $SYSOVERRIDE && [ -f "/system/addon.d/$MODID-files" -o -f "/sy
   set_vars
   unity_install
 elif [ -f "$MOD_VER" ]; then
-  if [ $(grep_prop versionCode $MOD_VER) -ge $(grep_prop versionCode $INSTALLER/module.prop) ]; then
+  if $RAMDISK && [ ! "$(grep "#$MODID-UnityIndicator" $RD/init.rc 2>/dev/null)" ]; then
+    ui_print " "
+    ui_print "  ! Mod present in system but not in ramdisk!"
+    ui_print "  ! Running upgrade..."
+    unity_uninstall
+    unity_install
+  elif [ $(grep_prop versionCode $MOD_VER) -ge $(grep_prop versionCode $INSTALLER/module.prop) ]; then
     ui_print " "
     ui_print "  ! Current or newer version detected!"
     unity_uninstall

@@ -5,6 +5,9 @@ This fixes music and streaming apps (Spotify, Pandora, etc) that aren't processi
 * Any Android device
 
 ## Change Log
+### v1.4.8 - 8.30.2018
+* Unity v1.6.1 update
+
 ### v1.4.7 - 8.24.2018
 * Unity v1.6 update
 
