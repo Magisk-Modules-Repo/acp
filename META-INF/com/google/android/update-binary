@@ -10,21 +10,17 @@
 # PREP WORK
 ##########################################################################################
 
-# DETECT WHETHER IN BOOT MODE
-ps | grep zygote | grep -v grep >/dev/null && BOOTMODE=true || BOOTMODE=false
-$BOOTMODE || ps -A 2>/dev/null | grep zygote | grep -v grep >/dev/null && BOOTMODE=true
-$BOOTMODE || id | grep -q 'uid=0' || BOOTMODE=true
+# PRELIMINARY DETECTION OF BOOTMODE
+ps | grep zygote | grep -qv grep >/dev/null && BOOTMODE=true || BOOTMODE=false
+$BOOTMODE || ps -A 2>/dev/null | grep zygote | grep -qv grep >/dev/null && BOOTMODE=true
 
 # TEMP INSTALLER PATH
 TMPDIR=/dev/tmp
 INSTALLER=$TMPDIR/install
-
-# MAGISK PATHS
-MAGISKBIN=/data/adb/magisk
 MOUNTPATH=$TMPDIR/magisk_img
-$BOOTMODE && IMG=/data/adb/magisk_merge.img
 
 # OTHER VARIABLES
+OUTFD=$2
 ZIP=$3
 MAGISK=true
 DYNAMICOREO=false
@@ -45,15 +41,11 @@ rm -rf $TMPDIR 2>/dev/null
 mkdir -p $INSTALLER
 
 # GET OUTFD
-OUTFD=$2
-readlink /proc/$$/fd/$OUTFD 2>/dev/null | grep /tmp >/dev/null
-if [ "$?" -eq "0" ]; then
-  OUTFD=0
+if [ -z $OUTFD ] || readlink /proc/$$/fd/$OUTFD | grep -q /tmp; then
+  # We will have to manually find out OUTFD
   for FD in `ls /proc/$$/fd`; do
-    readlink /proc/$$/fd/$FD 2>/dev/null | grep pipe >/dev/null
-    if [ "$?" -eq "0" ]; then
-      ps | grep " 3 $FD " | grep -v grep >/dev/null
-      if [ "$?" -eq "0" ]; then
+    if readlink /proc/$$/fd/$FD | grep -q pipe; then
+      if ps | grep -v grep | grep -q " 3 $FD "; then
         OUTFD=$FD
         break
       fi
@@ -61,7 +53,7 @@ if [ "$?" -eq "0" ]; then
   done
 fi
 
-# NEED THIS LOADED BEFORE UTIL_FUNCTIONS
+# NEEDED BEFORE UTIL_FUNCTIONS IS LOADED
 ui_print() {
   $BOOTMODE && echo "$1" || echo -e "ui_print $1\nui_print" >> /proc/self/fd/$OUTFD
 }
@@ -74,12 +66,12 @@ ui_print() {
 ui_print " "
 ui_print "Unzipping files..."
 unzip -oq "$ZIP" -d $INSTALLER 2>/dev/null
-tar -xf $INSTALLER/common/unityfiles/tools.tar.xz -C $INSTALLER/common/unityfiles 2>/dev/null
-
 [ ! -f $INSTALLER/config.sh ] && { ui_print "! Unable to extract zip file !"; exit 1; }
 
 # LOAD FUNCTIONS
+tar -xf $INSTALLER/common/unityfiles.tar.xz -C $INSTALLER/common 2>/dev/null
 . $INSTALLER/common/unityfiles/util_functions.sh
+setup_flashable
 
 [ "$(grep_prop id $INSTALLER/module.prop)" == "UnityTemplate" ] && { ui_print "! Unity Template is not a separate module !"; abort "! This template is for devs only !"; }
 
@@ -253,20 +245,24 @@ unity_uninstall() {
 ##########################################################################################
 # (UN)INSTALL
 ##########################################################################################
-
 # CHECK FOR OLD MAGISK, DETERMINE IF SYSTEM INSTALL OR MAGISK INSTALL, CHECK MAGISK VERSION (IF APPLICABLE)
 MINMAGISK=$(grep_prop minMagisk $INSTALLER/module.prop)
-if [ ! -d $MAGISKBIN ] && [ ! -d /data/magisk ]; then
+if [ -f /data/adb/magisk/util_functions.sh ]; then
+  MAGISKBIN=/data/adb/magisk
+elif [ -f /data/magisk/util_functions.sh ]; then
+  MAGISKBIN=/data/magisk
+fi
+if $BOOTMODE; then IMG=/data/adb/magisk_merge.img; else IMG=$(dirname $MAGISKBIN)/magisk.img; fi
+
+if [ -z $MAGISKBIN ]; then
   MAGISK=false
   ui_print "- System install detected"
-elif [ ! -f $MAGISKBIN/util_functions.sh ]; then
-  require_new_magisk
 else
   ui_print "- Magisk install detected"
   cp -f $MAGISKBIN/util_functions.sh $INSTALLER/common/unityfiles/util_functions_mag.sh
   if $SYSOVERRIDE; then
     ui_print "- Overriding paths for system install"
-    $BOOTMODE && { ui_print "   ! Magisk manager isn't supported!"; abort "   ! Install in TWRP !"; }
+    $BOOTMODE && { ui_print "   ! Magisk manager isn't supported!"; abort "   ! Install in recovery !"; }
     sed -i "s/-o ro/-o rw/g" $INSTALLER/common/unityfiles/util_functions_mag.sh
     sysover_partitions
   fi
@@ -280,7 +276,7 @@ api_level_arch_detect
 
 if $MAGISK; then
   # SETUP BUSYBOX AND BINARIES
-  $BOOTMODE && boot_actions || { recovery_actions; [ -z $OLD_PATH ] && { OLD_PATH=$PATH; setup_bb; }; }
+  $BOOTMODE && boot_actions_unity || recovery_actions
   # GET THE VARIABLE REQSIZEM
   request_zip_size_check "$ZIP"
   # THIS FUNCTION WILL MOUNT $IMG TO $MOUNTPATH, AND RESIZE THE IMAGE BASED ON $REQSIZEM
