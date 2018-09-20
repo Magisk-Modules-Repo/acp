@@ -206,7 +206,7 @@ unity_install() {
     echo "#$MODID-UnityIndicator" >> $RD/init.rc
     [ -f "$INSTALLER/common/ramdiskinstall.sh" ] && . $INSTALLER/common/ramdiskinstall.sh
     for FILE in $(find $INSTALLER/ramdisk -type f 2>/dev/null | sed "s|$INSTALLER||" 2>/dev/null); do
-      cp_ch $INSTALLER$FILE $BOOTDIR$FILE
+      cp_ch $INSTALLER$FILE $INSTALLER/common/unityfiles/boot$FILE
     done
     [ ! -s $INFORD ] && rm -f $INFORD
   fi
