@@ -172,8 +172,8 @@ unity_install() {
     fi
     if $DYNAMICOREO && [ $API -ge 26 ]; then
       case $FILE in
-        /system/lib/modules/*) FILE2=$FILE;;
-        /system/lib/*) FILE2=$(echo $FILE | sed "s|/system/|$VEN/|");;
+        /system/lib*/modules/*) FILE2=$FILE;;
+        /system/lib*/*) FILE2=$(echo $FILE | sed "s|/system/|$VEN/|");;
       esac
     fi
     cp_ch $INSTALLER$FILE $UNITY$FILE2
@@ -327,6 +327,9 @@ fi
 
 # LOAD USER VARS/FUNCTIONS
 unity_custom
+
+# UNPACK RAMDISK IF CHANGED TO TRUE IN UNITY_CUSTOM
+$RAMDISK && [ ! -d "$RD" ] && unpack_ramdisk "late"
 
 # DETERMINE MOD INSTALLATION STATUS
 if $RAMDISK && [ "$(grep "#$MODID-UnityIndicator" $RD/init.rc 2>/dev/null)" ] && [ ! -f "$MOD_VER" ]; then
