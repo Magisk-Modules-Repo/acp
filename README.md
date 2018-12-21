@@ -5,6 +5,9 @@ This fixes music and streaming apps (Spotify, Pandora, etc) that aren't processi
 * Any Android device
 
 ## Change Log
+### v1.5.3 -12.21.2018
+* Updated to unity v2.1
+
 ### v1.5.2 - 12.28.2018
 * Unity v2.0 update
 * Fixed limitation in zipname triggers - you can use spaces in the zipname now and trigger is case insensitive
