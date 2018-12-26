@@ -24,8 +24,8 @@ done
 if $PATCH; then
   OIFS=$IFS; IFS=\|
   case $(echo $(basename $ZIP) | tr '[:upper:]' '[:lower:]') in
-    *rem*) PATCH=false;;
     *nrem*) PATCH=true;;
+    *rem*) PATCH=false;;
     *) PATCH="";;
   esac
   IFS=$OIFS
