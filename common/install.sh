@@ -35,12 +35,9 @@ else
   ui_print "! Using removal logic!"
 fi
 
-# Keycheck binary by someone755 @Github, idea for code below by Zappo @xda-developers
-chmod 755 $INSTALLER/common/keycheck
-
 keytest() {
   ui_print "- Vol Key Test -"
-  ui_print "   Press Vol Up:"
+  ui_print "   Press A Vol Key:"
   (/system/bin/getevent -lc 1 2>&1 | /system/bin/grep VOLUME | /system/bin/grep " DOWN" > $INSTALLER/events) || return 1
   return 0
 }
@@ -62,8 +59,8 @@ chooseport() {
 
 chooseportold() {
   # Calling it first time detects previous input. Calling it second time will do what we want
-  $INSTALLER/common/keycheck
-  $INSTALLER/common/keycheck
+  keycheck
+  keycheck
   SEL=$?
   if [ "$1" == "UP" ]; then
     UP=$SEL
