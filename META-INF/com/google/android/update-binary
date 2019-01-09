@@ -7,7 +7,7 @@
 ##########################################################################################
 
 # Temp Installer Path
-export TMPDIR=/dev/tmp; export INSTALLER=$TMPDIR/install; export OUTFD=$2; export ZIP=$3
+export TMPDIR=/dev/tmp; export INSTALLER=$TMPDIR/install; export OUTFD=$2; export ZIPFILE=$3
 
 # Default Permissions
 umask 022
@@ -17,7 +17,7 @@ rm -rf $TMPDIR 2>/dev/null
 mkdir -p $INSTALLER
 
 # Extract Unityfiles
-unzip -o "$ZIP" 'common/unityfiles/tools.tar.gz' 'common/unityfiles/util_functions.sh' -d $INSTALLER >&2
+unzip -o "$ZIPFILE" 'common/unityfiles/tools.tar.gz' 'common/unityfiles/util_functions.sh' -d $INSTALLER >&2
 [ -f "$INSTALLER/common/unityfiles/tools.tar.gz" ] || { echo "! Unable to extract zip file !"; exit 1; }
 
 # Load Util_Functions, Add In-House Binaries to PATH, Start Bash Shell

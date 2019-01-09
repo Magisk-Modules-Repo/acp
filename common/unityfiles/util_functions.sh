@@ -259,7 +259,8 @@ cleanup() {
   ui_print "    *    Unity by ahrion & zackptg5 @ XDA     *"
   ui_print "    *******************************************"
   ui_print " "
-  [ -d "$INSTALLER/addon/Aroma-Installer" ] || exit 0
+  [ -d "$INSTALLER/addon/Aroma-Installer" ] || { rm -rf $TMPDIR; exit 0; }
+  rm -rf $TMPDIR
 }
 
 device_check() {
@@ -588,7 +589,7 @@ unity_uninstall() {
 # Temp installer paths and vars
 MOUNTPATH=$TMPDIR/magisk_img; SYSOVERRIDE=false; DEBUG=false; DYNAMICOREO=false; DYNAMICAPP=false; SEPOLICY=false
 OIFS=$IFS; IFS=\|; 
-case $(echo $(basename $ZIP) | tr '[:upper:]' '[:lower:]') in
+case $(echo $(basename $ZIPFILE) | tr '[:upper:]' '[:lower:]') in
   *debug*) DEBUG=true;;
   *sysover*) SYSOVERRIDE=true;;
 esac
@@ -604,7 +605,7 @@ setup_flashable
 # Unzip files
 ui_print " "
 ui_print "Unzipping files..."
-unzip -oq "$ZIP" -d $INSTALLER 2>/dev/null
+unzip -oq "$ZIPFILE" -d $INSTALLER 2>/dev/null
 [ -f "$INSTALLER/config.sh" ] || abort "! Unable to extract zip file!"
 [ "$(grep_prop id $INSTALLER/module.prop)" == "UnityTemplate" ] && { ui_print "! Unity Template is not a separate module !"; abort "! This template is for devs only !"; }
 
@@ -683,7 +684,7 @@ if $MAGISK; then
     IMG=$NVBASE/magisk.img
     recovery_actions
   fi
-  request_zip_size_check "$ZIP"
+  request_zip_size_check "$ZIPFILE"
   mount_magisk_img
 else
   recovery_actions
