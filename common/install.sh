@@ -23,7 +23,7 @@ done
 # Get Rem/Pat from zipname
 if $PATCH; then
   OIFS=$IFS; IFS=\|
-  case $(echo $(basename $ZIP) | tr '[:upper:]' '[:lower:]') in
+  case $(echo $(basename $ZIPFILE) | tr '[:upper:]' '[:lower:]') in
     *nrem*) PATCH=true;;
     *rem*) PATCH=false;;
     *) PATCH="";;
