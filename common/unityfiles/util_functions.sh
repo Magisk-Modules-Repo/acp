@@ -637,7 +637,7 @@ else
   . $INSTALLER/common/unityfiles/util_functions_mag.sh
   # Temporary workaround for cat: write error
   . $INSTALLER/common/unityfiles/util_functions2.sh
-  [ ! -z $MAGISK_VER_CODE -a $MAGISK_VER_CODE -ge $MINMAGISK ] || require_new_magisk
+  [ -z $MAGISK_VER_CODE ] || [ $MAGISK_VER_CODE -ge $MINMAGISK ] || require_new_magisk
   [ $MAGISK_VER_CODE -ge 18000 ] && MAGISKTMP=/sbin/.magisk || MAGISKTMP=/sbin/.core
 fi
 
