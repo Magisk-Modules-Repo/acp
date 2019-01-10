@@ -28,7 +28,10 @@ else
       for FILE in ${FILES}; do
         NAME=$(echo "$FILE" | sed "s|$MOD|system|")
         case $NAME in
-          *audio_*policy*) sed -i "/$FLAG {/,/}/d" $MODPATH/$NAME;;
+          *audio_*policy*.conf) sed -i "/$FLAG {/,/}/d" $MODPATH/$NAME;;
+          *audio_*policy*.xml) sed -i "/$FLAG {/,/}/d" $MODPATH/$NAME
+                               sed -i "s/$FLAG,//g" $MODPATH/$NAME
+                               sed -i "s/,$FLAG//g" $MODPATH/$NAME;;
         esac
       done
     fi

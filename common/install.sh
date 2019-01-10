@@ -1,6 +1,6 @@
 # Tell user aml is needed if applicable
 if $MAGISK && ! $SYSOVERRIDE; then
-  if $BOOTMODE; then LOC="/sbin/.core/img/*/system $MOUNTPATH/*/system"; else LOC="$MOUNTPATH/*/system"; fi
+  if $BOOTMODE; then LOC="$MAGISKTMP/img/*/system $MOUNTPATH/*/system"; else LOC="$MOUNTPATH/*/system"; fi
   FILES=$(find $LOC -type f -name "*audio_*policy*.conf" -o -name "*audio_*policy*.xml" 2>/dev/null)
   if [ ! -z "$FILES" ] && [ ! "$(echo $FILES | grep '/aml/')" ]; then
     ui_print " "
@@ -109,7 +109,7 @@ if $PATCH; then
   ui_print "   Using patch logic"
   for OFILE in ${POLS}; do
     FILE="$UNITY$(echo $OFILE | sed "s|^/vendor|/system/vendor|g")"
-    cp_ch -nn $ORIGDIR$OFILE $FILE
+    cp_ch -i $ORIGDIR$OFILE $FILE
     case $FILE in
       *.xml) for MIX in "deep_buffer" "raw" "low_latency" "primary-out"; do
                sed -ri "/<mixPort name=\"$MIX\"/,/<\/mixPort> *$/ {/flags=\"[^\"]*/p; s|( *)(.*flags=\"[^\"]*.*)|\1<!--\2$MODID-->|; s|-->$MODID-->|$MODID-->|}" $FILE
@@ -140,7 +140,7 @@ else
   FIRST=true
   for FLAG in "deep_buffer" "raw" "low_latency"; do
     if [ -f $VEN/etc/audio_output_policy.conf ] && [ -f /system/etc/audio_policy_configuration.xml ]; then
-      $FIRST && cp_ch -nn $ORIGDIR/system/etc/audio_policy_configuration.xml $UNITY/system/etc/audio_policy_configuration.xml
+      $FIRST && cp_ch -i $ORIGDIR/system/etc/audio_policy_configuration.xml $UNITY/system/etc/audio_policy_configuration.xml
       for BUFFER in "Earpiece" "Speaker" "Wired Headset" "Wired Headphones" "Line" "HDMI" "Proxy" "FM" "BT SCO All" "USB Device Out" "Telephony Tx" "voice_rx" "primary input" "surround_sound" "record_24" "BT A2DP Out" "BT A2DP Headphones" "BT A2DP Speaker"; do
         if [ "$(sed -n "/$BUFFER/ {n;/$FLAG,/ p}" $UNITY/system/etc/audio_policy_configuration.xml)" ] && [ ! "$(sed -n "/$BUFFER/ {n;n;/$FLAG,/p}" $UNITY/system/etc/audio_policy_configuration.xml)" ]; then
           $FIRST && { sed -i "/$BUFFER/ {n;/$FLAG,/ p}" $UNITY/system/etc/audio_policy_configuration.xml;
@@ -149,13 +149,13 @@ else
         fi
       done
     elif [ ! -f $VEN/etc/audio_output_policy.conf ] && [ -f /system/etc/audio_policy_configuration.xml ]; then
-      $FIRST && { cp_ch -nn $ORIGDIR/system/etc/audio_policy_configuration.xml $UNITY/system/etc/audio_policy_configuration.xml;
+      $FIRST && { cp_ch -i $ORIGDIR/system/etc/audio_policy_configuration.xml $UNITY/system/etc/audio_policy_configuration.xml;
                   sed -ri "/($FLAG,|,$FLAG)/p" $UNITY/system/etc/audio_policy_configuration.xml;
                   sed -ri "/($FLAG,|,$FLAG)/{n;s/( *)(.*)$FLAG(.*)/\1<!--\2$FLAG\3$MODID-->/}" $UNITY/system/etc/audio_policy_configuration.xml; }
       sed -i "/<!--/!{/$FLAG,/ s/$FLAG,//g}" $UNITY/system/etc/audio_policy_configuration.xml
       sed -i "/<!--/!{/,$FLAG/ s/,$FLAG//g}" $UNITY/system/etc/audio_policy_configuration.xml
     elif [ -f $VEN/etc/audio/audio_policy_configuration.xml ]; then
-      $FIRST && { cp_ch -nn $ORIGDIR$VEN/etc/audio/audio_policy_configuration.xml $UNITY$VEN/etc/audio/audio_policy_configuration.xml;
+      $FIRST && { cp_ch -i $ORIGDIR$VEN/etc/audio/audio_policy_configuration.xml $UNITY$VEN/etc/audio/audio_policy_configuration.xml;
                   sed -ri "/($FLAG,|,$FLAG)/p" $UNITY$VEN/etc/audio/audio_policy_configuration.xml;
                   sed -ri "/($FLAG,|,$FLAG)/{n;s/( *)(.*)$FLAG(.*)/\1<!--\2$FLAG\3$MODID-->/}" $UNITY$VEN/etc/audio/audio_policy_configuration.xml; }
       sed -i "/<!--/!{/$FLAG,/ s/$FLAG,//g}" $UNITY$VEN/etc/audio/audio_policy_configuration.xml
@@ -163,14 +163,19 @@ else
     else
       for OFILE in ${POLS}; do
         FILE="$UNITY$(echo $OFILE | sed "s|^/vendor|/system/vendor|g")"
-        $FIRST && cp_ch -nn $ORIGDIR$OFILE $FILE
+        $FIRST && cp_ch -i $ORIGDIR$OFILE $FILE
         case $FILE in
           *.conf) if [ ! "$(grep "#$MODID *$FLAG" $FILE)" ] && [ "$(grep "^ *$FLAG" $FILE)" ]; then
                     sed -i "/$FLAG {/,/}/ s/^/#$MODID/" $FILE
                   fi;;
           *.xml) if [ ! "$(grep "<!--.*$FLAG" $FILE)" ]; then
                    sed -i "/$FLAG {/,/}/ s/$FLAG {/<!--$FLAG {/g; s/}/}$MODID-->/g" $FILE
-                 fi;;
+                 fi
+                $FIRST && { sed -ri "/($FLAG,|,$FLAG)/p" $FILE;
+                            sed -ri "/($FLAG,|,$FLAG)/{n;s/( *)(.*)$FLAG(.*)/\1<!--\2$FLAG\3$MODID-->/}" $FILE; }
+                sed -i "/<!--/!{/$FLAG,/ s/$FLAG,//g}" $FILE
+                sed -i "/<!--/!{/,$FLAG/ s/,$FLAG//g}" $FILE
+                ;;
         esac
       done
     fi
