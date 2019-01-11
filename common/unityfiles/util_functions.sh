@@ -570,7 +570,7 @@ unity_uninstall() {
 # Temp installer paths and vars
 MOUNTPATH=$TMPDIR/magisk_img; SYSOVERRIDE=false; DEBUG=false; DYNAMICOREO=false; DYNAMICAPP=false; SEPOLICY=false
 OIFS=$IFS; IFS=\|; 
-case $(echo $(basename $ZIPFILE) | tr '[:upper:]' '[:lower:]') in
+case $(echo $(basename "$ZIPFILE") | tr '[:upper:]' '[:lower:]') in
   *debug*) DEBUG=true;;
   *sysover*) SYSOVERRIDE=true;;
 esac
@@ -694,8 +694,8 @@ if $DEBUG; then
     ui_print "  Debug log will be written to: /sdcard/$MODID-debug.log"
     exec > >(tee -a /sdcard/$MODID-debug.log ); exec 2>/sdcard/$MODID-debug.log
   else
-    ui_print "  Debug log will be written to: $(dirname $ZIPFILE)/$MODID-debug.log"  
-    exec > >(tee -a $(dirname $ZIPFILE)/$MODID-debug.log ); exec 2>$(dirname $ZIPFILE)/$MODID-debug.log
+    ui_print "  Debug log will be written to: $(dirname "$ZIPFILE")/$MODID-debug.log"  
+    exec > >(tee -a $(dirname "$ZIPFILE")/$MODID-debug.log ); exec 2>$(dirname "$ZIPFILE")/$MODID-debug.log
   fi
   set -x
 fi
