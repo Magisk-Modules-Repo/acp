@@ -261,7 +261,7 @@ device_check() {
 
 cp_ch() {
   #UBAK: false for no backup file creation. REST: false for no file restore on uninstall
-  local OPT=`getopt -o inr -- "$@"` BAK BAKFILE EXT UBAK=true REST=true FOL=false OFILES="$2" FILE="$3" PERM=$4 SAME=false
+  local OPT=`getopt -o inr -- "$@"` BAK BAKFILE EXT UBAK=true REST=true FOL=false SAME=false
   eval set -- "$OPT"
   while true; do
     case "$1" in
@@ -271,6 +271,7 @@ cp_ch() {
       --) shift; break;;
     esac
   done
+  OFILES="$1" FILE="$2" PERM=$3
   case "$2" in
     /system/*|/vendor/*) BAK=true; BAKFILE=$INFO; EXT=".bak";;
     $RD/*) BAK=true; BAKFILE=$INFORD; EXT="~";;
