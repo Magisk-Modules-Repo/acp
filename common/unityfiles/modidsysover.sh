@@ -32,7 +32,6 @@ if [ -f $INFO ]; then
   rm -f $INFO
 fi
 rm -rf $MOUNTPATH/$MODID
-# CUSTOM USER SCRIPT
 rm -f $0
 mount -o ro,remount /system
 [ -L /system/vendor ] && mount -o ro,remount /vendor
