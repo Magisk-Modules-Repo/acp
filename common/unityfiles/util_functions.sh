@@ -430,7 +430,7 @@ unity_install() {
   
   # Remove comments from files
   for i in $INSTALLER/common/sepolicy.sh $INSTALLER/common/system.prop $INSTALLER/common/service.sh $INSTALLER/common/post-fs-data.sh; do
-    [ -f $i ] && sed -i "/^#/d" $i
+    [ -f $i ] && sed -i -e "/^#/d" -e "/^ *$/d" $i
   done
   
   # Sepolicy
