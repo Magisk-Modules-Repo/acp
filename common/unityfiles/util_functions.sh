@@ -281,14 +281,14 @@ cp_ch() {
 
 patch_script() {
   [ -L /system/vendor ] && local VEN=/vendor
-  sed -i -e "1i $SHEBANG" -e '2i MODPATH=${0%/*}' -e "2i SYS=$ROOT/system" -e "2i VEN=$ROOT$VEN" $1
+  sed -i -e "1i $SHEBANG" -e '1i MODPATH=${0%/*}' -e "1i SYS=$ROOT/system" -e "1i VEN=$ROOT$VEN" $1
   for i in "ROOT" "MAGISK" "LIBDIR" "SYSOVERRIDE" "MODID"; do
-    sed -i "3i $i=$(eval echo \$$i)" $1
+    sed -i "2i $i=$(eval echo \$$i)" $1
   done
   if $MAGISK; then 
-    sed -i -e "s|\$MOUNTPATH|$MAGISKTMP/img|g" -e "s|\$UNITY|$MAGISKTMP/img/$MODID|g" -e "3i INFO=$(echo $INFO | sed "s|$MOUNTPATH|$MAGISKTMP/img|")" $1
+    sed -i -e "s|\$MOUNTPATH|$MAGISKTMP/img|g" -e "s|\$UNITY|$MAGISKTMP/img/$MODID|g" -e "2i INFO=$(echo $INFO | sed "s|$MOUNTPATH|$MAGISKTMP/img|")" $1
   else
-    sed -i -e "s|\$MOUNTPATH||g" -e "s|\$UNITY||g" -e "3i INFO=$INFO" $1
+    sed -i -e "s|\$MOUNTPATH||g" -e "s|\$UNITY||g" -e "2i INFO=$INFO" $1
   fi
 }
 
@@ -317,7 +317,7 @@ install_script() {
 }
 
 prop_process() {
-  sed -i "/^#/d" $1
+  sed -i -e "/^#/d" -e "/^ *$/d" $1
   if $MAGISK; then
     [ -f $PROP ] || mktouch $PROP
   else
@@ -582,7 +582,7 @@ for i in version name author; do
       SPACES="${SPACES} "
     done
   fi
-  if [ $(((41-$CHARS) % 2)) -eq 1 ]; then sed -i "s/<$i>/$SPACES$NEW${SPACES} /" $INSTALLER/config.sh; else sed -i "s/<$i>/$SPACES$NEW$SPACES/" $INSTALLER/config.sh; fi
+  if [ $(((41-$CHARS) % 2)) -eq 1 ]; then sed -i "s|<$i>|$SPACES$NEW${SPACES} |" $INSTALLER/config.sh; else sed -i "s|<$i>|$SPACES$NEW$SPACES|" $INSTALLER/config.sh; fi
 done
 )
 . $INSTALLER/config.sh
@@ -632,7 +632,7 @@ mount_partitions
 api_level_arch_detect
 
 # Check for min & max api version
-[ -z $MINAPI ] && MINAPI=21 || { [ $MINAPI -lt 21 ] && MINAPI=21; }
+[ -z $MINAPI ] && MINAPI=17 || { [ $MINAPI -lt 17 ] && MINAPI=17; }
 [ $API -lt $MINAPI ] && { ui_print "! Your system API of $API is less than"; ui_print "!  the minimum api of $MINAPI!"; abort "! Aborting!"; }
 [ -z $MAXAPI ] || { [ $API -gt $MAXAPI ] && { ui_print "! Your system API of $API is greater than"; ui_print "!  the maximum api of $MINAPI!"; abort "! Aborting!"; }; }
 
@@ -673,7 +673,7 @@ if $DEBUG; then
     exec > >(tee -a /sdcard/$MODID-debug.log ); exec 2>/sdcard/$MODID-debug.log
   else
     ui_print "  Debug log will be written to: $(dirname "$ZIPFILE")/$MODID-debug.log"  
-    exec > >(tee -a $(dirname "$ZIPFILE")/$MODID-debug.log ); exec 2>$(dirname "$ZIPFILE")/$MODID-debug.log
+    exec > >(tee -a "$(dirname "$ZIPFILE")"/$MODID-debug.log ); exec 2>"$(dirname "$ZIPFILE")"/$MODID-debug.log
   fi
   set -x
 fi

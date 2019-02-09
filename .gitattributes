@@ -2,4 +2,5 @@
 *.sh text eol=lf
 *.prop text eol=lf
 *.md text eol=lf
+*.xml text eol=lf
 META-INF/** text eol=lf
