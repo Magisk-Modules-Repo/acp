@@ -11,7 +11,11 @@ if ! $MAGISK || $SYSOVERRIDE; then
                 done;;
       esac
     done
-  else
+  fi
+fi
+
+if ! $MAGISK || $SYSOVERRIDE; then
+  if $(grep_prop remv $MOD_VER); then 
     for FLAG in "deep_buffer" "raw" "low_latency"; do
       if [ -f $UNITY$VEN/etc/audio_output_policy.conf ] && [ -f $UNITY$SYS/etc/audio_policy_configuration.xml ] && [ "$(grep "<!--.*$FLAG" $UNITY$SYS/etc/audio_policy_configuration.xml)" ]; then
         for BUFFER in "Speaker" "Wired Headset" "Wired Headphones"; do
@@ -35,6 +39,33 @@ if ! $MAGISK || $SYSOVERRIDE; then
           esac
         done
       fi
+    done
+  fi
+fi
+
+if ! $MAGISK || $SYSOVERRIDE 
+  if $(grep_prop notif $MOD_VER); then
+    for OFILE in ${CFGS}; do
+      FILE="$UNITY$(echo $OFILE | sed "s|^/vendor|/system/vendor|g")"
+      case $FILE in
+        *.conf) sed -i "s/#$MODID//g" $FILE;;
+        *.xml) sed -ri "s/<!--$MODID(.*)-->/\1/g" $FILE;;
+      esac
+    done
+  fi
+fi
+
+if ! $MAGISK || $SYSOVERRIDE; then
+  if $(grep_prop usb $MOD_VER); then
+    for OFILE in ${UPCS}; do
+      FILE="$UNITY$(echo $OFILE | sed "s|^/vendor|/system/vendor|g")"
+      sed -i "/<!--$MODID-->/d" $FILE
+      sed -i -e "s|<!--$MODID\(.*\)|\1|g" -e "s|\(.*\)$MODID-->|\1|g" $FILE
+    done
+    for OFILE in ${APS}; do
+      FILE="$UNITY$(echo $OFILE | sed "s|^/vendor|/system/vendor|g")"
+      sed -i "/<!--$MODID-->/d" $FILE
+      sed -i -e "s|<!--$MODID\(.*\)|\1|g" -e "s|\(.*\)$MODID-->|\1|g" $FILE
     done
   fi
 fi
