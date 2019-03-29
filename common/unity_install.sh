@@ -47,6 +47,7 @@ osp_detect_notification() {
 
 # Check if FLAGS are even present. If not, do removal since there's nothing to patch
 PATCH=false
+REMV=false
 for FILE in ${POLS}; do
   case $FILE in
     *.xml) [ "$(grep 'flags="AUDIO_OUTPUT_FLAG' $FILE)" ] && { PATCH=true; break; };;
@@ -98,6 +99,8 @@ ui_print " "
 if [ -z $PATCH ]; then
   ui_print "  Do you want to patch or remove acp?"
   ui_print "  Vol+ = yes, Vol- = no"
+  PATCH=false
+  REMV=false
   if $VKSEL; then
     ui_print "- Select Patch Method -"
     ui_print "   Patch flags or remove sections?:"
@@ -121,6 +124,8 @@ ui_print " "
 if [ -z $NOTIF ]; then
   ui_print "  Would you like to remove notification_helper or volume listener library?"
   ui_print "  Vol+ = yes, Vol- = no"
+  NOTIF=false
+  VOLU=false
   if $VKSEL; then
     ui_print "- Select Fix Method -"
     ui_print "   Remove Notification Helper Effect or Volume Listener Library?:"
@@ -144,6 +149,7 @@ ui_print " "
 if [ -z $USB ]; then
   ui_print "  Would you like to patch usb policy file for usb dacs?"
   ui_print "  Vol+ = yes, Vol- = no"
+  USB=false
   if $VKSEL; then
     USB=true
   else
@@ -160,6 +166,7 @@ if [ -z $LIBWA ]; then
   ui_print " "
   ui_print "   Only choose yes if you're having issues"
   ui_print "   Vol+ = yes, Vol- = no (recommended)"
+  LIBWA=false
   if $VKSEL; then
     LIBWA=true
   else
@@ -182,7 +189,7 @@ fi
 ui_print "   Patching existing audio policy files..."
 if $PATCH; then
 sed -i "s|PATCH=false|PATCH=true|" $TMPDIR/common/aml.sh
-sed -i "s|patch=false|patch=true|" $TMPDIR/module.propp
+sed -i "s|patch=false|patch=true|" $TMPDIR/module.prop
   ui_print "   Using patch logic"
   for OFILE in ${POLS}; do
     FILE="$UNITY$(echo $OFILE | sed "s|^/vendor|/system/vendor|g")"
