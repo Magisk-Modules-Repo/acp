@@ -1,15 +1,19 @@
 # Audio Compatibility Patch
 This fixes music and streaming apps (Spotify, Pandora, etc) that aren't processing audio effects for various equalizer applications through the modification of audio policy. Now with usb_policy patching and notification_helper remover [More details in support thread](https://forum.xda-developers.com/apps/magisk/module-universal-deepbuffer-remover-t3577067).
 
+
 ## Compatibility
 * Any Android device
+* Magisk 18+ Only
 
 ## Change Log
+###v 1.7 - 3.29.2019
+* Bug Fixes
+
 ### v1.6 - 3.26.2019
 * Unity v4.0 update
 * Magisk 18+ only compatible
 * Combine USB_policy patching and notification_helper remover (3in1 module now)
-* New template format
 
 ### v1.5.9 - 2.8.2019
 * Unity v3.3 update

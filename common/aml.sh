@@ -1,5 +1,5 @@
-[ -f "$MODULEROOT/acp/system/bin/xmlstarlet" ] && alias xmlstarlet=$MODULEROOT/acp/system/bin/xmlstarlet
-
+#!/system/bin/sh
+alias xmlstartlet="$(dirname $MOD)/system/bin/xmlstarlet"
 
 osp_detect_notification() {
   case $1 in

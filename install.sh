@@ -29,7 +29,7 @@ comp_check
 #MAXAPI=25
 #DYNLIB=true
 #SYSOVER=true
-#DEBUG=true
+DEBUG=true
 
 # Uncomment if you do *NOT* want Magisk to mount any files for you. Most modules would NOT want to set this flag to true
 # This is obviously irrelevant for system installs
@@ -130,7 +130,7 @@ unity_custom() {
   MODPATH=$(echo $MODPATH | sed "s/$MODID/upp/g")
   MODID="upp"
   unity_uninstall
-  MODID=`grep_prop id $INSTALLER/module.prop`
+  MODID=`grep_prop id $TMDIR/module.prop`
   INFO=$(echo $INFO | sed "s/upp/$MODID/g")
   MODPATH=$MODULEROOT/$MODID
   fi

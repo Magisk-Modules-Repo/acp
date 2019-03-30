@@ -96,9 +96,12 @@ fi
 
 ui_print " "
 if [ -z $PATCH ]; then
-  ui_print "  Do you want to patch or remove acp?"
+  ui_print "  Do you want to skip audio_policy patching? (Original acp before became 3in1 module)"
   ui_print "  Vol+ = yes, Vol- = no"
   if $VKSEL; then
+    PATCH=false
+    REMV=false
+  else
     ui_print "- Select Patch Method -"
     ui_print "   Patch flags or remove sections?:"
     ui_print "   Vol Up = Patch (new logic)"
@@ -108,10 +111,7 @@ if [ -z $PATCH ]; then
       PATCH=true
     else
       REMV=true
-    fi
-  else
-    PATCH=false
-    REMV=false
+    fi  
   fi
 else
   ui_print "   Patching method specified in zipname!"
@@ -119,9 +119,12 @@ fi
 
 ui_print " "
 if [ -z $NOTIF ]; then
-  ui_print "  Would you like to remove notification_helper or volume listener library?"
+  ui_print "  Would you like to skip notification_helper remover?"
   ui_print "  Vol+ = yes, Vol- = no"
   if $VKSEL; then
+    NOTIF=false
+    VOLU=false
+  else
     ui_print "- Select Fix Method -"
     ui_print "   Remove Notification Helper Effect or Volume Listener Library?:"
     ui_print "   Vol Up = Remove notification_helper effect"
@@ -132,9 +135,6 @@ if [ -z $NOTIF ]; then
     else
       VOLU=true
     fi
-  else
-    NOTIF=false
-    VOLU=false
   fi  
 else
   ui_print "   Fix method specified in zipname!"
@@ -142,12 +142,12 @@ fi
 
 ui_print " "
 if [ -z $USB ]; then
-  ui_print "  Would you like to patch usb policy file for usb dacs?"
+  ui_print "  Would you like to skip usb policy patching for usb dacs?"
   ui_print "  Vol+ = yes, Vol- = no"
   if $VKSEL; then
-    USB=true
-  else
     USB=false
+  else
+    USB=true
   fi 
 else
   ui_print "   USB specified in zipname!"
@@ -182,7 +182,7 @@ fi
 ui_print "   Patching existing audio policy files..."
 if $PATCH; then
 sed -i "s|PATCH=false|PATCH=true|" $TMPDIR/common/aml.sh
-sed -i "s|patch=false|patch=true|" $TMPDIR/module.propp
+sed -i "s|patch=false|patch=true|" $TMPDIR/module.prop
   ui_print "   Using patch logic"
   for OFILE in ${POLS}; do
     FILE="$UNITY$(echo $OFILE | sed "s|^/vendor|/system/vendor|g")"
@@ -288,6 +288,7 @@ fi
 if $USB; then
   ui_print "   Patching usb policy files..."
   if [ "$UPCS" ]; then
+  cp_ch -n $UF/tools/$ARCH32/xmlstarlet $UNITY/system/bin/xmlstarlet
   sed -i "s|USB=false|USB=true|" $TMPDIR/common/aml.sh
   sed -i "s|usb=false|usb=true|" $TMPDIR/module.prop
     for OFILE in ${UPCS}; do
@@ -310,4 +311,5 @@ if $USB; then
     done
   fi
 fi
+
 $MAGISK && ! $SYSOVER && cp_ch -i $TMPDIR/common/aml.sh $UNITY/.aml.sh
