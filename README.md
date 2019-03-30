@@ -7,7 +7,10 @@ This fixes music and streaming apps (Spotify, Pandora, etc) that aren't processi
 * Magisk 18+ Only
 
 ## Change Log
-###v 1.7 - 3.29.2019
+### v1.7.1 - 3.30.2019
+* fix uninstall/upgrade
+
+### v1.7 - 3.29.2019
 * Bug Fixes
 
 ### v1.6 - 3.26.2019

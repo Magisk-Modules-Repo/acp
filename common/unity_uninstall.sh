@@ -43,7 +43,7 @@ if ! $MAGISK || $SYSOVERRIDE; then
   fi
 fi
 
-if ! $MAGISK || $SYSOVERRIDE 
+if ! $MAGISK || $SYSOVERRIDE; then
   if $(grep_prop notif $MOD_VER); then
     for OFILE in ${CFGS}; do
       FILE="$UNITY$(echo $OFILE | sed "s|^/vendor|/system/vendor|g")"
