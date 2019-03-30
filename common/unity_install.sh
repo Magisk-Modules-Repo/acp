@@ -95,7 +95,7 @@ if device_check "walleye" || device_check "taimen" || device_check "crosshatch" 
 fi
 
 ui_print " "
-if [ -z $PATCH ]; then
+if [ -z $PATCH ] || [ -z $REMV ]; then
   ui_print "  Do you want to skip audio_policy patching? (Original acp before became 3in1 module)"
   ui_print "  Vol+ = yes, Vol- = no"
   if $VKSEL; then
@@ -109,7 +109,9 @@ if [ -z $PATCH ]; then
     ui_print "   Only select Remove if patch doesn't work for you"
     if $VKSEL; then
       PATCH=true
+      REMV=false
     else
+      PATCH=false
       REMV=true
     fi  
   fi
@@ -132,7 +134,9 @@ if [ -z $NOTIF ]; then
     ui_print "   Only select Remove library if removing effect doesn't work for you"
     if $VKSEL; then
       NOTIF=true
+      VOLU=false
     else
+      NOTIF=false
       VOLU=true
     fi
   fi  
