@@ -119,7 +119,7 @@ unity_custom() {
     MODPATH=$(echo $MODPATH | sed "s/$MODID/nhr/g")
     MODID="nhr"
     unity_uninstall
-    MODID=`grep_prop id $INSTALLER/module.prop`
+    MODID=`grep_prop id $TMPDIR/module.prop`
     INFO=$(echo $INFO | sed "s/nhr/$MODID/g")
     MODPATH=$MODULEROOT/$MODID
   fi
@@ -130,7 +130,7 @@ unity_custom() {
   MODPATH=$(echo $MODPATH | sed "s/$MODID/upp/g")
   MODID="upp"
   unity_uninstall
-  MODID=`grep_prop id $TMDIR/module.prop`
+  MODID=`grep_prop id $TMPDIR/module.prop`
   INFO=$(echo $INFO | sed "s/upp/$MODID/g")
   MODPATH=$MODULEROOT/$MODID
   fi
