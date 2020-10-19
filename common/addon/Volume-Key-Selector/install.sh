@@ -1,13 +1,19 @@
 # External Tools
 
-chmod -R 0755 $TMPDIR/addon/Volume-Key-Selector/tools
-cp -R $TMPDIR/addon/Volume-Key-Selector/tools $UF 2>/dev/null
+chmod -R 0755 $MODPATH/common/addon/Volume-Key-Selector/tools
+alias keycheck="$MODPATH/common/addon/Volume-Key-Selector/tools/$ARCH32/keycheck"
 
 keytest() {
-  ui_print "- Vol Key Test -"
-  ui_print "  Press a Vol Key"
-  (/system/bin/getevent -lc 1 2>&1 | /system/bin/grep VOLUME | /system/bin/grep " DOWN" > $TMPDIR/events) || return 1
-  return 0
+  ui_print "- Vol Key Test"
+  ui_print "   Press a Vol Key:"
+  if (timeout 3 /system/bin/getevent -lc 1 2>&1 | /system/bin/grep VOLUME | /system/bin/grep " DOWN" > $TMPDIR/events); then
+    return 0
+  else
+    ui_print "   Try again:"
+    timeout 3 keycheck
+    local SEL=$?
+    [ $SEL -eq 143 ] && abort "   Vol key not detected!" || return 1
+  fi
 }
 
 chooseport() {
@@ -29,20 +35,22 @@ chooseport() {
 chooseportold() {
   # Keycheck binary by someone755 @Github, idea for code below by Zappo @xda-developers
   # Calling it first time detects previous input. Calling it second time will do what we want
-  keycheck
-  keycheck
-  SEL=$?
-  if [ "$1" == "UP" ]; then
-    UP=$SEL
-  elif [ "$1" == "DOWN" ]; then
-    DOWN=$SEL
-  elif [ $SEL -eq $UP ]; then
-    return 0
-  elif [ $SEL -eq $DOWN ]; then
-    return 1
-  else
-    abort "  Vol key not detected! Aborting!"
-  fi
+  while true; do
+    keycheck
+    keycheck
+    local SEL=$?
+    if [ "$1" == "UP" ]; then
+      UP=$SEL
+      break
+    elif [ "$1" == "DOWN" ]; then
+      DOWN=$SEL
+      break
+    elif [ $SEL -eq $UP ]; then
+      return 0
+    elif [ $SEL -eq $DOWN ]; then
+      return 1
+    fi
+  done
 }
 
 # Have user option to skip vol keys

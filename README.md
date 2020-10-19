@@ -4,9 +4,12 @@ This fixes music and streaming apps (Spotify, Pandora, etc) that aren't processi
 
 ## Compatibility
 * Any Android device
-* Magisk 18+ Only
+* Magisk 20+
 
 ## Change Log
+### v2.0 - 10.19.2020
+* Update to latest MMTEx
+
 ### v1.7.2 - 3.30.2019
 * Fix bugs
 
