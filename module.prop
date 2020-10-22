@@ -1,7 +1,7 @@
 id=acp
 name=Audio Compatibility Patch
-version=v2.0
-versionCode=34
+version=v2.1
+versionCode=35
 author=zackptg5, ahrion, John Fawkes
 description=Fixes music and streaming apps (Spotify, Pandora, etc) that aren't processing audio effects for various equalizer applications through the modification of audio policy
 USB Policy Patching and Notification_helper remover

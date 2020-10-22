@@ -77,63 +77,50 @@ if device_check -m "google" || device_check -m "Essential Products" || device_ch
   LIBWA=true
 fi
 
+PATCH=false; REMV=false; USB=false; NOTIF=false; VOLU=false
 ui_print " "
-ui_print "  Do you want to skip audio_policy patching?"
-ui_print "  Original acp logic - deep_buffer removal and stuff"
+ui_print "- Patch audio_policy?"
+ui_print "  (Original acp logic - deep_buffer removal and stuff)"
 ui_print "  Vol+ = yes, Vol- = no"
 if $VKSEL; then
-  PATCH=false
-  REMV=false
-else
   ui_print " "
-  ui_print "- Select Patch Method -"
+  ui_print " - Select Patch Method"
   ui_print "   Patch flags or remove sections?:"
   ui_print "   Vol Up = Patch (new logic)"
   ui_print "   Vol Down = Remove (old logic)"
   ui_print "   Only select Remove if patch doesn't work for you"
   if $VKSEL; then
     PATCH=true
-    REMV=false
   else
-    PATCH=false
     REMV=true
   fi  
 fi
 
 ui_print " "
-ui_print "  Would you like to skip notification_helper remover?"
+ui_print "- Remove notification_helper?"
 ui_print "  Vol+ = yes, Vol- = no"
 if $VKSEL; then
-  NOTIF=false
-  VOLU=false
-else
   ui_print " "
-  ui_print "- Select Fix Method -"
+  ui_print " - Select Fix Method"
   ui_print "   Remove Notification Helper Effect or Volume Listener Library?:"
   ui_print "   Vol Up = Remove notification_helper effect"
   ui_print "   Vol Down = Remove volume listener library"
   ui_print "   Only select Remove library if removing effect doesn't work for you"
   if $VKSEL; then
     NOTIF=true
-    VOLU=false
   else
-    NOTIF=false
     VOLU=true
   fi
 fi  
 
 ui_print " "
-ui_print "  Would you like to skip usb policy patching for usb dacs?"
+ui_print "- Would you like patch usb policy for usb dacs? -"
 ui_print "  Vol+ = yes, Vol- = no"
-if $VKSEL; then
-  USB=false
-else
-  USB=true
-fi 
+$VKSEL && USB=true
 
 if [ -z $LIBWA ]; then
   ui_print " "
-  ui_print " - Use lib workaround? -"
+  ui_print "- Use lib workaround?"
   ui_print " "
   ui_print "   Only choose yes if you're having issues"
   ui_print "   Vol+ = yes, Vol- = no (recommended)"
@@ -169,24 +156,12 @@ if $PATCH; then
     FILE="$MODPATH$(echo $OFILE | sed "s|^/vendor|/system/vendor|g")"
     cp_ch $ORIGDIR$OFILE $FILE
     case $FILE in
-      *.xml) for MIX in "deep_buffer" "raw" "low_latency" "primary-out"; do
-               if [ "$MIX" == "deep_buffer" -o $MIX == "low_latency" ]; then
-                 sed -ri "/<mixPort name=\"$MIX\"/,/<\/mixPort> *$/ {/<!--/! {s|flags=\"[^\"]*|flags=\"AUDIO_OUTPUT_FLAG_NONE|}}" $FILE
-               elif [ "$MIX" == "raw" ]; then
-                 sed -i "/<mixPort name=\"$MIX\"/,/<\/mixPort> *$/ {/<!--/! {s|flags=\"[^\"]*|flags=\"AUDIO_OUTPUT_FLAG_FAST|}}" $FILE
-               else
-                 sed -i "/<mixPort name=\"$MIX\"/,/<\/mixPort> *$/ {/<!--/! {s/|AUDIO_OUTPUT_FLAG_DEEP_BUFFER//; s/AUDIO_OUTPUT_FLAG_DEEP_BUFFER|//}}" $FILE
-               fi
-             done;;
-      *.conf) for MIX in "deep_buffer" "raw" "low_latency" "primary"; do
-                if [ "$MIX" == "deep_buffer" -o $MIX == "low_latency" ]; then
-                  sed -i "/^ *$MIX {/,/}/ {/^ *flags .*$/ s|flags .*|flags AUDIO_OUTPUT_FLAG_NONE|}" $FILE
-                elif [ "$MIX" == "raw" ]; then
-                  sed -i "/^ *$MIX {/,/}/ {/^ *flags .*$/ s|flags .*|flags AUDIO_OUTPUT_FLAG_FAST|}" $FILE
-                else
-                  sed -i "/^ *$MIX {/,/}/ {/^ *flags .*$/ s/|AUDIO_OUTPUT_FLAG_DEEP_BUFFER//; s/AUDIO_OUTPUT_FLAG_DEEP_BUFFER|//}" $FILE
-                fi
-              done;;
+      *.xml) sed -ri "/<mixPort name=\"(deep_buffer)|(low_latency)\"/,/<\/mixPort> *$/ s|flags=\"[^\"]*|flags=\"AUDIO_OUTPUT_FLAG_NONE|" $FILE
+             sed -i "/<mixPort name=\"raw\"/,/<\/mixPort> *$/ s|flags=\"[^\"]*|flags=\"AUDIO_OUTPUT_FLAG_FAST|" $FILE
+             sed -i "/<mixPort name=\"primary-out\"/,/<\/mixPort> *$/ s/|AUDIO_OUTPUT_FLAG_DEEP_BUFFER//g" $FILE;;
+      *.conf) sed -ri "/^ *(deep_buffer)|(low_latency) \{/,/}/ s|flags .*|flags AUDIO_OUTPUT_FLAG_NONE|" $FILE
+              sed -i "/^ *raw {/,/}/ s|flags .*|flags AUDIO_OUTPUT_FLAG_PRIMARY|" $FILE
+              sed -i "/^ *primary {/,/}/ s/|AUDIO_OUTPUT_FLAG_DEEP_BUFFER//g" $FILE;;
     esac
   done
 elif $REMV; then
@@ -195,9 +170,7 @@ elif $REMV; then
     if [ -f $ORIGDIR/vendor/etc/audio_output_policy.conf ] && [ -f $ORIGDIR/system/etc/audio_policy_configuration.xml ]; then
       [ -f $MODPATH/system/etc/audio_policy_configuration.xml ] || cp_ch $ORIGDIR/system/etc/audio_policy_configuration.xml $MODPATH/system/etc/audio_policy_configuration.xml
       for BUFFER in "Earpiece" "Speaker" "Wired Headset" "Wired Headphones" "Line" "HDMI" "Proxy" "FM" "BT SCO All" "USB Device Out" "Telephony Tx" "voice_rx" "primary input" "surround_sound" "record_24" "BT A2DP Out" "BT A2DP Headphones" "BT A2DP Speaker"; do
-        if [ "$(sed -n "/$BUFFER/ {/$FLAG,/p}" $MODPATH/system/etc/audio_policy_configuration.xml)" ]; then
-          sed -i "/$BUFFER/{s/$FLAG,//;}" $MODPATH/system/etc/audio_policy_configuration.xml
-        fi
+        sed -i "/$BUFFER/ s/$FLAG,//g" $MODPATH/system/etc/audio_policy_configuration.xml
       done
     elif [ ! -f $ORIGDIR/vendor/etc/audio_output_policy.conf ] && [ -f $ORIGDIR/system/etc/audio_policy_configuration.xml ]; then
       [ -f $MODPATH/system/etc/audio_policy_configuration.xml ] || cp_ch $ORIGDIR/system/etc/audio_policy_configuration.xml $MODPATH/system/etc/audio_policy_configuration.xml
@@ -252,10 +225,10 @@ if $USB; then
       FILE="$MODPATH$(echo $OFILE | sed "s|^/vendor|/system/vendor|g")"
       cp_ch $ORIGDIR$OFILE $FILE
       grep -iE " name=\"usb[ _]+.* output\"" $FILE | sed -r "s/.*ame=\"([A-Za-z_ ]*)\".*/\1/" | while read i; do
-      patch_xml $FILE "/module/mixPorts/mixPort[@name=\"$i\"]/profile[@name=\"\"]"
+        patch_xml $FILE "/module/mixPorts/mixPort[@name=\"$i\"]/profile[@name=\"\"]"
       done
       grep -iE "tagName=\"usb[ _]+.* out\"" $FILE | sed -r "s/.*ame=\"([A-Za-z_ ]*)\".*/\1/" | while read i; do
-      patch_xml $FILE "/module/devicePorts/devicePort[@tagName=\"$i\"]/profile[@name=\"\"]"
+        patch_xml $FILE "/module/devicePorts/devicePort[@tagName=\"$i\"]/profile[@name=\"\"]"
       done
     done
   else

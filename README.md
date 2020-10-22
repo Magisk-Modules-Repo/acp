@@ -7,6 +7,10 @@ This fixes music and streaming apps (Spotify, Pandora, etc) that aren't processi
 * Magisk 20+
 
 ## Change Log
+### v2.1 - 10.21.2020
+* Minor fixes
+* Rework prompts to make more sense
+
 ### v2.0 - 10.19.2020
 * Update to latest MMTEx
 
