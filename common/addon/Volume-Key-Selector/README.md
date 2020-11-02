@@ -1,8 +1,8 @@
 # Volume Key Selector - Addon that allows the use of the volume keys to select option in the installer
 
 ## Instructions:
-* Use $VKSEL variable whenever you want to call the volume key selection function. The function returns true if user selected vol up and false if vol down
-Ex: if $VKSEL; then
+* Call chooseport whenever you want to call to use volume key check. The function returns true if user selected vol up and false if vol down
+Ex: if chooseport; then
       echo "true"
     else
       echo "false"

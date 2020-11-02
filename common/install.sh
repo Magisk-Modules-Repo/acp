@@ -1,34 +1,14 @@
 # Functions
 patch_xml() {
   if [ "$(xmlstarlet sel -t -m "$2" -c . $1)" ]; then
-    [ "$(xmlstarlet sel -t -m "$2" -c . $1 | sed -r "s/.*samplingRates=\"([0-9]*)\".*/\1/")" == "48000" ] && return
-    xmlstarlet ed -L -i "$2" -t elem -n "$MODID" $1
-    local LN=$(sed -n "/<$MODID\/>/=" $1)
-    for i in ${LN}; do
-      sed -i "$i d" $1
-      sed -i "$i p" $1
-      sed -ri "${i}s/(^ *)(.*)/\1<!--$MODID\2$MODID-->/" $1
-      sed -i "$((i+1))s/$/<!--$MODID-->/" $1
-    done
     xmlstarlet ed -L -u "$2/@samplingRates" -v "48000" $1
   else
     local NP=$(echo "$2" | sed -r "s|(^.*)/.*$|\1|")
     local SNP=$(echo "$2" | sed -r "s|(^.*)\[.*$|\1|")
     local SN=$(echo "$2" | sed -r "s|^.*/.*/(.*)\[.*$|\1|")
-    xmlstarlet ed -L -s "$NP" -t elem -n "$SN-$MODID" -i "$SNP-$MODID" -t attr -n "name" -v "" -i "$SNP-$MODID" -t attr -n "format" -v "AUDIO_FORMAT_PCM_16_BIT" -i "$SNP-$MODID" -t attr -n "samplingRates" -v "48000" -i "$SNP-$MODID" -t attr -n "channelMasks" -v "AUDIO_CHANNEL_OUT_STEREO" $1
-    xmlstarlet ed -L -r "$SNP-$MODID" -v "$SN" $1
-    xmlstarlet ed -L -i "$2" -t elem -n "$MODID" $1
-    local LN=$(sed -n "/<$MODID\/>/=" $1)
-    for i in ${LN}; do
-      sed -i "$i d" $1
-      sed -ri "${i}s/$/<!--$MODID-->/" $1
-    done 
+    xmlstarlet ed -L -s "$NP" -t elem -n "$SN-acp" -i "$SNP-acp" -t attr -n "name" -v "" -i "$SNP-acp" -t attr -n "format" -v "AUDIO_FORMAT_PCM_16_BIT" -i "$SNP-acp" -t attr -n "samplingRates" -v "48000" -i "$SNP-acp" -t attr -n "channelMasks" -v "AUDIO_CHANNEL_OUT_STEREO" $1
+    xmlstarlet ed -L -r "$SNP-acp" -v "$SN" $1
   fi
-  local LN=$(sed -n "/^ *<!--$MODID-->$/=" $1 | tac)
-  for i in ${LN}; do
-    sed -i "$i d" $1
-    sed -ri "$((i-1))s/$/<!--$MODID-->/" $1
-  done 
 }
 
 osp_detect_notification() {
@@ -37,11 +17,11 @@ osp_detect_notification() {
             local EFFECTS=$(sed -n "/^output_session_processing {/,/^}/ {/^$SPACES\notification {/,/^$SPACES}/p}" $1 | grep -E "^$SPACES +[A-Za-z]+" | sed -r "s/( *.*) .*/\1/g")
             for EFFECT in ${EFFECTS}; do
               SPACES=$(sed -n "/^effects {/,/^}/ {/^ *$EFFECT {/p}" $1 | sed -r "s/( *).*/\1/")
-              sed -i "/^effects {/,/^}/ {/^$SPACES$EFFECT {/,/^$SPACES}/ s/^/#$MODID/g}" $1
+              sed -i "/^effects {/,/^}/ {/^$SPACES$EFFECT {/,/^$SPACES}/d}" $1
             done;;
      *.xml) local EFFECTS=$(sed -n "/^ *<postprocess>$/,/^ *<\/postprocess>$/ {/^ *<stream type=\"notification\">$/,/^ *<\/stream>$/ {/<stream type=\"notification\">/d; /<\/stream>/d; s/<apply effect=\"//g; s/\"\/>//g; p}}" $1)
             for EFFECT in ${EFFECTS}; do
-              sed -ri "s/^( *)<apply effect=\"$EFFECT\"\/>/\1<\!--$MODID<apply effect=\"$EFFECT\"\/>-->/" $1
+              sed -i "/^\( *\)<apply effect=\"$EFFECT\"\/>/d" $1
             done;;
   esac
 }
@@ -82,14 +62,14 @@ ui_print " "
 ui_print "- Patch audio_policy?"
 ui_print "  (Original acp logic - deep_buffer removal and stuff)"
 ui_print "  Vol+ = yes, Vol- = no"
-if $VKSEL; then
+if chooseport; then
   ui_print " "
   ui_print " - Select Patch Method"
   ui_print "   Patch flags or remove sections?:"
   ui_print "   Vol Up = Patch (new logic)"
   ui_print "   Vol Down = Remove (old logic)"
   ui_print "   Only select Remove if patch doesn't work for you"
-  if $VKSEL; then
+  if chooseport; then
     PATCH=true
   else
     REMV=true
@@ -99,14 +79,14 @@ fi
 ui_print " "
 ui_print "- Remove notification_helper?"
 ui_print "  Vol+ = yes, Vol- = no"
-if $VKSEL; then
+if chooseport; then
   ui_print " "
   ui_print " - Select Fix Method"
   ui_print "   Remove Notification Helper Effect or Volume Listener Library?:"
   ui_print "   Vol Up = Remove notification_helper effect"
   ui_print "   Vol Down = Remove volume listener library"
   ui_print "   Only select Remove library if removing effect doesn't work for you"
-  if $VKSEL; then
+  if chooseport; then
     NOTIF=true
   else
     VOLU=true
@@ -116,7 +96,7 @@ fi
 ui_print " "
 ui_print "- Would you like patch usb policy for usb dacs? -"
 ui_print "  Vol+ = yes, Vol- = no"
-$VKSEL && USB=true
+chooseport && USB=true
 
 if [ -z $LIBWA ]; then
   ui_print " "
@@ -124,7 +104,7 @@ if [ -z $LIBWA ]; then
   ui_print " "
   ui_print "   Only choose yes if you're having issues"
   ui_print "   Vol+ = yes, Vol- = no (recommended)"
-  if $VKSEL; then
+  if chooseport; then
     LIBWA=true
   else
     LIBWA=false

@@ -1,7 +1,6 @@
 #!/system/bin/sh
 patch_xml() {
   if [ "$(xmlstarlet sel -t -m "$2" -c . $1)" ]; then
-    [ "$(xmlstarlet sel -t -m "$2" -c . $1 | sed -r "s/.*samplingRates=\"([0-9]*)\".*/\1/")" == "48000" ] && return
     xmlstarlet ed -L -u "$2/@samplingRates" -v "48000" $1
   else
     local NP=$(echo "$2" | sed -r "s|(^.*)/.*$|\1|")
@@ -17,7 +16,7 @@ NOTIF=false
 PATCH=false
 REMV=false
 USB=false
-if $USB && [ -z "$(find $MODPATH/system -type f -name 'usb_audio_policy_configuration.xml')" ]; then
+if $USB && [ ! -z "$(find $MODPATH/system -type f -name 'usb_audio_policy_configuration.xml')" ]; then
   USBFILE=true
 else
   USBFILE=false
