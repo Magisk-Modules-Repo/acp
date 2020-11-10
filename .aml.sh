@@ -1,4 +1,6 @@
 #!/system/bin/sh
+alias xmlstarlet="$mod/tools/xmlstarlet"
+
 patch_xml() {
   if [ "$(xmlstarlet sel -t -m "$2" -c . $1)" ]; then
     xmlstarlet ed -L -u "$2/@samplingRates" -v "48000" $1
@@ -11,7 +13,6 @@ patch_xml() {
   fi
 }
 
-alias xmlstarlet="$mod/tools/xmlstarlet"
 NOTIF=false
 PATCH=false
 REMV=false
@@ -26,6 +27,12 @@ FILES=$(find $MODPATH/system -type f)
 for FILE in $FILES; do
   case $FILE in
     *audio_effects*) $NOTIF && osp_detect "notification" $FILE;;
+    *usb_audio_policy_configuration.xml) grep -iE " name=\"usb[ _]+.* output\"" $FILE | sed -r "s/.*ame=\"([A-Za-z_ ]*)\".*/\1/" | while read i; do
+                                          patch_xml $FILE "/module/mixPorts/mixPort[@name=\"$i\"]/profile[@name=\"\"]"
+                                        done
+                                        grep -iE "tagName=\"usb[ _]+.* out\"" $FILE | sed -r "s/.*ame=\"([A-Za-z_ ]*)\".*/\1/" | while read i; do
+                                          patch_xml $FILE "/module/devicePorts/devicePort[@tagName=\"$i\"]/profile[@name=\"\"]"
+                                        done;;
     *audio_*policy*.xml) $PATCH || continue
                          sed -ri "/<mixPort name=\"(deep_buffer)|(low_latency)\"/,/<\/mixPort> *$/ s|flags=\"[^\"]*|flags=\"AUDIO_OUTPUT_FLAG_NONE|" $FILE
                          sed -i "/<mixPort name=\"raw\"/,/<\/mixPort> *$/ s|flags=\"[^\"]*|flags=\"AUDIO_OUTPUT_FLAG_FAST|" $FILE
@@ -39,12 +46,6 @@ for FILE in $FILES; do
                             SPACES=$(sed -n "/^ *usb {/p" $FILE | sed -r "s/^( *).*/\1/")
                             sed -i "/^$SPACES\usb {/,/^$SPACES}/ s/\(^ *\)sampling_rates .*/\1sampling_rates 48000/g" $FILE
                           fi;;
-    usb_audio_policy_configuration.xml) grep -iE " name=\"usb[ _]+.* output\"" $FILE | sed -r "s/.*ame=\"([A-Za-z_ ]*)\".*/\1/" | while read i; do
-                                          patch_xml $FILE "/module/mixPorts/mixPort[@name=\"$i\"]/profile[@name=\"\"]"
-                                        done
-                                        grep -iE "tagName=\"usb[ _]+.* out\"" $FILE | sed -r "s/.*ame=\"([A-Za-z_ ]*)\".*/\1/" | while read i; do
-                                          patch_xml $FILE "/module/devicePorts/devicePort[@tagName=\"$i\"]/profile[@name=\"\"]"
-                                        done;;
   esac
 done
 

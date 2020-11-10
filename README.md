@@ -7,6 +7,9 @@ This fixes music and streaming apps (Spotify, Pandora, etc) that aren't processi
 * Magisk 20+
 
 ## Change Log
+### v2.3 - 11.10.2020
+* USB patching bug fix in aml script
+
 ### v2.2 - 11.2.2020
 * USB policy patching fixes
 * Updated volume key addon
