@@ -62,14 +62,14 @@ ui_print " "
 ui_print "- Patch audio_policy?"
 ui_print "  (Original acp logic - deep_buffer removal and stuff)"
 ui_print "  Vol+ = yes, Vol- = no"
-if chooseport; then
+if chooseport 5; then
   ui_print " "
   ui_print " - Select Patch Method"
   ui_print "   Patch flags or remove sections?:"
   ui_print "   Vol Up = Patch (new logic)"
   ui_print "   Vol Down = Remove (old logic)"
   ui_print "   Only select Remove if patch doesn't work for you"
-  if chooseport; then
+  if chooseport 10; then
     PATCH=true
   else
     REMV=true
@@ -86,7 +86,7 @@ if chooseport; then
   ui_print "   Vol Up = Remove notification_helper effect"
   ui_print "   Vol Down = Remove volume listener library"
   ui_print "   Only select Remove library if removing effect doesn't work for you"
-  if chooseport; then
+  if chooseport 10; then
     NOTIF=true
   else
     VOLU=true
