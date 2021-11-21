@@ -4,9 +4,12 @@ This fixes music and streaming apps (Spotify, Pandora, etc) that aren't processi
 
 ## Compatibility
 * Any Android device
-* Magisk 20+
+* Magisk 20.4+
 
 ## Change Log
+### v2.4 - 11.21.2021
+* MMT-EX v1.8 update - fix for magisk canary, minmagisk now 20.4
+
 ### v2.3 - 11.10.2020
 * USB patching bug fix in aml script
 
