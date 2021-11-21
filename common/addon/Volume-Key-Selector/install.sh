@@ -1,5 +1,4 @@
 # External Tools
-
 chmod -R 0755 $MODPATH/common/addon/Volume-Key-Selector/tools
 
 chooseport() {
@@ -10,10 +9,10 @@ chooseport() {
   while true; do
     timeout 0 $MODPATH/common/addon/Volume-Key-Selector/tools/$ARCH32/keycheck
     timeout $delay $MODPATH/common/addon/Volume-Key-Selector/tools/$ARCH32/keycheck
-    local SEL=$?
-    if [ $SEL -eq 42 ]; then
+    local sel=$?
+    if [ $sel -eq 42 ]; then
       return 0
-    elif [ $SEL -eq 41 ]; then
+    elif [ $sel -eq 41 ]; then
       return 1
     else
       $error && abort "Volume key error!"
