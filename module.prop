@@ -1,8 +1,9 @@
 id=acp
 name=Audio Compatibility Patch
-version=v2.4
-versionCode=38
+version=v2.5
+versionCode=39
 author=zackptg5, ahrion, John Fawkes
 description=Fixes music and streaming apps (Spotify, Pandora, etc) that aren't processing audio effects for various equalizer applications through the modification of audio policy
 USB Policy Patching and Notification_helper remover
 support=https://forum.xda-developers.com/apps/magisk/module-universal-deepbuffer-remover-t3577067
+updateJson=https://raw.githubusercontent.com/Magisk-Modules-Repo/acp/master/update.json
