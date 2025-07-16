@@ -1,3 +1,6 @@
+if [ -d "/data/adb/modules/acp/system" ]; then
+  rm -rf /data/adb/modules/acp/system
+fi
 # Functions
 patch_xml() {
   if [ "$(xmlstarlet sel -t -m "$2" -c . $1)" ]; then
