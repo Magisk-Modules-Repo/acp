@@ -31,19 +31,19 @@ POLS="$(find /system /vendor -type f -name "*audio_*policy*.conf" -o -name "*aud
 UPCS="$(find /system /vendor -type f -name "usb_audio_policy_configuration.xml")"
 APS="$(find /system /vendor -type f -name "*audio_*policy*.conf")"
 CFGS="$(find /system /vendor -type f -name "*audio_effects*.conf" -o -name "*audio_effects*.xml")"
-if [ -d "$NVBASE/modules/nhr" ]; then
+if [ -d "/data/adb/modules/nhr" ]; then
   ui_print " "
   ui_print "! Old Notification Helper Remover detected! Removing..."
-  touch $NVBASE/modules/nhr/remove
+  touch /data/adb/modules/nhr/remove
 fi
-if [ -d "$NVBASE/modules/upp" ]; then
+if [ -d "/data/adb/modules/upp" ]; then
   ui_print " "
   ui_print "! Old USB Policy Patcher detected! Removing..."
-  touch $NVBASE/modules/upp/remove
+  touch /data/adb/modules/upp/remove
 fi
 
 # Tell user aml is needed if applicable
-FILES=$(find $NVBASE/modules/*/system $MODULEROOT/*/system -type f -name "usb_audio_policy_configuration.xml" -o -name "*audio_*policy*.conf" -o -name "*audio_effects*.conf" -o -name "*audio_effects*.xml" 2>/dev/null)
+FILES=$(find /data/adb/modules/*/system $MODULEROOT/*/system -type f -name "usb_audio_policy_configuration.xml" -o -name "*audio_*policy*.conf" -o -name "*audio_effects*.conf" -o -name "*audio_effects*.xml" 2>/dev/null)
 if [ ! -z "$FILES" ] && [ ! "$(echo $FILES | grep '/aml/')" ]; then
   ui_print " "
   ui_print "   ! Conflicting audio mod found!"
