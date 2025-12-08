@@ -35,8 +35,9 @@ for FILE in $FILES; do
                                         done;;
     *audio_*policy*.xml) $PATCH || continue
                          sed -ri "/<mixPort name=\"(deep_buffer)|(low_latency)\"/,/<\/mixPort> *$/ s|flags=\"[^\"]*|flags=\"AUDIO_OUTPUT_FLAG_NONE|" $FILE
-                         sed -i "/<mixPort name=\"raw\"/,/<\/mixPort> *$/ s|flags=\"[^\"]*|flags=\"AUDIO_OUTPUT_FLAG_FAST|" $FILE
-                         sed -i "/<mixPort name=\"primary-out\"/,/<\/mixPort> *$/ s/|AUDIO_OUTPUT_FLAG_DEEP_BUFFER//g" $FILE;;
+                         sed -ri "/<mixPort name=\"raw\"/,/<\/mixPort> *$/ s/( |\|)?AUDIO_OUTPUT_FLAG_RAW//g" $FILE
+                         sed -ri "/<mixPort name=\"primary out\"/,/<\/mixPort> *$/ s/( |\|)?AUDIO_OUTPUT_FLAG_DEEP_BUFFER//g" $FILE
+                         sed -ri "/<mixPort name=\"mmap_no_irq_out\"/,/<\/mixPort> *$/ s/( |\|)?AUDIO_OUTPUT_FLAG_MMAP_NOIRQ//g" $FILE;;
     *audio_*policy*.conf) if $PATCH; then
                             sed -ri "/^ *(deep_buffer)|(low_latency) \{/,/}/ s|flags .*|flags AUDIO_OUTPUT_FLAG_NONE|" $FILE
                             sed -i "/^ *raw {/,/}/ s|flags .*|flags AUDIO_OUTPUT_FLAG_PRIMARY|" $FILE
@@ -50,7 +51,7 @@ for FILE in $FILES; do
 done
 
 if $REMV; then
-  for FLAG in "deep_buffer" "raw" "low_latency"; do
+  for FLAG in "deep_buffer" "raw" "low_latency" "mmap_no_irq_out"; do
     if [ -f $MODPATH/system/vendor/etc/audio_output_policy.conf ] && [ -f $MODPATH/system/etc/audio_policy_configuration.xml ]; then
       for BUFFER in "Earpiece" "Speaker" "Wired Headset" "Wired Headphones" "Line" "HDMI" "Proxy" "FM" "BT SCO All" "USB Device Out" "Telephony Tx" "voice_rx" "primary input" "surround_sound" "record_24" "BT A2DP Out" "BT A2DP Headphones" "BT A2DP Speaker"; do
         sed -i "/$BUFFER/ s/$FLAG//g" $MODPATH/system/etc/audio_policy_configuration.xml
